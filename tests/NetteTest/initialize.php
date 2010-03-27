@@ -19,7 +19,7 @@ NetteTestHelpers::startup();
 
 
 
-require __DIR__ . '/../../lib/Table.php';
+require __DIR__ . '/../../lib/loader.php';
 
 
 /**
