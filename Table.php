@@ -18,30 +18,33 @@ abstract class Table {
 	static $FIELDS = array();
 	static $NULL_COLUMNS = array();
 	
-	private $__id;
-	private $__values = array();
-	private $__modified = array();
-	private $__parents = array();
-	private $__children = array();
-	private $__aux = array();
+	private $_id;
+	private $_values = array();
+	private $_modified = array();
+	private $_parents = array();
+	private $_children = array();
+	private $_loaded;
+	private $_aux = array();
 	
-	private static $__cache;
+	private static $_cache;
 	
 	function __construct($id = null) {
 		$this->id = $id;
 		foreach ($this->columns as $column) {
 			if ($column != static::$PREFIX.'_'.self::ID) {
-				$this->__modified[$column] = self::VALUE_NOT_SET;
-				$this->__values[$column] = NULL;
+				$this->_modified[$column] = self::VALUE_NOT_SET;
+				$this->_values[$column] = NULL;
 			}
 		}
 		if (is_array(static::$PARENTS))
 			foreach (static::$PARENTS as $parentName=>$parentClass) {
-				$this->__parents[$parentName] = NULL;
+				$this->_parents[$parentName] = NULL;
+				$this->_loaded[$parentName] = FALSE;
 			}
 		if (is_array(static::$CHILDREN))
 			foreach (static::$CHILDREN as $childName=>$childClass) {
-				$this->$childName = new RowCollection;
+				$this->_children[$childName] = new RowCollection;
+				$this->_loaded[$childName] = FALSE;
 			}
 	}
 	
@@ -56,7 +59,7 @@ abstract class Table {
 				foreach ($row as $name=>$value) 
 					if ($name != (static::$PREFIX.'_'.self::ID)) {
 						$this->$name = $value;
-						$this->__modified[$name] = self::VALUE_NOT_MODIFIED;
+						$this->_modified[$name] = self::VALUE_NOT_MODIFIED;
 					}
 			} else return FALSE;
 			
@@ -81,7 +84,8 @@ abstract class Table {
 				if ($this->{$parentClass::$PREFIX.'_'.self::ID}) {
 					$parentEntity = new $parentClass($this->{$parentClass::$PREFIX.'_'.self::ID});
 					$parentEntity->load(FALSE, $withChildren);
-					$this->{is_string($parentName) ? $parentName : $parentClass::getVariableName()} = $parentEntity; 
+					$this->$parentName = $parentEntity;
+					$this->_loaded[$parentName] = TRUE; 
 				}
 		}
 	}
@@ -101,7 +105,8 @@ abstract class Table {
 					);
 					$sortTmp = isset($sort[$childName]) ? $sort[$childName] : array();
 					$limitTmp = isset($limit[$childName]) ? $limit[$childName] : array();
-					$this->{is_string($childName) ? $childName : $childClass::getVariableName()} = $childClass::getAll($whereTmp, $sortTmp, $limitTmp, $withParents);
+					$this->$childName = $childClass::getAll($whereTmp, $sortTmp, $limitTmp, $withParents);
+					$this->_loaded[$childName] = TRUE;
 				}
 			}
 		} else return NULL;
@@ -127,7 +132,7 @@ abstract class Table {
 			if ($key == self::ID) continue; // primární klíč vždy potřebujeme
 			if (!is_scalar($value) && !is_null($value)) unset($values[$key]);
 			// ukládáme jen hodnoty, které se změnily
-			elseif ($this->id && $this->__modified[static::getColumnName($key)] !== self::VALUE_MODIFIED) {
+			elseif ($this->id && $this->_modified[static::getColumnName($key)] !== self::VALUE_MODIFIED) {
 				$values[$key] = '`'.static::getColumnName($key).'`';
 			}
 		}
@@ -136,8 +141,8 @@ abstract class Table {
 	
 	public function save() {
 		//uložíme rodiče
-		if (is_array($this->__parents))
-			foreach ($this->__parents as $parentName=>$parentEntity) {
+		if (is_array($this->_parents))
+			foreach ($this->_parents as $parentName=>$parentEntity) {
 				if (!is_null($parentEntity)) {
 					$parentEntity->save();
 					$this->{$parentEntity::$PREFIX.'_'.self::ID} = $parentEntity->id;
@@ -180,8 +185,8 @@ abstract class Table {
 		}
 		
 		// a uložíme děti
-		if (is_array($this->__children))
-			foreach ($this->__children as $childName=>$childEntities)
+		if (is_array($this->_children))
+			foreach ($this->_children as $childName=>$childEntities)
 				foreach ($childEntities as $i=>$childEntity) {
 					$childEntity->{static::$PREFIX.'_'.self::ID} = $this->id;
 					$childEntity->save();
@@ -207,15 +212,15 @@ abstract class Table {
 	public function copy() {
 		$copy = clone $this;
 		$copy->id = NULL;
-		if (is_array($copy->__parents))
-			foreach ($copy->__parents as $parentName=>$parentEntity) {
+		if (is_array($copy->_parents))
+			foreach ($copy->_parents as $parentName=>$parentEntity) {
 				if ($parentEntity !== NULL)
-					$copy->__parents[$parentName] = $this->__parents[$parentName]->copy();
+					$copy->_parents[$parentName] = $this->_parents[$parentName]->copy();
 			}
-		if (is_array($copy->__children))
-			foreach ($copy->__children as $childName=>$childEntities)
-				foreach ($copy->__children[$childName] as $i=>$childEntity) {
-					$copy->__children[$childName][$i] = $this->__children[$childName][$i]->copy();
+		if (is_array($copy->_children))
+			foreach ($copy->_children as $childName=>$childEntities)
+				foreach ($copy->_children[$childName] as $i=>$childEntity) {
+					$copy->_children[$childName][$i] = $this->_children[$childName][$i]->copy();
 				}
 				
 		return $copy;
@@ -224,13 +229,13 @@ abstract class Table {
 	
 	public function getValues() {
 		$values = array();
-		foreach ($this->__values as $name=>$value) {
+		foreach ($this->_values as $name=>$value) {
 			if (strpos($name, static::$PREFIX.'_') === 0) $pos = strlen(static::$PREFIX)+1;
 			else $pos = 0;
 			$values[substr($name,$pos)] = $value;
 		}
-		if ($this->__id) {
-			$values[self::ID] = $this->__id;
+		if ($this->_id) {
+			$values[self::ID] = $this->_id;
 		}
 		foreach (static::$PARENTS as $parentName=>$parentClass) {
 			if (isset($this->$parentName)) 
@@ -246,19 +251,23 @@ abstract class Table {
 	
 	public function __get($name) {
 		if ($name == 'id' || $name == static::$PREFIX.'_'.self::ID) {
-			return $this->__id;
-		} elseif (strpos($name, '_') === 0 && ($_name = substr($name, 1)) && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->__values)) {
-			return $this->__values[self::getColumnName($_name)];
+			return $this->_id;
+		} elseif (strpos($name, '_') === 0 && ($_name = substr($name, 1)) && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
+			return $this->_values[self::getColumnName($_name)];
 		} elseif (method_exists($this, ($m_name = 'get'.ucfirst(self::toCamelCase($name))) )) {//get{Name}
 			return $this->{$m_name}();
-		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->__values)) {
-			return $this->__values[self::getColumnName($name)];
-		} elseif (array_key_exists($name, $this->__parents)) {
-			return $this->__parents[$name];
-		} elseif (array_key_exists($name, $this->__children)) {
-			return $this->__children[$name];
-		} elseif (array_key_exists($name, $this->__aux)) {
-			return $this->__aux[$name];
+		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
+			return $this->_values[self::getColumnName($name)];
+		} elseif (array_key_exists($name, $this->_parents)) {
+			if (!$this->_loaded[$name]) //lazy loading
+				$this->{'load'.ucfirst($name)}();
+			return $this->_parents[$name];
+		} elseif (array_key_exists($name, $this->_children)) {
+			if (!$this->_loaded[$name]) //lazy loading
+				$this->{'load'.ucfirst($name)}();
+			return $this->_children[$name];
+		} elseif (array_key_exists($name, $this->_aux)) {
+			return $this->_aux[$name];
 		} elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
 			return new \DateTime($this->{$matches[1]});
 		} elseif (static::isCallable( $method = 'get'.ucfirst($name) )) {//static get{Name}
@@ -301,36 +310,36 @@ abstract class Table {
 				}
 			}
 		} elseif (is_object($value) && in_array(get_class($value), static::$PARENTS)) {
-			$this->__parents[$name] = $value;
+			$this->_parents[$name] = $value;
 		} elseif (($value instanceof RowCollection) && in_array($name, array_keys(static::$CHILDREN))) {
 			if ($value->isEmpty() || in_array($value->getClass(), static::$CHILDREN))
-				$this->__children[$name] = $value;
+				$this->_children[$name] = $value;
 			else throw new \Exception('The collection of objects ('.$name.') that have class '.$value->getClass().' not defined in CHILDREN');
 		} elseif ($name == 'id' || $name == static::$PREFIX.'_'.self::ID) {
 			$newId = intval($value) === 0 ? NULL : intval($value);
-			if ($this->__id !== $newId && !is_null($this->__id))
-				array_map(function($item){return Table::VALUE_MODIFIED;}, $this->__modified);
+			if ($this->_id !== $newId && !is_null($this->_id))
+				array_map(function($item){return Table::VALUE_MODIFIED;}, $this->_modified);
 			
-			$this->__id = $newId;
+			$this->_id = $newId;
 				
 		} elseif ($_name = static::getColumnName($name)) {
-			if ($this->__values[$_name] !== $value)
-				$this->__modified[$_name] = self::VALUE_MODIFIED;
+			if ($this->_values[$_name] !== $value)
+				$this->_modified[$_name] = self::VALUE_MODIFIED;
 			
-			$this->__values[$_name] = $value;
+			$this->_values[$_name] = $value;
 		} else {
 			//throw new \Exception('Undefined property '.$name.' (class '.get_class($this).')');
-			$this->__aux[$name] = $value;
+			$this->_aux[$name] = $value;
 		}
 	}
 	
 	public function __isset($name) {
 		if (
 			$name == self::ID ||
-			self::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->__values) || 
-			array_key_exists($name, $this->__children) ||
-			(array_key_exists($name, $this->__parents) && !is_null($this->__parents[$name])) ||
-			array_key_exists($name, $this->__aux)
+			self::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
+			array_key_exists($name, $this->_children) ||
+			(array_key_exists($name, $this->_parents) && !is_null($this->_parents[$name])) ||
+			array_key_exists($name, $this->_aux)
 		) {
 			return true;
 		} else {
@@ -339,16 +348,16 @@ abstract class Table {
 	}
 	
 	public function __clone() {
-		if (is_array($this->__parents))
-			foreach ($this->__parents as $parentName=>$parentEntity) {
+		if (is_array($this->_parents))
+			foreach ($this->_parents as $parentName=>$parentEntity) {
 				if ($parentEntity !== NULL)
-					$this->__parents[$parentName] = clone $this->__parents[$parentName];
+					$this->_parents[$parentName] = clone $this->_parents[$parentName];
 			}
-		if (is_array($this->__children))
-			foreach ($this->__children as $childName=>$childEntities) {
-				$this->__children[$childName] = clone $this->__children[$childName];
-				foreach ($this->__children[$childName] as $i=>$childEntity) {
-					$this->__children[$childName][$i] = clone $this->__children[$childName][$i];
+		if (is_array($this->_children))
+			foreach ($this->_children as $childName=>$childEntities) {
+				$this->_children[$childName] = clone $this->_children[$childName];
+				foreach ($this->_children[$childName] as $i=>$childEntity) {
+					$this->_children[$childName][$i] = clone $this->_children[$childName][$i];
 				}
 			}
 	}
@@ -397,7 +406,7 @@ abstract class Table {
 	}
 	
 	private static function &getCache($cachePath = NULL) {
-		$cache =& self::$__cache;
+		$cache =& self::$_cache;
 		if (is_array($cachePath)) {
 			foreach ($cachePath as $part) {
 				if (!isset($cache[$part]))
@@ -618,7 +627,7 @@ abstract class Table {
 		
 		$rc = new \ReflectionClass(get_called_class());
 		foreach ($rc->getProperties() as $rp) {
-			if ($rp->isPrivate() && !$rp->isStatic() && strpos($rp->getName(), '__') !== 0) {
+			if ($rp->isPrivate() && !$rp->isStatic() && strpos($rp->getName(), '_') !== 0) {
 				$columns[] = $rp->getName();
 			}
 		}
