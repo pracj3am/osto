@@ -5,6 +5,7 @@ namespace isqua\Table;
 
 
 use isqua\Table;
+use isqua\Nette\AnnotationsParser;
 
 
 /**
@@ -30,8 +31,6 @@ class Helpers
 			//Debug::dump(array($cachePath, $cache, self::getCache()));
 			//Debug::dump(array($name));
 			return $cache;
-		/*} else {
-			return call_user_func_array(array($class, $name), $arguments);*/
 		}
 	}
 
@@ -77,17 +76,22 @@ class Helpers
 	}
 	
 	private static function getTableName($class) {
-		return self::fromCamelCase( strrpos($class,'\\') !== FALSE ? substr($class, strrpos($class,'\\')+1) : $class );
+		$rc = new \ReflectionClass($class);
+		$a = AnnotationsParser::getAll($rc);
+		if (isset($a['table']) && is_string($tn = end($a['table'])))
+			return $tn;
+		else
+			return self::fromCamelCase( strrpos($class,'\\') !== FALSE ? substr($class, strrpos($class,'\\')+1) : $class );
 	}
 	
 	// helper
 	public static function fromCamelCase($name) {
-		return strtolower(preg_replace('/([^_])([A-Z][^_]*)/', '\1_\2', $name));
+		return strtolower(preg_replace('/(?<=[^_])([A-Z])/', '_\1', $name));
 	}
 	
 	// helper
 	public static function toCamelCase($name) {
-		return preg_replace_callback('/([^_])_([^_])/', function($matches){return $matches[1].strtoupper($matches[2]);}, $name);
+		return preg_replace_callback('/(?<=[^_])_([^_])/', function($matches){return strtoupper($matches[1]);}, $name);
 	}
 	
 	/**

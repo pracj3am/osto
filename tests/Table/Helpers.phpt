@@ -51,7 +51,7 @@ Assert::same( subTest::getColumnName('test.one'),  'test.t_one' );
 Assert::same( subTest::getColumnName('test.one', 'xxx'),  'xxx->test.t_one' );
 Assert::same( subTest::getColumnName('test.x_y', 'xxx'),  'xxx->test.x_y' );
 
-Assert::same( TestA::getTableName(), 'test_a' );
+Assert::same( TestA::getTableName(), 'model_test' );
 Assert::same( subTest::getTableName(), 'sub_test' );
 
 Assert::false( TestA::isColumn('one') );
