@@ -14,6 +14,8 @@ require __DIR__ . '/NetteTestHelpers.php';
 
 require __DIR__ . '/Assert.php';
 
+require __DIR__ . '/../../dibi/dibi.php';
+
 
 
 NetteTestHelpers::startup();
@@ -50,4 +52,10 @@ function dump($var, $message = NULL)
 function output($message = NULL)
 {
 	echo $message ? "$message\n\n" : "===\n\n";
+}
+
+function db_connect()
+{
+	dibi::connect('driver=mysqli&host=localhost&username=root&charset=utf8');
+	dibi::query('CREATE DATABASE IF NOT EXISTS test; USE test;');
 }
