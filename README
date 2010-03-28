@@ -1,0 +1,25 @@
+isqua 
+=====
+
+Tiny'n'Smart ORM for PHP6
+
+
+Acknowledgment
+--------------
+
+This software are using derived parts of Nette Framework (caching, annotations, test framework).
+Copyright (c) 2004, 2010 David Grudl. http://nettephp.com
+
+
+
+
+Documentation
+=============
+
+
+1. Annotations
+--------------
+
+1.1 Table class annotations
+
+ * table - DB table name
