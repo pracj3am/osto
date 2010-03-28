@@ -1,9 +1,15 @@
 <?php
 namespace isqua;
 
-use dibi;
 
-abstract class Table {
+
+use dibi;
+use isqua\Table\Helpers;
+
+
+
+abstract class Table 
+{
 	const ID = 'id';
 	const ALIAS = '$this';
 	const ALIAS_DELIM = '->';
@@ -24,6 +30,7 @@ abstract class Table {
 	private $_parents = array();
 	private $_children = array();
 	private $_loaded;
+	private $_self_loaded = false;
 	private $_aux = array();
 	
 	function __construct($id = null) {
@@ -59,6 +66,7 @@ abstract class Table {
 						$this->$name = $value;
 						$this->_modified[$name] = self::VALUE_NOT_MODIFIED;
 					}
+				$this->_self_loaded = TRUE;
 			} else return FALSE;
 			
 			// parents
@@ -139,13 +147,13 @@ abstract class Table {
 	
 	public function save() {
 		//uložíme rodiče
-		if (is_array($this->_parents))
-			foreach ($this->_parents as $parentName=>$parentEntity) {
-				if (!is_null($parentEntity)) {
-					$parentEntity->save();
-					$this->{$parentEntity::$PREFIX.'_'.self::ID} = $parentEntity->id;
-				}
+		foreach (static::$PARENTS as $parentName=>$parentClass) {
+			if (isset($this->$parentName)) {
+				$parentEntity = $this->$parentName;
+				$parentEntity->save();
+				$this->{$parentEntity::$PREFIX.'_'.self::ID} = $parentEntity->id;
 			}
+		}
 
 		//$values = array_map(function($name){return static::getColumnName($name);},$this->values);
 		$values = $v = $this->getValuesForSave();
@@ -183,13 +191,13 @@ abstract class Table {
 		}
 		
 		// a uložíme děti
-		if (is_array($this->_children))
-			foreach ($this->_children as $childName=>$childEntities)
-				foreach ($childEntities as $i=>$childEntity) {
+		foreach (static::$CHILDREN as $childName=>$childClass) {
+			if (isset($this->$childName))
+				foreach ($this->$childName as $i=>$childEntity) {
 					$childEntity->{static::$PREFIX.'_'.self::ID} = $this->id;
 					$childEntity->save();
 				}
-				
+		}
 		return TRUE;
 	}
 	
@@ -248,27 +256,36 @@ abstract class Table {
 	}
 	
 	public function __get($name) {
+		if (strpos($name, '_') === 0) //name starts with undescore
+			$_name = substr($name, 1);
+		else $_name = FALSE;
+		
 		if ($name == 'id' || $name == static::$PREFIX.'_'.self::ID) {
 			return $this->_id;
-		} elseif (strpos($name, '_') === 0 && ($_name = substr($name, 1)) && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
+		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
 			return $this->_values[self::getColumnName($_name)];
-		} elseif (method_exists($this, ($m_name = 'get'.ucfirst(self::toCamelCase($name))) )) {//get{Name}
+		} elseif (method_exists($this, ($m_name = 'get'.ucfirst(Helpers::toCamelCase($name))) )) {//get{Name}
 			return $this->{$m_name}();
 		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
 			return $this->_values[self::getColumnName($name)];
 		} elseif (array_key_exists($name, $this->_parents)) {
-			if (!$this->_loaded[$name]) //lazy loading
+			if ( (!$this->_parents[$name] instanceof self || !$this->_parents[$name]->_self_loaded) &&
+				 (!isset($this->_loaded[$name]) || !$this->_loaded[$name]) ) //lazy loading
 				$this->{'load'.ucfirst($name)}();
 			return $this->_parents[$name];
+		} elseif ($_name && array_key_exists($_name, $this->_parents)) {
+			return $this->_parents[$_name];
 		} elseif (array_key_exists($name, $this->_children)) {
-			if (!$this->_loaded[$name]) //lazy loading
+			if (!isset($this->_loaded[$name]) || !$this->_loaded[$name]) //lazy loading
 				$this->{'load'.ucfirst($name)}();
 			return $this->_children[$name];
+		} elseif ($_name && array_key_exists($_name, $this->_children)) {
+			return $this->_children[$_name];
 		} elseif (array_key_exists($name, $this->_aux)) {
 			return $this->_aux[$name];
 		} elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
 			return new \DateTime($this->{$matches[1]});
-		} elseif (static::isCallable( $method = 'get'.ucfirst(self::toCamelCase($name)) )) {//static get{Name}
+		} elseif (static::isCallable( $method = 'get'.ucfirst(Helpers::toCamelCase($name)) )) {//static get{Name}
 			//Debug::dump($method);
 			return static::$method();
 		/*} else {
@@ -279,6 +296,7 @@ abstract class Table {
 	public function __set($name, $value) {
 		if ($name == 'values') {
 			if (is_array($value) || is_object($value)) {
+				$this->_self_loaded = TRUE;
 				foreach ($value as $key=>$val) {
 					if ($this->__isset($key))
 						$this->$key = $val;
@@ -385,7 +403,7 @@ abstract class Table {
 		return call_user_func_array(array(__CLASS__.'\Helpers', $name), $arguments);
 	}
 	
-	public static function isCallable($method) {
+	private static function isCallable($method) {
 		return method_exists(get_called_class(), $method) || method_exists(__CLASS__.'\Helpers', $method);
 	}
 	
