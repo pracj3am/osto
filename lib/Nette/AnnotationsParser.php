@@ -301,7 +301,7 @@ final class AnnotationsParser
 	protected static function getCache()
 	{
 		return new Nette\Caching\Cache(
-			new Nette\Caching\FileStorage(__DIR__);,
+			new Nette\Caching\FileStorage(__DIR__),
 			'Nette.Annotations'
 		);
 	}
