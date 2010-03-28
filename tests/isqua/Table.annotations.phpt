@@ -3,7 +3,7 @@
 /**
  * Test: isqua\Table annotations.
  *
- * @author     Jan Prachaø
+ * @author     Jan PrachaÅ™
  * @category   isqua
  * @package    isqua
  * @subpackage UnitTests

@@ -3,7 +3,7 @@
 /**
  * Test: isqua\Table columns.
  *
- * @author     Jan Prachaø
+ * @author     Jan PrachaÅ™
  * @category   isqua
  * @package    isqua
  * @subpackage UnitTests

@@ -105,7 +105,7 @@ class Helpers
 	}
 	
 	/**
-	 * Vrátí pole názvù sloupcù tabulky
+	 * VrÃ¡tÃ­ pole nÃ¡zvÅ¯ sloupcÅ¯ tabulky
 	 */
 	private static function getColumns($class) {
 		$columns = array($class::$PREFIX.'_'.Table::ID);
@@ -121,7 +121,7 @@ class Helpers
 	}
 
 	/**
-	 * Vrátí pole názvù sloupcù vlastní tabulky a tabulek rodièù 
+	 * VrÃ¡tÃ­ pole nÃ¡zvÅ¯ sloupcÅ¯ vlastnÃ­ tabulky a tabulek rodiÄÅ¯ 
 	 */
 	private static function getAllColumns($class) {
 		$columns = $class::getColumns();

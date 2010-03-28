@@ -3,7 +3,7 @@
 /**
  * Test: isqua\Table\Helpers::isSelfReferencing()
  *
- * @author     Jan Prachaø
+ * @author     Jan PrachaÅ™
  * @category   isqua
  * @package    isqua\Table
  * @subpackage UnitTests
