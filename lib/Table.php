@@ -26,8 +26,6 @@ abstract class Table {
 	private $_loaded;
 	private $_aux = array();
 	
-	private static $_cache;
-	
 	function __construct($id = null) {
 		$this->id = $id;
 		foreach ($this->columns as $column) {
@@ -270,7 +268,7 @@ abstract class Table {
 			return $this->_aux[$name];
 		} elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
 			return new \DateTime($this->{$matches[1]});
-		} elseif (static::isCallable( $method = 'get'.ucfirst($name) )) {//static get{Name}
+		} elseif (static::isCallable( $method = 'get'.ucfirst(self::toCamelCase($name)) )) {//static get{Name}
 			//Debug::dump($method);
 			return static::$method();
 		/*} else {
@@ -378,44 +376,17 @@ abstract class Table {
 				return $this->loadChildren(array($childName), $where, $sort, $limit, $withParents);
 			}
 		} else {
-			return static::__callStatic($name, $arguments); //for non-static context
+			return $this->__callStatic($name, $arguments);
 		}
 	}
 	
 	public static function __callStatic($name, $arguments) {
-		$class = get_called_class();
-		//Debug::dump(array($name,$arguments)); die();
-		if (method_exists($class, $name.'_cached')) { //caching results of static methods
-			$cachePath = array(serialize($arguments));
-			array_unshift($cachePath, $class);
-			array_unshift($cachePath, $name);
-			$cache =& self::getCache($cachePath);
-			if ($cache === array()) {
-				$cache = call_user_func_array(array($class, $name.'_cached'), $arguments);
-			}
-			//Debug::dump(array($cachePath, $cache, self::getCache()));
-			//Debug::dump(array($name));
-			return $cache;
-		/*} else {
-			return call_user_func_array(array($class, $name), $arguments);*/
-		}
+		array_unshift($arguments, get_called_class());
+		return call_user_func_array(array(__CLASS__.'\Helpers', $name), $arguments);
 	}
 	
 	public static function isCallable($method) {
-		return method_exists(get_called_class(), $method) || method_exists(get_called_class(), $method.'_cached');
-	}
-	
-	private static function &getCache($cachePath = NULL) {
-		$cache =& self::$_cache;
-		if (is_array($cachePath)) {
-			foreach ($cachePath as $part) {
-				if (!isset($cache[$part]))
-					$cache[$part] = array();
-
-				$cache =& $cache[$part];
-			}
-		}
-		return $cache;
+		return method_exists(get_called_class(), $method) || method_exists(__CLASS__.'\Helpers', $method);
 	}
 	
 	public static function count($where = array()) {
@@ -579,94 +550,6 @@ abstract class Table {
 				$newArray[$key] = $item; //zkusíme ho nechat na pokoj
 		} 
 		$array = $newArray;
-	}
-	
-	public static function getColumnName_cached($name, $alias = FALSE) {
-		//dump($name);
-		//dump(get_called_class());
-		//dump(static::$PARENTS);
-		if ( ($pos = strpos($name, '.')) !== FALSE) {
-			$parentName = substr($name, 0, $pos);
-			if (isset(static::$PARENTS[$parentName])) {
-				$class = static::$PARENTS[$parentName];
-				$name = substr($name, $pos+1);
-				$r =  $class::getColumnName($name,$parentName);
-				//dump($name); dump($r);
-			 	return $r === FALSE ? $r : ($alias ? $alias.self::ALIAS_DELIM : '').$r;
-			} else {
-				return FALSE;
-			}
-		} else {
-			$r = (static::isColumn($name) ? $name : 
-					(static::isColumn(static::$PREFIX.'_'.$name) ? static::$PREFIX.'_'.$name :
-						 FALSE));
-		 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
-		}
-		//return (($name == self::ID) || property_exists(get_called_class(), static::$PREFIX.'_'.$name) ? static::$PREFIX.'_' : '').$name;
-	}
-	
-	public static function getTableName_cached() {
-		return self::fromCamelCase( substr(get_called_class(), strrpos(get_called_class(),'\\')+1) );
-	}
-	
-	// helper
-	public static function fromCamelCase($name) {
-		return strtolower(substr(preg_replace('/([A-Z][a-z]*)/', '_\1', $name), 1));
-	}
-	
-	// helper
-	public static function toCamelCase($name) {
-		return preg_replace_callback('/(.)_(.)/', function($matches){return $matches[1].strtoupper($matches[2]);}, $name);
-	}
-	
-	/**
-	 * Vrátí pole názvů sloupců tabulky
-	 */
-	public static function getColumns_cached() {
-		$columns = array(static::$PREFIX.'_'.self::ID);
-		
-		$rc = new \ReflectionClass(get_called_class());
-		foreach ($rc->getProperties() as $rp) {
-			if ($rp->isPrivate() && !$rp->isStatic() && strpos($rp->getName(), '_') !== 0) {
-				$columns[] = $rp->getName();
-			}
-		}
-
-		return $columns;
-	}
-
-	/**
-	 * Vrátí pole názvů sloupců vlastní tabulky a tabulek rodičů 
-	 */
-	public static function getAllColumns_cached() {
-		$class = get_called_class();
-
-		$columns = static::getColumns();
-
-		foreach (static::$PARENTS as $parentClass) {
-			$columns .= array_merge($columns, $parentClass::getColumns());
-		}
-		
-		return array_unique($columns);
-	}
-	
-	
-	public static function isColumn($name) {
-		return in_array($name, static::getColumns(), TRUE);
-	}
-	
-	/**
-	 * Z názvu třídy vytvoří název proměnné (pouze zmenší první písmeno unqualified name)
-	 * Používá se v loadChildren
-	 * @return string
-	 */
-	public static function getVariableName_cached() {
-		$className = get_called_class();
-		return strtolower($className{strrpos($className, '\\')+1}).substr($className, strrpos($className, '\\')+2);
-	}
-	
-	public static function isSelfReferencing_cached() {
-		return static::getColumnName('parent_id') && in_array(get_called_class(), static::$CHILDREN);
 	}
 	
 	public static function htmlLetterEntityDecode($string) {
