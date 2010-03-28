@@ -87,6 +87,13 @@ class Helpers
 			return self::fromCamelCase( strrpos($class,'\\') !== FALSE ? substr($class, strrpos($class,'\\')+1) : $class );
 	}
 	
+	private static function getPrefix($class) {
+		if (($prefix = $class::getAnnotation('prefix')) && is_string($prefix))
+			return $prefix;
+		else
+			return strtolower(preg_replace('/[^A-Z0-9]*/', '', $class));
+	}
+	
 	// helper
 	public static function fromCamelCase($name) {
 		return strtolower(preg_replace('/(?<=[^_])([A-Z])/', '_\1', $name));

@@ -23,3 +23,4 @@ Documentation
 1.1 Table class annotations
 
  * table - DB table name
+ * prefix - prefix of table columns
