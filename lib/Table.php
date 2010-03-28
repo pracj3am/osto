@@ -376,7 +376,7 @@ abstract class Table {
 				return $this->loadChildren(array($childName), $where, $sort, $limit, $withParents);
 			}
 		} else {
-			return $this->__callStatic($name, $arguments);
+			return static::__callStatic($name, $arguments);
 		}
 	}
 	
@@ -550,19 +550,6 @@ abstract class Table {
 				$newArray[$key] = $item; //zkusíme ho nechat na pokoj
 		} 
 		$array = $newArray;
-	}
-	
-	public static function htmlLetterEntityDecode($string) {
-		$trans_tbl = get_html_translation_table(HTML_ENTITIES, ENT_NOQUOTES);
-		foreach ($trans_tbl as $code => $ent) {
-			if (ord($code) < 192) unset($trans_tbl[$code]);
-		}
-		$trans_tbl = array_flip($trans_tbl);
-		$trans_tbl = array_map(function($c){return @iconv('ISO-8859-1', 'UTF-8', $c);}, $trans_tbl);
-		$trans_tbl['&scaron;'] = 'š';
-		$trans_tbl['&Scaron;'] = 'Š';
-		return strtr($string, $trans_tbl);
-		
 	}
 	
 }
