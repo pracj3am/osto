@@ -6,6 +6,7 @@
  * @author     David Grudl
  * @package    Nette\Test
  */
+date_default_timezone_set('Europe/Prague');
 
 require __DIR__ . '/NetteTestCase.php';
 
