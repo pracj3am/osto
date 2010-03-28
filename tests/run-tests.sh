@@ -4,9 +4,9 @@
 dir=` dirname $0 `
 
 # absolutizes the path if necessary
-if echo $dir | grep -v ^/ > /dev/null; then
-	dir=` pwd `/$dir
-fi
+#if echo $dir | grep -v ^/ > /dev/null; then
+#	dir=` pwd `/$dir
+#fi
 
 # runs RunTests.php with script's arguments
 php "$dir/NetteTest/RunTests.php" $*

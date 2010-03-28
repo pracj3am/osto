@@ -198,7 +198,7 @@ class NetteTestCase
 		$this->output = file_get_contents($tempFile);
 		unlink($tempFile);
 
-		list($this->headers, $this->output) = explode("\r\n\r\n", $this->output, 2); // CGI
+		@list($this->headers, $this->output) = explode("\r\n\r\n", $this->output, 2); // CGI, intentionally @
 	}
 
 
