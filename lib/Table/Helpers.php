@@ -9,7 +9,7 @@ use isqua\Nette\AnnotationsParser;
 
 
 /**
- * @todo Implement Nette caching
+ * @todo Implement Nette caching?
  */
 class Helpers 
 {
@@ -47,6 +47,11 @@ class Helpers
 		return $cache;
 	}
 	
+	private static function getAnnotation($class, $name) {
+		$rc = new \ReflectionClass($class);
+		$res = AnnotationsParser::getAll($rc);
+		return isset($res[$name]) ? end($res[$name]) : NULL;
+	}
 
 	private static function getColumnName($class, $name, $alias = FALSE) {
 		//dump($name);
@@ -76,9 +81,7 @@ class Helpers
 	}
 	
 	private static function getTableName($class) {
-		$rc = new \ReflectionClass($class);
-		$a = AnnotationsParser::getAll($rc);
-		if (isset($a['table']) && is_string($tn = end($a['table'])))
+		if (($tn = $class::getAnnotation('table')) && is_string($tn))
 			return $tn;
 		else
 			return self::fromCamelCase( strrpos($class,'\\') !== FALSE ? substr($class, strrpos($class,'\\')+1) : $class );
