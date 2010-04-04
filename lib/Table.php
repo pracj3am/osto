@@ -36,7 +36,7 @@ abstract class Table
 	function __construct($id = null) {
 		$this->id = $id;
 		foreach ($this->columns as $column) {
-			if ($column != static::$PREFIX.'_'.self::ID) {
+			if ($column != static::getPrefix().'_'.self::ID) {
 				$this->_modified[$column] = self::VALUE_NOT_SET;
 				$this->_values[$column] = NULL;
 			}
@@ -58,11 +58,11 @@ abstract class Table
 		if ($this->id) {
 			$row = dibi::fetch(
 				'SELECT * FROM `'.static::getTableName().'` ' .
-				'WHERE %and', array(static::$PREFIX.'_'.self::ID=>$this->id)
+				'WHERE %and', array(static::getPrefix().'_'.self::ID=>$this->id)
 			);
 			if ($row) {
 				foreach ($row as $name=>$value) 
-					if ($name != (static::$PREFIX.'_'.self::ID)) {
+					if ($name != (static::getPrefix().'_'.self::ID)) {
 						$this->$name = $value;
 						$this->_modified[$name] = self::VALUE_NOT_MODIFIED;
 					}
@@ -87,8 +87,8 @@ abstract class Table
 	
 		foreach (static::$PARENTS as $parentName=>$parentClass) {
 			if (in_array($parentName, $parentNames)) 
-				if ($this->{$parentClass::$PREFIX.'_'.self::ID}) {
-					$parentEntity = new $parentClass($this->{$parentClass::$PREFIX.'_'.self::ID});
+				if ($this->{$parentClass::getPrefix().'_'.self::ID}) {
+					$parentEntity = new $parentClass($this->{$parentClass::getPrefix().'_'.self::ID});
 					$parentEntity->load(FALSE, $withChildren);
 					$this->$parentName = $parentEntity;
 					$this->_loaded[$parentName] = TRUE; 
@@ -104,7 +104,7 @@ abstract class Table
 					if (get_class($this) == $childClass)//load children of the same class
 						$fk = 'parent_id';
 					else 						
-						$fk = static::$PREFIX.'_'.self::ID;
+						$fk = static::getPrefix().'_'.self::ID;
 					$whereTmp = array_merge(
 						isset($where[$childName]) ? $where[$childName] : array(), 
 						array($fk=>(int)$this->id)
@@ -151,12 +151,13 @@ abstract class Table
 			if (isset($this->$parentName)) {
 				$parentEntity = $this->$parentName;
 				$parentEntity->save();
-				$this->{$parentEntity::$PREFIX.'_'.self::ID} = $parentEntity->id;
+				$this->{$parentEntity::getPrefix().'_'.self::ID} = $parentEntity->id;
 			}
 		}
 
 		//$values = array_map(function($name){return static::getColumnName($name);},$this->values);
 		$values = $v = $this->getValuesForSave();
+		//dump($v);
 		foreach ($values as $key=>&$value) {
 			if (is_null($value) && !in_array($key, static::$NULL_COLUMNS)) { //nemůže být null, neukládáme
 				//dump('NULL COLUMN!!',array(get_class($this),$values));
@@ -174,11 +175,11 @@ abstract class Table
 		}
 		if ($values) {
 			$valuesWithoutPK = $values;
-			unset($valuesWithoutPK[static::$PREFIX.'_'.self::ID]);
+			unset($valuesWithoutPK[static::getPrefix().'_'.self::ID]);
 			
 			dibi::query(
 				'INSERT INTO `'.static::getTableName().'`', $values,
-				'ON DUPLICATE KEY UPDATE '.static::$PREFIX.'_'.self::ID.'=LAST_INSERT_ID('.static::$PREFIX.'_'.self::ID.') 
+				'ON DUPLICATE KEY UPDATE '.static::getPrefix().'_'.self::ID.'=LAST_INSERT_ID('.static::getPrefix().'_'.self::ID.') 
 				%if', $valuesWithoutPK, ', %a', $valuesWithoutPK, '%end'
 			);
 			$this->afterSave($v);
@@ -194,7 +195,7 @@ abstract class Table
 		foreach (static::$CHILDREN as $childName=>$childClass) {
 			if (isset($this->$childName))
 				foreach ($this->$childName as $i=>$childEntity) {
-					$childEntity->{static::$PREFIX.'_'.self::ID} = $this->id;
+					$childEntity->{static::getPrefix().'_'.self::ID} = $this->id;
 					$childEntity->save();
 				}
 		}
@@ -209,7 +210,7 @@ abstract class Table
 		if ($this->id) {
 			dibi::query(
 				'DELETE FROM '.static::getTableName().' WHERE %and',
-					array(static::$PREFIX.'_'.self::ID=>$this->id),'LIMIT 1'
+					array(static::getPrefix().'_'.self::ID=>$this->id),'LIMIT 1'
 			);
 		}
 		// mazání children zajištěno na úrovni databáze
@@ -236,9 +237,13 @@ abstract class Table
 	public function getValues() {
 		$values = array();
 		foreach ($this->_values as $name=>$value) {
-			if (strpos($name, static::$PREFIX.'_') === 0) $pos = strlen(static::$PREFIX)+1;
-			else $pos = 0;
-			$values[substr($name,$pos)] = $value;
+			$key = $name;
+			if (strpos($name, static::getPrefix().'_') === 0) {
+				$_name = substr($name, strlen(static::getPrefix())+1);
+				if (!static::isColumn($_name))
+					$key = $_name; 
+			}
+			$values[$key] = $value;
 		}
 		if ($this->_id) {
 			$values[self::ID] = $this->_id;
@@ -260,7 +265,7 @@ abstract class Table
 			$_name = substr($name, 1);
 		else $_name = FALSE;
 		
-		if ($name == 'id' || $name == static::$PREFIX.'_'.self::ID) {
+		if ($name == 'id' || $name == static::getPrefix().'_'.self::ID) {
 			return $this->_id;
 		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
 			return $this->_values[self::getColumnName($_name)];
@@ -301,11 +306,11 @@ abstract class Table
 					if ($this->__isset($key))
 						$this->$key = $val;
 				}
-				if (is_array($value) && isset($value[static::$PREFIX.'_'.self::ID])) {
-					$this->id = $value[static::$PREFIX.'_'.self::ID];
+				if (is_array($value) && isset($value[static::getPrefix().'_'.self::ID])) {
+					$this->id = $value[static::getPrefix().'_'.self::ID];
 				}
-				if (is_object($value) && isset($value->{static::$PREFIX.'_'.self::ID})) {
-					$this->id = $value->{static::$PREFIX.'_'.self::ID};
+				if (is_object($value) && isset($value->{static::getPrefix().'_'.self::ID})) {
+					$this->id = $value->{static::getPrefix().'_'.self::ID};
 				}
 				foreach (static::$PARENTS as $parentName=>$parentClass) {
 					if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) { 
@@ -331,7 +336,7 @@ abstract class Table
 			if ($value->isEmpty() || in_array($value->getClass(), static::$CHILDREN))
 				$this->_children[$name] = $value;
 			else throw new \Exception('The collection of objects ('.$name.') that have class '.$value->getClass().' not defined in CHILDREN');
-		} elseif ($name == 'id' || $name == static::$PREFIX.'_'.self::ID) {
+		} elseif ($name == 'id' || $name == static::getPrefix().'_'.self::ID) {
 			$newId = intval($value) === 0 ? NULL : intval($value);
 			if ($this->_id !== $newId && !is_null($this->_id))
 				array_map(function($item){return Table::VALUE_MODIFIED;}, $this->_modified);
@@ -448,7 +453,7 @@ abstract class Table
 		$rows = new RowCollection();
 		foreach ($cursor as $row) {
 			$model_class = get_called_class();
-			$entity = new $model_class($row->{static::$PREFIX.'_'.self::ID});
+			$entity = new $model_class($row->{static::getPrefix().'_'.self::ID});
 			$entity->values = $row;
 			//$entity->loadChildren();
 			if ($withParents)
@@ -466,7 +471,7 @@ abstract class Table
 					$entity->{is_string($parentName) ? $parentName : $parentClass::getVariableName()} = $parentEntity; 
 				}
 			
-			$rows[$row->{static::$PREFIX.'_'.self::ID}] = $entity;
+			$rows[$row->{static::getPrefix().'_'.self::ID}] = $entity;
 		}
 		return $rows;		
 	}
@@ -480,7 +485,7 @@ abstract class Table
 		$cursor = dibi::fetchAll(
 			static::getSql(
 				array(
-					static::$PREFIX.'_'.self::ID=>'id',
+					static::getPrefix().'_'.self::ID=>'id',
 					static::getColumnName($column)=>'name'
 				),
 				$where, $sort, $limit, $withParents
@@ -525,11 +530,11 @@ abstract class Table
 			foreach (static::$PARENTS as $parentName=>$parentClass) {
 				if ($parentClass != get_called_class())
 					$from .= ' LEFT JOIN (' . $parentClass::getFromClause($withParents, $alias.self::ALIAS_DELIM.$parentName) . ') '. 
-						'ON (`'.$alias.'.'.$parentClass::$PREFIX.'_'.self::ID.'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::$PREFIX.'_'.self::ID.'`)';
+						'ON (`'.$alias.'.'.$parentClass::getPrefix().'_'.self::ID.'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::getPrefix().'_'.self::ID.'`)';
 			}
 		/*foreach (static::$CHILDREN as $childClass) {
 			if ($childClass != get_called_class())
-				$from .= ' LEFT JOIN `' . $childClass::getTableName() . '` USING(`'.static::$PREFIX.'_'.self::ID.'`)';
+				$from .= ' LEFT JOIN `' . $childClass::getTableName() . '` USING(`'.static::getPrefix().'_'.self::ID.'`)';
 		}*/
 		return $from;
 	}

@@ -21,10 +21,9 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 /**
  * @table model_test
+ * @prefix t
  */
 class TestA extends Table {
-	static $PREFIX = 't';
-
 	private $t_one;
 	private $t_two;
 	private $x_y;
@@ -33,9 +32,8 @@ class TestA extends Table {
 	static $CHILDREN = array('sub'=>'subTest');
 }
 
+/** @prefix st */
 class subTest extends Table {
-	static $PREFIX = 'st';
-
 	private $st_one;
 	private $st_two;
 	private $x_y;

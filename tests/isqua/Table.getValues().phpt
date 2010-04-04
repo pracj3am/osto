@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table columns.
+ * Test: isqua\Table::getValues()
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -19,6 +19,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 /**
  * @table model_test
+ * @prefix a
  */
 class Test extends Table {
 
@@ -29,7 +30,7 @@ class Test extends Table {
 	private $main;
 	private $a_alt;
 	private $a_a_alt;
-	private $t_b;
+	private $a_b;
 
 	static $PARENTS = array();
 	static $CHILDREN = array();
@@ -38,19 +39,23 @@ class Test extends Table {
 
 
 $t = new Test;
+$t->main = 1;
+$t->alt = 2;
+$t->a_alt = 3;
+$t->a_a_alt = 4;
+$t->b = 5;
 
-output('Table Test columns:');
-dump($t->columns);
+output('Table Test values:');
+dump($t->values);
 
 __halt_compiler();
 
 ------EXPECT------
-Table Test columns:
+Table Test values:
 
-array(5) {
-	0 => string(4) "t_id"
-	1 => string(4) "main"
-	2 => string(5) "a_alt"
-	3 => string(7) "a_a_alt"
-	4 => string(3) "t_b"
-} 
+array(4) {
+	"main" => int(1)
+	"alt" => int(3)
+	"a_a_alt" => int(4)
+	"b" => int(5)
+}

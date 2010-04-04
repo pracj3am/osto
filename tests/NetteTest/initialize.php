@@ -6,6 +6,7 @@
  * @author     David Grudl
  * @package    Nette\Test
  */
+
 date_default_timezone_set('Europe/Prague');
 
 require __DIR__ . '/NetteTestCase.php';
@@ -57,5 +58,6 @@ function output($message = NULL)
 function db_connect()
 {
 	dibi::connect('driver=mysqli&host=localhost&username=root&charset=utf8');
-	dibi::query('CREATE DATABASE IF NOT EXISTS test; USE test;');
+	dibi::query('CREATE DATABASE IF NOT EXISTS test');
+	dibi::query('USE test');
 }

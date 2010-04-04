@@ -70,14 +70,14 @@ class Helpers
 			}
 		} else {
 			$r = ($class::isColumn($name) ? $name : 
-					($class::isColumn($class::$PREFIX.'_'.$name) ? 
-						$class::$PREFIX.'_'.$name :
+					($class::isColumn($class::getPrefix().'_'.$name) ? 
+						$class::getPrefix().'_'.$name :
 						FALSE
 					)
 			);
 		 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
 		}
-		//return (($name == self::ID) || property_exists(get_called_class(), static::$PREFIX.'_'.$name) ? static::$PREFIX.'_' : '').$name;
+		//return (($name == self::ID) || property_exists(get_called_class(), static::getPrefix().'_'.$name) ? static::getPrefix().'_' : '').$name;
 	}
 	
 	private static function getTableName($class) {
@@ -108,7 +108,7 @@ class Helpers
 	 * Vrátí pole názvů sloupců tabulky
 	 */
 	private static function getColumns($class) {
-		$columns = array($class::$PREFIX.'_'.Table::ID);
+		$columns = array($class::getPrefix().'_'.Table::ID);
 		
 		$rc = new \ReflectionClass($class);
 		foreach ($rc->getProperties() as $rp) {
