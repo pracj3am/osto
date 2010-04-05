@@ -127,7 +127,9 @@ abstract class Table implements \ArrayAccess
 					$parent->load(); 
 				}
 			return $parent;
-		} else return NULL;
+		} 
+		
+		return NULL;
 	}
 	
 	public function getValuesForSave() {
@@ -147,8 +149,8 @@ abstract class Table implements \ArrayAccess
 	final public function save() {
 		//uložíme rodiče
 		foreach (static::$PARENTS as $parentName=>$parentClass) {
-			if (isset($this->$parentName)) {
-				$parentEntity = $this->$parentName;
+			if (isset($this->_parents[$parentName])) {
+				$parentEntity = $this->_parents[$parentName];
 				$parentEntity->save();
 				$this->{$parentEntity::getColumnName(self::ID)} = $parentEntity->id;
 			}
@@ -192,8 +194,8 @@ abstract class Table implements \ArrayAccess
 		
 		// a uložíme děti
 		foreach (static::$CHILDREN as $childName=>$childClass) {
-			if (isset($this->$childName))
-				foreach ($this->$childName as $i=>$childEntity) {
+			if (isset($this->_children[$childName]))
+				foreach ($this->_children[$childName] as $i=>$childEntity) {
 					$childEntity->{static::getColumnName(self::ID)} = $this->id;
 					$childEntity->save();
 				}
@@ -274,19 +276,19 @@ abstract class Table implements \ArrayAccess
 			}
 			foreach (static::$PARENTS as $parentName=>$parentClass) {
 				if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) { 
-					if (!isset($this->$parentName)) $this->$parentName = new $parentClass();
-					$this->$parentName->values = is_array($value) ? $value[$parentName] : $value->$parentName;
+					if (!isset($this->_parents[$parentName])) $this->_parents[$parentName] = new $parentClass();
+					$this->_parents[$parentName]->values = is_array($value) ? $value[$parentName] : $value->$parentName;
 				}
 			} 
 			foreach (static::$CHILDREN as $childName=>$childClass) {
 				if (is_array($value) && isset($value[$childName]) && is_array($childArray = $value[$childName]) || isset($value->$childName) && is_array($childArray = $value->$childName)) { 
-					$childEntities = isset($this->$childName) ? $this->$childName : new RowCollection();
+					$childEntities = isset($this->_children[$childName]) ? $this->_children[$childName] : new RowCollection();
 					foreach ($childArray as $i=>$childValues) {
 						if (!isset($childEntities[$i])) $childEntities[$i] = new $childClass();
 						$childEntities[$i]->values = $childValues;
 					}
 					if ($childEntities)
-						$this->$childName = $childEntities;
+						$this->_children[$childName] = $childEntities;
 				}
 			}
 		}
