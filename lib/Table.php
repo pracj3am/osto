@@ -8,7 +8,7 @@ use isqua\Table\Helpers;
 
 
 
-abstract class Table 
+abstract class Table implements \ArrayAccess
 {
 	const ID = 'id';
 	const ALIAS = '$this';
@@ -18,7 +18,6 @@ abstract class Table
 	const VALUE_NOT_MODIFIED = 1;
 	const VALUE_MODIFIED = 2;
 	
-	static $PREFIX = '';
 	static $PARENTS = array();
 	static $CHILDREN = array();
 	static $FIELDS = array();
@@ -33,10 +32,10 @@ abstract class Table
 	private $_self_loaded = false;
 	private $_aux = array();
 	
-	function __construct($id = null) {
+	public function __construct($id = null) {
 		$this->id = $id;
 		foreach ($this->columns as $column) {
-			if ($column != static::getPrefix().'_'.self::ID) {
+			if ($column != static::getColumnName(self::ID)) {
 				$this->_modified[$column] = self::VALUE_NOT_SET;
 				$this->_values[$column] = NULL;
 			}
@@ -53,17 +52,17 @@ abstract class Table
 			}
 	}
 	
-	public function load($withParents = FALSE, $withChildren = FALSE) {
+	final public function load($withParents = FALSE, $withChildren = FALSE) {
 		
 		if ($this->id) {
 			$row = dibi::fetch(
 				'SELECT * FROM `'.static::getTableName().'` ' .
-				'WHERE %and', array(static::getPrefix().'_'.self::ID=>$this->id)
+				'WHERE %and', array(static::getColumnName(self::ID)=>$this->id)
 			);
 			if ($row) {
 				foreach ($row as $name=>$value) 
-					if ($name != (static::getPrefix().'_'.self::ID)) {
-						$this->$name = $value;
+					if ($name != (static::getColumnName(self::ID))) {
+						$this[$name] = $value;
 						$this->_modified[$name] = self::VALUE_NOT_MODIFIED;
 					}
 				$this->_self_loaded = TRUE;
@@ -82,13 +81,13 @@ abstract class Table
 		} else return NULL;
 	}
 	
-	public function loadParents($parentNames = array(), $withChildren = FALSE) {
+	final public function loadParents($parentNames = array(), $withChildren = FALSE) {
 		if (empty($parentNames)) $parentNames = array_keys(static::$PARENTS); 
 	
 		foreach (static::$PARENTS as $parentName=>$parentClass) {
 			if (in_array($parentName, $parentNames)) 
-				if ($this->{$parentClass::getPrefix().'_'.self::ID}) {
-					$parentEntity = new $parentClass($this->{$parentClass::getPrefix().'_'.self::ID});
+				if ($this->{$parentClass::getColumnName(self::ID)}) {
+					$parentEntity = new $parentClass($this->{$parentClass::getColumnName(self::ID)});
 					$parentEntity->load(FALSE, $withChildren);
 					$this->$parentName = $parentEntity;
 					$this->_loaded[$parentName] = TRUE; 
@@ -96,7 +95,7 @@ abstract class Table
 		}
 	}
 	
-	public function loadChildren($childrenNames = array(), $where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
+	final public function loadChildren($childrenNames = array(), $where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
 		if ($this->id) {
 			if (empty($childrenNames)) $childrenNames = array_keys(static::$CHILDREN); 
 			foreach (static::$CHILDREN as $childName=>$childClass) {
@@ -104,7 +103,7 @@ abstract class Table
 					if (get_class($this) == $childClass)//load children of the same class
 						$fk = 'parent_id';
 					else 						
-						$fk = static::getPrefix().'_'.self::ID;
+						$fk = static::getColumnName(self::ID);
 					$whereTmp = array_merge(
 						isset($where[$childName]) ? $where[$childName] : array(), 
 						array($fk=>(int)$this->id)
@@ -123,7 +122,7 @@ abstract class Table
 			$parent = new static($this->parent_id); 
 			$parent->load();
 			if ($root)
-				while (!is_null($parent->parent_id)) {
+				while ($parent->parent_id !== NULL) {
 					$parent = new static($parent->parent_id);
 					$parent->load(); 
 				}
@@ -136,7 +135,7 @@ abstract class Table
 		$values = $this->values;
 		foreach ($values as $key=>$value) {
 			if ($key == self::ID) continue; // primární klíč vždy potřebujeme
-			if (!is_scalar($value) && !is_null($value)) unset($values[$key]);
+			if (!is_scalar($value) && $value !== NULL) unset($values[$key]);
 			// ukládáme jen hodnoty, které se změnily
 			elseif ($this->id && $this->_modified[static::getColumnName($key)] !== self::VALUE_MODIFIED) {
 				$values[$key] = '`'.static::getColumnName($key).'`';
@@ -145,13 +144,13 @@ abstract class Table
 		return $values;
 	}
 	
-	public function save() {
+	final public function save() {
 		//uložíme rodiče
 		foreach (static::$PARENTS as $parentName=>$parentClass) {
 			if (isset($this->$parentName)) {
 				$parentEntity = $this->$parentName;
 				$parentEntity->save();
-				$this->{$parentEntity::getPrefix().'_'.self::ID} = $parentEntity->id;
+				$this->{$parentEntity::getColumnName(self::ID)} = $parentEntity->id;
 			}
 		}
 
@@ -159,7 +158,7 @@ abstract class Table
 		$values = $v = $this->getValuesForSave();
 		//dump($v);
 		foreach ($values as $key=>&$value) {
-			if (is_null($value) && !in_array($key, static::$NULL_COLUMNS)) { //nemůže být null, neukládáme
+			if ($value === NULL && !in_array($key, static::$NULL_COLUMNS)) { //nemůže být null, neukládáme
 				//dump('NULL COLUMN!!',array(get_class($this),$values));
 				/** @todo vyřešit lépe tohle tiché neuložení - třeba jen unset */
 				return FALSE;
@@ -179,7 +178,7 @@ abstract class Table
 			
 			dibi::query(
 				'INSERT INTO `'.static::getTableName().'`', $values,
-				'ON DUPLICATE KEY UPDATE '.static::getPrefix().'_'.self::ID.'=LAST_INSERT_ID('.static::getPrefix().'_'.self::ID.') 
+				'ON DUPLICATE KEY UPDATE '.static::getColumnName(self::ID).'=LAST_INSERT_ID('.static::getPrefix().'_'.self::ID.') 
 				%if', $valuesWithoutPK, ', %a', $valuesWithoutPK, '%end'
 			);
 			$this->afterSave($v);
@@ -195,7 +194,7 @@ abstract class Table
 		foreach (static::$CHILDREN as $childName=>$childClass) {
 			if (isset($this->$childName))
 				foreach ($this->$childName as $i=>$childEntity) {
-					$childEntity->{static::getPrefix().'_'.self::ID} = $this->id;
+					$childEntity->{static::getColumnName(self::ID)} = $this->id;
 					$childEntity->save();
 				}
 		}
@@ -206,11 +205,11 @@ abstract class Table
 		
 	}
 	
-	public function delete() {
+	final public function delete() {
 		if ($this->id) {
 			dibi::query(
 				'DELETE FROM '.static::getTableName().' WHERE %and',
-					array(static::getPrefix().'_'.self::ID=>$this->id),'LIMIT 1'
+					array(static::getColumnName(self::ID)=>$this->id),'LIMIT 1'
 			);
 		}
 		// mazání children zajištěno na úrovni databáze
@@ -234,38 +233,77 @@ abstract class Table
 		
 	}
 	
-	public function getValues() {
+	final public function getValues() {
 		$values = array();
-		foreach ($this->_values as $name=>$value) {
-			$key = $name;
-			if (strpos($name, static::getPrefix().'_') === 0) {
-				$_name = substr($name, strlen(static::getPrefix())+1);
-				if (!static::isColumn($_name))
-					$key = $_name; 
+		foreach ($this->columns as $prop=>$name) {
+			if ($prop == self::ID) {
+				if ($this->_id)
+					$values[self::ID] = $this->_id;
+			} else {
+				$values[$prop] = $this->_values[$name];
 			}
-			$values[$key] = $value;
 		}
-		if ($this->_id) {
-			$values[self::ID] = $this->_id;
-		}
+
 		foreach (static::$PARENTS as $parentName=>$parentClass) {
-			if (isset($this->$parentName)) 
-				$values[$parentName] = $this->$parentName->values;
+			if (isset($this->_parents[$parentName])) 
+				$values[$parentName] = $this->_parents[$parentName]->values;
 		}
 		foreach (static::$CHILDREN as $childName=>$childClass) {
-			if (isset($this->$childName) && is_a($childArray = $this->$childName, 'ArrayObject')) 
-				foreach ($childArray as $i=>$childEntity)
+			if (isset($this->_children[$childName])) 
+				foreach ($this->_children[$childName] as $i=>$childEntity)
 					$values[$childName][$i] = $childEntity->values;
 		}
 		return $values;
 	}
+	
+	final public function setValues($value, $isColumns = FALSE) {
+		if (is_array($value) || is_object($value)) {
+			$this->_self_loaded = TRUE;
+			foreach ($value as $key=>$val) {
+				if ($this->__isset($key))
+					if ($isColumns)
+						$this[$key] = $val;
+					else
+						$this->$key = $val;
+			}
+			if (is_array($value) && isset($value[static::getColumnName(self::ID)])) {
+				$this->id = $value[static::getColumnName(self::ID)];
+			}
+			if (is_object($value) && isset($value->{static::getColumnName(self::ID)})) {
+				$this->id = $value->{static::getColumnName(self::ID)};
+			}
+			foreach (static::$PARENTS as $parentName=>$parentClass) {
+				if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) { 
+					if (!isset($this->$parentName)) $this->$parentName = new $parentClass();
+					$this->$parentName->values = is_array($value) ? $value[$parentName] : $value->$parentName;
+				}
+			} 
+			foreach (static::$CHILDREN as $childName=>$childClass) {
+				if (is_array($value) && isset($value[$childName]) && is_array($childArray = $value[$childName]) || isset($value->$childName) && is_array($childArray = $value->$childName)) { 
+					$childEntities = isset($this->$childName) ? $this->$childName : new RowCollection();
+					foreach ($childArray as $i=>$childValues) {
+						if (!isset($childEntities[$i])) $childEntities[$i] = new $childClass();
+						$childEntities[$i]->values = $childValues;
+					}
+					if ($childEntities)
+						$this->$childName = $childEntities;
+				}
+			}
+		}
+	}
+	
+	final public function setColumnValues($values) {
+		$this->setValues($values, TRUE);
+	}
+	
+	
 	
 	public function __get($name) {
 		if (strpos($name, '_') === 0) //name starts with undescore
 			$_name = substr($name, 1);
 		else $_name = FALSE;
 		
-		if ($name == 'id' || $name == static::getPrefix().'_'.self::ID) {
+		if ($name == 'id' || $name == self::getColumnName('id')) {
 			return $this->_id;
 		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
 			return $this->_values[self::getColumnName($_name)];
@@ -274,14 +312,14 @@ abstract class Table
 		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
 			return $this->_values[self::getColumnName($name)];
 		} elseif (array_key_exists($name, $this->_parents)) {
-			if ( (!$this->_parents[$name] instanceof self || !$this->_parents[$name]->_self_loaded) &&
+			if ( (!$this->_parents[$name] instanceof self /*|| !$this->_parents[$name]->_self_loaded*/) &&
 				 (!isset($this->_loaded[$name]) || !$this->_loaded[$name]) ) //lazy loading
 				$this->{'load'.ucfirst($name)}();
 			return $this->_parents[$name];
 		} elseif ($_name && array_key_exists($_name, $this->_parents)) {
 			return $this->_parents[$_name];
 		} elseif (array_key_exists($name, $this->_children)) {
-			if (!isset($this->_loaded[$name]) || !$this->_loaded[$name]) //lazy loading
+			if ($this->_children[$name]->isEmpty() && (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
 				$this->{'load'.ucfirst($name)}();
 			return $this->_children[$name];
 		} elseif ($_name && array_key_exists($_name, $this->_children)) {
@@ -299,55 +337,38 @@ abstract class Table
 	}
 	
 	public function __set($name, $value) {
-		if ($name == 'values') {
-			if (is_array($value) || is_object($value)) {
-				$this->_self_loaded = TRUE;
-				foreach ($value as $key=>$val) {
-					if ($this->__isset($key))
-						$this->$key = $val;
-				}
-				if (is_array($value) && isset($value[static::getPrefix().'_'.self::ID])) {
-					$this->id = $value[static::getPrefix().'_'.self::ID];
-				}
-				if (is_object($value) && isset($value->{static::getPrefix().'_'.self::ID})) {
-					$this->id = $value->{static::getPrefix().'_'.self::ID};
-				}
-				foreach (static::$PARENTS as $parentName=>$parentClass) {
-					if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) { 
-						if (!isset($this->$parentName)) $this->$parentName = new $parentClass();
-						$this->$parentName->values = is_array($value) ? $value[$parentName] : $value->$parentName;
-					}
-				} 
-				foreach (static::$CHILDREN as $childName=>$childClass) {
-					if (is_array($value) && isset($value[$childName]) && is_array($childArray = $value[$childName]) || isset($value->$childName) && is_array($childArray = $value->$childName)) { 
-						$childEntities = isset($this->$childName) ? $this->$childName : new RowCollection();
-						foreach ($childArray as $i=>$childValues) {
-							if (!isset($childEntities[$i])) $childEntities[$i] = new $childClass();
-							$childEntities[$i]->values = $childValues;
-						}
-						if ($childEntities)
-							$this->$childName = $childEntities;
-					}
-				}
-			}
-		} elseif (is_object($value) && in_array(get_class($value), static::$PARENTS)) {
+		if (strpos($name, '_') === 0) //name starts with undescore
+			$_name = substr($name, 1);
+		else $_name = FALSE;
+
+		if (is_object($value) && in_array(get_class($value), static::$PARENTS)) {
 			$this->_parents[$name] = $value;
 		} elseif (($value instanceof RowCollection) && in_array($name, array_keys(static::$CHILDREN))) {
 			if ($value->isEmpty() || in_array($value->getClass(), static::$CHILDREN))
 				$this->_children[$name] = $value;
 			else throw new \Exception('The collection of objects ('.$name.') that have class '.$value->getClass().' not defined in CHILDREN');
-		} elseif ($name == 'id' || $name == static::getPrefix().'_'.self::ID) {
+		} elseif ($name == 'id' || $name == static::getColumnName(self::ID)) {
 			$newId = intval($value) === 0 ? NULL : intval($value);
-			if ($this->_id !== $newId && !is_null($this->_id))
+			if ($this->_id !== $newId && $this->_id !== NULL)
 				array_map(function($item){return Table::VALUE_MODIFIED;}, $this->_modified);
 			
 			$this->_id = $newId;
 				
-		} elseif ($_name = static::getColumnName($name)) {
-			if ($this->_values[$_name] !== $value)
-				$this->_modified[$_name] = self::VALUE_MODIFIED;
+		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
+			$cn = self::getColumnName($_name);
+			if ($this->_values[$cn] !== $value)
+				$this->_modified[$cn] = self::VALUE_MODIFIED;
 			
-			$this->_values[$_name] = $value;
+			$this->_values[$cn] = $value;
+		} elseif (method_exists($this, ($m_name = 'set'.ucfirst(Helpers::toCamelCase($name))) )) {//get{Name}
+			return $this->{$m_name}($value);
+		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
+			$cn = self::getColumnName($name);
+			if ($this->_values[$cn] !== $value)
+				$this->_modified[$cn] = self::VALUE_MODIFIED;
+			
+			$this->_values[$cn] = $value;
+
 		} else {
 			//throw new \Exception('Undefined property '.$name.' (class '.get_class($this).')');
 			$this->_aux[$name] = $value;
@@ -359,7 +380,7 @@ abstract class Table
 			$name == self::ID ||
 			self::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
 			array_key_exists($name, $this->_children) ||
-			(array_key_exists($name, $this->_parents) && !is_null($this->_parents[$name])) ||
+			(array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
 			array_key_exists($name, $this->_aux)
 		) {
 			return true;
@@ -453,25 +474,25 @@ abstract class Table
 		$rows = new RowCollection();
 		foreach ($cursor as $row) {
 			$model_class = get_called_class();
-			$entity = new $model_class($row->{static::getPrefix().'_'.self::ID});
-			$entity->values = $row;
+			$entity = new $model_class($row->{static::getColumnName(self::ID)});
+			$entity->column_values = $row;
 			//$entity->loadChildren();
 			if ($withParents)
 				foreach (static::$PARENTS as $parentName=>$parentClass) {
 					$parentEntity = new $parentClass();
-					$parentEntity->values = $row;
+					$parentEntity->column_values = $row;
 					/**
 					 * @todo FUJ - lépe!
 					 */
 					foreach ($parentClass::$PARENTS as $supParentName=>$supParentClass) {
 						$supParentEntity = new $supParentClass();
-						$supParentEntity->values = $row;
+						$supParentEntity->column_values = $row;
 						$parentEntity->{is_string($supParentName) ? $supParentName : $supParentClass::getVariableName()} = $supParentEntity; 
 					}
 					$entity->{is_string($parentName) ? $parentName : $parentClass::getVariableName()} = $parentEntity; 
 				}
 			
-			$rows[$row->{static::getPrefix().'_'.self::ID}] = $entity;
+			$rows[$row->{static::getColumnName(self::ID)}] = $entity;
 		}
 		return $rows;		
 	}
@@ -574,6 +595,28 @@ abstract class Table
 		} 
 		$array = $newArray;
 	}
-	
+
+
+	final public function offsetSet($name, $value)
+	{
+		if (array_key_exists($name, $this->_values))
+			$this->_values[$name] = $value;
+	}
+
+	final public function offsetGet($name)
+	{
+		return $this->_values[$name];
+	}
+
+	final public function offsetExists($name)
+	{
+		return array_key_exists($name, $this->_values);
+	}
+
+	final public function offsetUnset($name)
+	{
+		if (array_key_exists($name, $this->_values))
+			unset($this->_values[$name]);
+	}	
 }
 ?>

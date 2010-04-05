@@ -25,12 +25,12 @@ class Test extends Table {
 
 	/**
 	 * @null
-	 * @column a_main
+	 * @column x_main
 	 */	
 	private $main;
+	private $alt;
 	private $a_alt;
-	private $a_a_alt;
-	private $a_b;
+	private $b;
 
 	static $PARENTS = array();
 	static $CHILDREN = array();
@@ -38,9 +38,9 @@ class Test extends Table {
 }
 
 
-Assert::same(Test::getColumnName('main'), 'main');
+Assert::same(Test::getColumnName('main'), 'x_main');
 Assert::same(Test::getColumnName('alt'), 'a_alt');
-Assert::same(Test::getColumnName('a_alt'), 'a_alt');
+Assert::same(Test::getColumnName('a_alt'), 'a_a_alt');
 Assert::same(Test::getColumnName('a_a_alt'), 'a_a_alt');
 Assert::same(Test::getColumnName('a_b'), 'a_b');
 Assert::same(Test::getColumnName('b'), 'a_b');

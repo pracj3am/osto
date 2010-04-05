@@ -24,8 +24,9 @@ require __DIR__ . '/../NetteTest/initialize.php';
  * @prefix t
  */
 class TestA extends Table {
-	private $t_one;
-	private $t_two;
+	private $one;
+	private $two;
+	/** @column x_y */
 	private $x_y;
 
 	static $PARENTS = array();
@@ -34,13 +35,21 @@ class TestA extends Table {
 
 /** @prefix st */
 class subTest extends Table {
-	private $st_one;
-	private $st_two;
+	private $one;
+	private $two;
+	/** @column x_y */
 	private $x_y;
 
 	static $PARENTS = array('test'=>'TestA');
 	static $CHILDREN = array();
 }
+
+Assert::same(TestA::getAnnotation('table'), 'model_test');
+Assert::same(TestA::getAnnotation('prefix'), 't');
+Assert::same(subTest::getAnnotation('prefix'), 'st');
+Assert::same(subTest::getPropertyAnnotation('x_y', 'column'), 'x_y');
+Assert::null(subTest::getPropertyAnnotation('x_y', 'pokutre'));
+dump(TestA::getPropertyAnnotations('x_y'));
 
 Assert::same( TestA::getColumnName('one'),  't_one' );
 Assert::same( TestA::getColumnName('one'),  't_one' );
@@ -73,33 +82,36 @@ dump(subTest::getAllColumns());
 __halt_compiler();
 
 ------EXPECT------
+array(1) {
+	"column" => array(1) {
+		0 => string(3) "x_y"
+	}
+} 
+
 array(4) {
-	0 => string(4) "t_id"
-	1 => string(5) "t_one"
-	2 => string(5) "t_two"
-	3 => string(3) "x_y"
+	"id" => string(4) "t_id"
+	"one" => string(5) "t_one"
+	"two" => string(5) "t_two"
+	"x_y" => string(3) "x_y"
 }
 
 array(4) {
-	0 => string(4) "t_id"
-	1 => string(5) "t_one"
-	2 => string(5) "t_two"
-	3 => string(3) "x_y"
+	"id" => string(4) "t_id"
+	"one" => string(5) "t_one"
+	"two" => string(5) "t_two"
+	"x_y" => string(3) "x_y"
 }
 
 array(4) {
-	0 => string(5) "st_id"
-	1 => string(6) "st_one"
-	2 => string(6) "st_two"
-	3 => string(3) "x_y"
+	"id" => string(5) "st_id"
+	"one" => string(6) "st_one"
+	"two" => string(6) "st_two"
+	"x_y" => string(3) "x_y"
 }
 
-array(7) {
-	0 => string(5) "st_id"
-	1 => string(6) "st_one"
-	2 => string(6) "st_two"
-	3 => string(3) "x_y"
-	4 => string(4) "t_id"
-	5 => string(5) "t_one"
-	6 => string(5) "t_two"
+array(4) {
+	"id" => string(4) "t_id"
+	"one" => string(5) "t_one"
+	"two" => string(5) "t_two"
+	"x_y" => string(3) "x_y"
 }

@@ -24,10 +24,12 @@ Documentation
 
 ###1.1 Table class annotations
 
- * table - DB table name
- * prefix - prefix of table columns
+ * @table - name of DB table
+ * @prefix - prefix of table columns
  
+###1.2 Table class properties annotations
  
+ * @column - name of column
  
  
 License

@@ -48,36 +48,52 @@ class Helpers
 	}
 	
 	private static function getAnnotation($class, $name) {
-		$rc = new \ReflectionClass($class);
+		if ($class instanceof \ReflectionClass)
+			$rc = $class;
+		else
+			$rc = new \ReflectionClass($class);
 		$res = AnnotationsParser::getAll($rc);
 		return isset($res[$name]) ? end($res[$name]) : NULL;
 	}
+	
+	private static function getPropertyAnnotations($class, $prop = NULL) {
+		if ($class instanceof \ReflectionProperty)
+			$rp = $class;
+		else
+			$rp = new \ReflectionProperty($class, $prop);
+		return AnnotationsParser::getAll($rp);
+	} 
 
+	private static function getPropertyAnnotation($class, $prop, $name = NULL) {
+		if ($class instanceof \ReflectionProperty) {
+			$rp = $class;
+			$name = $prop;
+		} else
+			$rp = new \ReflectionProperty($class, $prop);
+		$res = AnnotationsParser::getAll($rp);
+		return isset($res[$name]) ? end($res[$name]) : NULL;
+	}
+	
 	private static function getColumnName($class, $name, $alias = FALSE) {
-		//dump($name);
-		//dump(get_called_class());
-		//dump(static::$PARENTS);
 		if ( ($pos = strpos($name, '.')) !== FALSE) {
 			$parentName = substr($name, 0, $pos);
 			if (isset($class::$PARENTS[$parentName])) {
 				$class = $class::$PARENTS[$parentName];
 				$name = substr($name, $pos+1);
 				$r =  $class::getColumnName($name,$parentName);
-				//dump($name); dump($r);
 			 	return $r === FALSE ? $r : ($alias ? $alias.Table::ALIAS_DELIM : '').$r;
-			} else {
-				return FALSE;
 			}
-		} else {
-			$r = ($class::isColumn($name) ? $name : 
-					($class::isColumn($class::getPrefix().'_'.$name) ? 
-						$class::getPrefix().'_'.$name :
+
+			return FALSE;
+		}
+		$r = ( ($t = $class::getColumns()) && isset($t[$name]) ? 
+					$t[$name] :
+					($class::isColumn($name) ? 
+						$name :
 						FALSE
 					)
-			);
-		 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
-		}
-		//return (($name == self::ID) || property_exists(get_called_class(), static::getPrefix().'_'.$name) ? static::getPrefix().'_' : '').$name;
+		);
+	 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
 	}
 	
 	private static function getTableName($class) {
@@ -108,12 +124,14 @@ class Helpers
 	 * Vrátí pole názvů sloupců tabulky
 	 */
 	private static function getColumns($class) {
-		$columns = array($class::getPrefix().'_'.Table::ID);
+		$columns = array(Table::ID=>$class::getPrefix().'_'.Table::ID);
 		
 		$rc = new \ReflectionClass($class);
-		foreach ($rc->getProperties() as $rp) {
-			if ($rp->isPrivate() && !$rp->isStatic() && strpos($rp->getName(), '_') !== 0) {
-				$columns[] = $rp->getName();
+		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
+			if (strpos($cn = $rp->getName(), '_') !== 0) {
+				$columns[$cn] = ($columnName = self::getPropertyAnnotation($rp, 'column')) && is_string($columnName) ?
+					$columnName :
+					$class::getPrefix().'_'.$rp->getName();
 			}
 		}
 

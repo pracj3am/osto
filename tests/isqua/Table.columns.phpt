@@ -22,13 +22,11 @@ require __DIR__ . '/../NetteTest/initialize.php';
  */
 class Test extends Table {
 
-	/**
-	 * @null
-	 * @column a_main
-	 */	
+	/** @column a_main */
 	private $main;
+	/** @column a_alt */
 	private $a_alt;
-	private $a_a_alt;
+	private $b;
 	private $t_b;
 
 	static $PARENTS = array();
@@ -48,9 +46,9 @@ __halt_compiler();
 Table Test columns:
 
 array(5) {
-	0 => string(4) "t_id"
-	1 => string(4) "main"
-	2 => string(5) "a_alt"
-	3 => string(7) "a_a_alt"
-	4 => string(3) "t_b"
+	"id" => string(4) "t_id"
+	"main" => string(6) "a_main"
+	"a_alt" => string(5) "a_alt"
+	"b" => string(3) "t_b"
+	"t_b" => string(5) "t_t_b"
 } 

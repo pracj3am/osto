@@ -30,6 +30,8 @@ class Test extends Table {
 	 */	
 	private $main;
 	private $a_alt;
+	/** @column wolf */	
+	private $sheep;
 
 	static $PARENTS = array();
 	static $CHILDREN = array();
@@ -58,3 +60,9 @@ $tmp = A::getAll($rp);
 
 Assert::null( @$tmp["null"][0] );
 Assert::null( @$tmp["column"][0] );
+
+$rp = $rc->getProperty('sheep');
+$tmp = A::getAll($rp);
+
+Assert::null( @$tmp["null"][0] );
+Assert::same( @$tmp["column"][0], 'wolf');

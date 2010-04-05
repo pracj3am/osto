@@ -28,9 +28,9 @@ class Test extends Table {
 	 * @column a_main
 	 */	
 	private $main;
+	private $alt;
 	private $a_alt;
-	private $a_a_alt;
-	private $a_b;
+	private $b;
 
 	static $PARENTS = array();
 	static $CHILDREN = array();
@@ -55,7 +55,7 @@ Table Test values:
 
 array(4) {
 	"main" => int(1)
-	"alt" => int(3)
-	"a_a_alt" => int(4)
+	"alt" => int(2)
+	"a_alt" => int(4)
 	"b" => int(5)
 }
