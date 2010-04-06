@@ -133,15 +133,17 @@ abstract class Table implements \ArrayAccess
 	}
 	
 	public function getValuesForSave() {
-		//$values = array_map(function($name){return static::getColumnName($name);},$this->values);
 		$values = $this->values;
 		foreach ($values as $key=>$value) {
 			if ($key == self::ID) continue; // primární klíč vždy potřebujeme
-			if (!is_scalar($value) && $value !== NULL) unset($values[$key]);
+			
+			if (!is_scalar($value) && $value !== NULL) 
+				unset($values[$key]);
 			// ukládáme jen hodnoty, které se změnily
-			elseif ($this->id && $this->_modified[static::getColumnName($key)] !== self::VALUE_MODIFIED) {
+			elseif ($this->id && $this->_modified[static::getColumnName($key)] !== self::VALUE_MODIFIED)
 				$values[$key] = '`'.static::getColumnName($key).'`';
-			}
+			elseif ($value === NULL && !in_array($key, static::$NULL_COLUMNS)) 
+				unset($values[$key]);
 		}
 		return $values;
 	}
@@ -156,14 +158,13 @@ abstract class Table implements \ArrayAccess
 			}
 		}
 
-		//$values = array_map(function($name){return static::getColumnName($name);},$this->values);
 		$values = $v = $this->getValuesForSave();
 		//dump($v);
-		foreach ($values as $key=>&$value) {
+		foreach ($values as $key=>$value) {
 			if ($value === NULL && !in_array($key, static::$NULL_COLUMNS)) { //nemůže být null, neukládáme
 				//dump('NULL COLUMN!!',array(get_class($this),$values));
 				/** @todo vyřešit lépe tohle tiché neuložení - třeba jen unset */
-				return FALSE;
+				//return FALSE;
 			}
 		}
 		
@@ -176,7 +177,7 @@ abstract class Table implements \ArrayAccess
 		}
 		if ($values) {
 			$valuesWithoutPK = $values;
-			unset($valuesWithoutPK[static::getPrefix().'_'.self::ID]);
+			unset($valuesWithoutPK[static::getColumnName(self::ID)]);
 			
 			dibi::query(
 				'INSERT INTO `'.static::getTableName().'`', $values,
@@ -235,7 +236,7 @@ abstract class Table implements \ArrayAccess
 		
 	}
 	
-	final public function getValues() {
+	public function getValues() {
 		$values = array();
 		foreach ($this->columns as $prop=>$name) {
 			if ($prop == self::ID) {
@@ -258,7 +259,7 @@ abstract class Table implements \ArrayAccess
 		return $values;
 	}
 	
-	final public function setValues($value, $isColumns = FALSE) {
+	public function setValues($value, $isColumns = FALSE) {
 		if (is_array($value) || is_object($value)) {
 			$this->_self_loaded = TRUE;
 			foreach ($value as $key=>$val) {
@@ -380,6 +381,7 @@ abstract class Table implements \ArrayAccess
 	public function __isset($name) {
 		if (
 			$name == self::ID ||
+			method_exists($this, 'get'.ucfirst(Helpers::toCamelCase($name)) ) ||
 			self::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
 			array_key_exists($name, $this->_children) ||
 			(array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
