@@ -20,7 +20,7 @@ class Helpers
 	public static function __callStatic($name, $arguments) {
 		$class = $arguments[0];
 		//Debug::dump(array($name,$arguments)); die();
-		if (method_exists(__CLASS__, $name)) { //caching results of static methods
+		if (method_exists(__CLASS__, $name) || method_exists(__CLASS__, $name = ltrim($name, '_'))) { //caching results of static methods
 			$cachePath = array(md5(serialize($arguments)));
 			array_unshift($cachePath, $class);
 			array_unshift($cachePath, $name);
@@ -80,15 +80,15 @@ class Helpers
 			if (isset($class::$PARENTS[$parentName])) {
 				$class = $class::$PARENTS[$parentName];
 				$name = substr($name, $pos+1);
-				$r =  $class::getColumnName($name,$parentName);
+				$r =  self::_getColumnName($class, $name,$parentName);
 			 	return $r === FALSE ? $r : ($alias ? $alias.Table::ALIAS_DELIM : '').$r;
 			}
 
 			return FALSE;
 		}
-		$r = ( ($t = $class::getColumns()) && isset($t[$name]) ? 
+		$r = ( ($t = self::_getColumns($class)) && isset($t[$name]) ? 
 					$t[$name] :
-					($class::isColumn($name) ? 
+					(self::_isColumn($class, $name) ? 
 						$name :
 						FALSE
 					)
@@ -97,14 +97,14 @@ class Helpers
 	}
 	
 	private static function getTableName($class) {
-		if (($tn = $class::getAnnotation('table')) && is_string($tn))
+		if (($tn = self::_getAnnotation($class, 'table')) && is_string($tn))
 			return $tn;
 		else
 			return self::fromCamelCase( strrpos($class,'\\') !== FALSE ? substr($class, strrpos($class,'\\')+1) : $class );
 	}
 	
 	private static function getPrefix($class) {
-		if (($prefix = $class::getAnnotation('prefix')) && is_string($prefix))
+		if (($prefix = self::_getAnnotation($class, 'prefix')) && is_string($prefix))
 			return $prefix;
 		else
 			return strtolower(preg_replace('/[^A-Z0-9]*/', '', $class));
@@ -124,14 +124,14 @@ class Helpers
 	 * Vrátí pole názvů sloupců tabulky
 	 */
 	private static function getColumns($class) {
-		$columns = array(Table::ID=>$class::getPrefix().'_'.Table::ID);
+		$columns = array(Table::ID=>self::_getPrefix($class).'_'.Table::ID);
 		
 		$rc = new \ReflectionClass($class);
 		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
 			if (strpos($cn = $rp->getName(), '_') !== 0) {
 				$columns[$cn] = ($columnName = self::getPropertyAnnotation($rp, 'column')) && is_string($columnName) ?
 					$columnName :
-					$class::getPrefix().'_'.$rp->getName();
+					self::_getPrefix($class).'_'.$rp->getName();
 			}
 		}
 
@@ -142,10 +142,10 @@ class Helpers
 	 * Vrátí pole názvů sloupců vlastní tabulky a tabulek rodičů 
 	 */
 	private static function getAllColumns($class) {
-		$columns = $class::getColumns();
+		$columns = self::_getColumns($class);
 
 		foreach ($class::$PARENTS as $parentClass) {
-			$columns = array_merge($columns, $parentClass::getColumns());
+			$columns = array_merge($columns, self::_getColumns($parentClass));
 		}
 		
 		return array_unique($columns);
@@ -153,11 +153,11 @@ class Helpers
 	
 	
 	private static function isColumn($class, $name) {
-		return in_array($name, $class::getColumns(), TRUE);
+		return in_array($name, self::_getColumns($class), TRUE);
 	}
 	
 	private static function isSelfReferencing($class) {
-		return $class::getColumnName('parent_id') && in_array($class, $class::$CHILDREN);
+		return self::_getColumnName($class, 'parent_id') && in_array($class, $class::$CHILDREN);
 	}
 	
 	
