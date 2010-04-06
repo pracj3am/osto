@@ -160,14 +160,6 @@ abstract class Table implements \ArrayAccess
 
 		$values = $v = $this->getValuesForSave();
 		//dump($v);
-		foreach ($values as $key=>$value) {
-			if ($value === NULL && !in_array($key, static::$NULL_COLUMNS)) { //nemůže být null, neukládáme
-				//dump('NULL COLUMN!!',array(get_class($this),$values));
-				/** @todo vyřešit lépe tohle tiché neuložení - třeba jen unset */
-				//return FALSE;
-			}
-		}
-		
 		static::replaceKeys($values);
 		foreach ($values as $key => $value) {
 			if (strpos($value, '`') === 0) {
