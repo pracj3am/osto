@@ -7,7 +7,7 @@
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @license    http://dibiphp.com/license  dibi license
  * @link       http://dibiphp.com
- * @package    dibi
+ * @package    dibi\drivers
  */
 
 
@@ -23,7 +23,7 @@
  *   - 'lazy' - if TRUE, connection will be established only when required
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
- * @package    dibi
+ * @package    dibi\drivers
  */
 class DibiPdoDriver extends DibiObject implements IDibiDriver
 {
@@ -359,7 +359,7 @@ class DibiPdoDriver extends DibiObject implements IDibiDriver
 	 */
 	public function getRowCount()
 	{
-		throw new NotSupportedException('Row count is not available for unbuffered queries.');
+		return $this->resultSet->rowCount();
 	}
 
 
@@ -414,6 +414,10 @@ class DibiPdoDriver extends DibiObject implements IDibiDriver
 			if ($row === FALSE) {
 				throw new DibiDriverException('Driver does not support meta data.');
 			}
+			// PHP < 5.2.3 compatibility
+			// @see: http://php.net/manual/en/pdostatement.getcolumnmeta.php#pdostatement.getcolumnmeta.changelog
+			$row['table'] = isset($row['table']) ? $row['table'] : NULL;
+
 			$res[] = array(
 				'name' => $row['name'],
 				'table' => $row['table'],

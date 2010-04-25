@@ -17,6 +17,10 @@
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
+ *
+ * @property-read string $name
+ * @property-read array $tables
+ * @property-read array $tableNames
  */
 class DibiDatabaseInfo extends DibiObject
 {
@@ -122,11 +126,20 @@ class DibiDatabaseInfo extends DibiObject
 
 
 
+
 /**
  * Reflection metadata class for a database table.
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
+ *
+ * @property-read string $name
+ * @property-read bool $view
+ * @property-read array $columns
+ * @property-read array $columnNames
+ * @property-read array $foreignKeys
+ * @property-read array $indexes
+ * @property-read DibiIndexInfo $primaryKey
  */
 class DibiTableInfo extends DibiObject
 {
@@ -320,11 +333,15 @@ class DibiTableInfo extends DibiObject
 
 
 
+
 /**
  * Reflection metadata class for a result set.
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
+ *
+ * @property-read array $columns
+ * @property-read array $columnNames
  */
 class DibiResultInfo extends DibiObject
 {
@@ -420,11 +437,23 @@ class DibiResultInfo extends DibiObject
 
 
 
+
 /**
  * Reflection metadata class for a table or result set column.
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
+ *
+ * @property-read string $name
+ * @property-read string $fullName
+ * @property-read DibiTableInfo $table
+ * @property-read string $type
+ * @property-read mixed $nativeType
+ * @property-read int $size
+ * @property-read bool $unsigned
+ * @property-read bool $nullable
+ * @property-read bool $autoIncrement
+ * @property-read mixed $default
  */
 class DibiColumnInfo extends DibiObject
 {
@@ -529,6 +558,16 @@ class DibiColumnInfo extends DibiObject
 	/**
 	 * @return bool
 	 */
+	public function isUnsigned()
+	{
+		return isset($this->info['unsigned']) ? (bool) $this->info['unsigned'] : NULL;
+	}
+
+
+
+	/**
+	 * @return bool
+	 */
 	public function isNullable()
 	{
 		return isset($this->info['nullable']) ? (bool) $this->info['nullable'] : NULL;
@@ -600,12 +639,16 @@ class DibiColumnInfo extends DibiObject
 
 
 
+
 /**
  * Reflection metadata class for a foreign key.
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
  * @todo
+ *
+ * @property-read string $name
+ * @property-read array $references
  */
 class DibiForeignKeyInfo extends DibiObject
 {
@@ -647,11 +690,17 @@ class DibiForeignKeyInfo extends DibiObject
 
 
 
+
 /**
  * Reflection metadata class for a index or primary key.
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
+ *
+ * @property-read string $name
+ * @property-read array $columns
+ * @property-read bool $unique
+ * @property-read bool $primary
  */
 class DibiIndexInfo extends DibiObject
 {

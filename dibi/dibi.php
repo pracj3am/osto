@@ -33,41 +33,47 @@ if (version_compare(PHP_VERSION, '5.2.0', '<')) {
  * Compatibility with Nette
  */
 if (!class_exists('NotImplementedException', FALSE)) {
+	/** @package exceptions */
 	class NotImplementedException extends LogicException {}
 }
 
 if (!class_exists('NotSupportedException', FALSE)) {
+	/** @package exceptions */
 	class NotSupportedException extends LogicException {}
 }
 
 if (!class_exists('MemberAccessException', FALSE)) {
+	/** @package exceptions */
 	class MemberAccessException extends LogicException {}
 }
 
 if (!class_exists('InvalidStateException', FALSE)) {
+	/** @package exceptions */
 	class InvalidStateException extends RuntimeException {}
 }
 
 if (!class_exists('IOException', FALSE)) {
+	/** @package exceptions */
 	class IOException extends RuntimeException {}
 }
 
 if (!class_exists('FileNotFoundException', FALSE)) {
+	/** @package exceptions */
 	class FileNotFoundException extends IOException {}
 }
 
-if (!interface_exists('Nette\IDebuggable', FALSE)) {
-	require_once __DIR__ . '/Nette/IDebuggable.php';
+if (!interface_exists(/*Nette\*/'IDebugPanel', FALSE)) {
+	require_once dirname(__FILE__) . '/Nette/IDebugPanel.php';
 }
 
 if (!class_exists('DateTime53', FALSE)) {
-	require_once __DIR__ . '/Nette/DateTime53.php';
+	require_once dirname(__FILE__) . '/Nette/DateTime53.php';
 }
 
 
 
 /**
- * Back-compatibility
+ * @deprecated
  */
 class DibiVariable extends DateTime53
 {
@@ -80,18 +86,20 @@ class DibiVariable extends DateTime53
 
 
 // dibi libraries
-require_once __DIR__ . '/libs/interfaces.php';
-require_once __DIR__ . '/libs/DibiObject.php';
-require_once __DIR__ . '/libs/DibiException.php';
-require_once __DIR__ . '/libs/DibiConnection.php';
-require_once __DIR__ . '/libs/DibiResult.php';
-require_once __DIR__ . '/libs/DibiResultIterator.php';
-require_once __DIR__ . '/libs/DibiRow.php';
-require_once __DIR__ . '/libs/DibiTranslator.php';
-require_once __DIR__ . '/libs/DibiDataSource.php';
-require_once __DIR__ . '/libs/DibiFluent.php';
-require_once __DIR__ . '/libs/DibiDatabaseInfo.php';
-require_once __DIR__ . '/libs/DibiProfiler.php';
+require_once dirname(__FILE__) . '/libs/interfaces.php';
+require_once dirname(__FILE__) . '/libs/DibiObject.php';
+require_once dirname(__FILE__) . '/libs/DibiException.php';
+require_once dirname(__FILE__) . '/libs/DibiConnection.php';
+require_once dirname(__FILE__) . '/libs/DibiResult.php';
+require_once dirname(__FILE__) . '/libs/DibiResultIterator.php';
+require_once dirname(__FILE__) . '/libs/DibiRow.php';
+require_once dirname(__FILE__) . '/libs/DibiTranslator.php';
+require_once dirname(__FILE__) . '/libs/DibiDataSource.php';
+require_once dirname(__FILE__) . '/libs/DibiFluent.php';
+require_once dirname(__FILE__) . '/libs/DibiDatabaseInfo.php';
+require_once dirname(__FILE__) . '/libs/DibiProfiler.php';
+
+
 
 
 
@@ -137,14 +145,14 @@ class dibi
 	 * dibi version
 	 */
 	const VERSION = '1.3-dev';
-	const REVISION = 'e177436 released on 2010-01-14';
+	const REVISION = '$WCREV$ released on $WCDATE$';
 	/**#@-*/
 
 	/**#@+
 	 * Configuration options
 	 */
-	const RESULT_WITH_TABLES = 'resultWithTables'; // for MySQL
-	const ROW_CLASS = 'rowClass';
+	const RESULT_DETECT_TYPES = 'resultDetectTypes';
+	const RESULT_DATE_TIME = 'resultDateTime';
 	const ASC = 'ASC', DESC = 'DESC';
 	/**#@-*/
 
@@ -697,7 +705,7 @@ class dibi
 
 			$sql = wordwrap($sql, 100);
 			$sql = htmlSpecialChars($sql);
-			$sql = preg_replace("#\n{2,}#", "\n", $sql);
+			$sql = preg_replace("#([ \t]*\r?\n){2,}#", "\n", $sql);
 
 			// syntax highlight
 			$sql = preg_replace_callback("#(/\\*.+?\\*/)|(\\*\\*.+?\\*\\*)|(?<=[\\s,(])($keywords1)(?=[\\s,)])|(?<=[\\s,(=])($keywords2)(?=[\\s,)=])#is", array('dibi', 'highlightCallback'), $sql);
@@ -727,25 +735,6 @@ class dibi
 
 		if (!empty($matches[4])) // other keywords
 			return '<strong style="color:green">' . $matches[4] . '</strong>';
-	}
-
-
-
-	/**
-	 * Returns brief descriptions.
-	 * @return string
-	 * @return array
-	 */
-	public static function getColophon($sender = NULL)
-	{
-		$arr = array(
-			'Number of SQL queries: ' . dibi::$numOfQueries
-			. (dibi::$totalTime === NULL ? '' : ', elapsed time: ' . sprintf('%0.3f', dibi::$totalTime * 1000) . ' ms'),
-		);
-		if ($sender === 'bluescreen') {
-			$arr[] = 'dibi ' . dibi::VERSION . ' (revision ' . dibi::REVISION . ')';
-		}
-		return $arr;
 	}
 
 }

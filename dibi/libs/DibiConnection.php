@@ -17,6 +17,14 @@
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
+ *
+ * @property-read bool $connected
+ * @property-read mixed $config
+ * @property-read IDibiDriver $driver
+ * @property-read int $affectedRows
+ * @property-read int $insertId
+ * @property IDibiProfiler $profiler
+ * @property-read DibiDatabaseInfo $databaseInfo
  */
 class DibiConnection extends DibiObject
 {
@@ -42,16 +50,12 @@ class DibiConnection extends DibiObject
 	 */
 	public function __construct($config, $name = NULL)
 	{
-		if (class_exists('Nette\Debug', FALSE)) {
-			Nette\Debug::addColophon(array('dibi', 'getColophon'));
-		}
-
 		// DSN string
 		if (is_string($config)) {
 			parse_str($config, $config);
 
-		} elseif ($config instanceof ArrayObject) {
-			$config = (array) $config;
+		} elseif ($config instanceof Traversable) {
+			$config = iterator_to_array($config);
 
 		} elseif (!is_array($config)) {
 			throw new InvalidArgumentException('Configuration must be array, string or ArrayObject.');
@@ -68,7 +72,7 @@ class DibiConnection extends DibiObject
 		$driver = preg_replace('#[^a-z0-9_]#', '_', $config['driver']);
 		$class = "Dibi" . $driver . "Driver";
 		if (!class_exists($class, FALSE)) {
-			include_once __DIR__ . "/../drivers/$driver.php";
+			include_once dirname(__FILE__) . "/../drivers/$driver.php";
 
 			if (!class_exists($class, FALSE)) {
 				throw new DibiException("Unable to create instance of dibi driver '$class'.");
@@ -318,21 +322,13 @@ class DibiConnection extends DibiObject
 			}
 			$ticket = $this->profiler->before($this, $event, $sql);
 		}
-		// TODO: move to profiler?
-		dibi::$numOfQueries++;
-		dibi::$sql = $sql;
-		dibi::$elapsedTime = FALSE;
-		$time = -microtime(TRUE);
 
+		dibi::$sql = $sql;
 		if ($res = $this->driver->query($sql)) { // intentionally =
 			$res = new DibiResult($res, $this->config);
 		} else {
 			$res = $this->driver->getAffectedRows();
 		}
-
-		$time += microtime(TRUE);
-		dibi::$elapsedTime = $time;
-		dibi::$totalTime += $time;
 
 		if (isset($ticket)) {
 			$this->profiler->after($ticket, $res);

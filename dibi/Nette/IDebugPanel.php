@@ -3,13 +3,6 @@
 /**
  * Nette Framework
  *
- * Copyright (c) 2004, 2010 David Grudl (http://davidgrudl.com)
- *
- * This source file is subject to the "Nette license" that is bundled
- * with this package in the file license.txt.
- *
- * For more information please see http://nettephp.com
- *
  * @copyright  Copyright (c) 2004, 2010 David Grudl
  * @license    http://nettephp.com/license  Nette license
  * @link       http://nettephp.com
@@ -17,9 +10,7 @@
  * @package    Nette
  */
 
-namespace Nette;
-
-use Nette;
+/*namespace Nette;*/
 
 
 
@@ -29,13 +20,25 @@ use Nette;
  * @copyright  Copyright (c) 2004, 2010 David Grudl
  * @package    Nette
  */
-interface IDebuggable
+interface IDebugPanel
 {
 
 	/**
-	 * Returns custom panels.
-	 * @return array
+	 * Renders HTML code for custom tab.
+	 * @return void
 	 */
-	function getPanels();
+	function getTab();
+
+	/**
+	 * Renders HTML code for custom panel.
+	 * @return void
+	 */
+	function getPanel();
+
+	/**
+	 * Returns panel ID.
+	 * @return string
+	 */
+	function getId();
 
 }

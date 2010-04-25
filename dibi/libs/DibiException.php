@@ -18,7 +18,7 @@
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
  */
-class DibiException extends Exception implements Nette\IDebuggable
+class DibiException extends Exception implements Nette\IDebugPanel
 {
 	/** @var string */
 	private $sql;
@@ -59,26 +59,43 @@ class DibiException extends Exception implements Nette\IDebuggable
 
 
 
-	/********************* interface Nette\IDebuggable ****************d*g**/
+	/********************* interface Nette\IDebugPanel ****************d*g**/
+
 
 
 	/**
-	 * Returns custom panels.
-	 * @return array
+	 * Returns HTML code for custom tab.
+	 * @return mixed
 	 */
-	public function getPanels()
+	public function getTab()
 	{
-		$panels = array();
-		if ($this->sql !== NULL) {
-			$panels['SQL'] = array(
-				'expanded' => TRUE,
-				'content' => dibi::dump($this->sql, TRUE),
-			);
-		}
-		return $panels;
+		return 'SQL';
+	}
+
+
+
+	/**
+	 * Returns HTML code for custom panel.
+	 * @return mixed
+	 */
+	public function getPanel()
+	{
+		return $this->sql ? dibi::dump($this->sql, TRUE) : NULL;
+	}
+
+
+
+	/**
+	 * Returns panel ID.
+	 * @return string
+	 */
+	public function getId()
+	{
+		return __CLASS__;
 	}
 
 }
+
 
 
 

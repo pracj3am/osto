@@ -18,13 +18,13 @@
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @package    dibi
  */
-class DibiProfiler extends DibiObject implements IDibiProfiler
+class DibiProfiler extends DibiObject implements IDibiProfiler, Nette\IDebugPanel
 {
 	/** maximum number of rows */
-	const FIREBUG_MAX_ROWS = 30;
+	static public $maxQueries = 30;
 
 	/** maximum SQL length */
-	const FIREBUG_MAX_LENGTH = 500;
+	static public $maxLength = 1000;
 
 	/** @var string  Name of the file where SQL errors should be logged */
 	private $file;
@@ -36,15 +36,19 @@ class DibiProfiler extends DibiObject implements IDibiProfiler
 	private $filter = self::ALL;
 
 	/** @var array */
-	public $tickets = array();
+	public static $tickets = array();
 
 	/** @var array */
-	public static $table = array(array('Time', 'SQL Statement', 'Rows', 'Connection'));
+	public static $fireTable = array(array('Time', 'SQL Statement', 'Rows', 'Connection'));
 
 
 
 	public function __construct()
 	{
+		if (class_exists(Nette\'Debug', FALSE) && is_callable(Nette\'Debug::addPanel')) {
+			Nette\Debug::addPanel($this);
+		}
+
 		$this->useFirebug = isset($_SERVER['HTTP_USER_AGENT']) && strpos($_SERVER['HTTP_USER_AGENT'], 'FirePHP/');
 	}
 
@@ -83,9 +87,11 @@ class DibiProfiler extends DibiObject implements IDibiProfiler
 	 */
 	public function before(DibiConnection $connection, $event, $sql = NULL)
 	{
-		$this->tickets[] = array($connection, $event, $sql);
-		end($this->tickets);
-		return key($this->tickets);
+		if ($event & self::QUERY) dibi::$numOfQueries++;
+		dibi::$elapsedTime = FALSE;
+		self::$tickets[] = array($connection, $event, trim($sql), -microtime(TRUE), NULL, NULL);
+		end(self::$tickets);
+		return key(self::$tickets);
 	}
 
 
@@ -98,56 +104,66 @@ class DibiProfiler extends DibiObject implements IDibiProfiler
 	 */
 	public function after($ticket, $res = NULL)
 	{
-		if (!isset($this->tickets[$ticket])) {
+		if (!isset(self::$tickets[$ticket])) {
 			throw new InvalidArgumentException('Bad ticket number.');
 		}
 
-		list($connection, $event, $sql) = $this->tickets[$ticket];
-		$sql = trim($sql);
+		$ticket = & self::$tickets[$ticket];
+		$ticket[3] += microtime(TRUE);
+		list($connection, $event, $sql, $time) = $ticket;
+
+		dibi::$elapsedTime = $time;
+		dibi::$totalTime += $time;
 
 		if (($event & $this->filter) === 0) return;
 
 		if ($event & self::QUERY) {
 			try {
-				$count = $res instanceof DibiResult ? count($res) : '-';
+				$ticket[4] = $count = $res instanceof DibiResult ? count($res) : '-';
 			} catch (Exception $e) {
 				$count = '?';
 			}
 
-			if ($this->useFirebug && !headers_sent()) {
-				if (count(self::$table) < self::FIREBUG_MAX_ROWS) {
-					self::$table[] = array(
-						sprintf('%0.3f', dibi::$elapsedTime * 1000),
-						strlen($sql) > self::FIREBUG_MAX_LENGTH ? substr($sql, 0, self::FIREBUG_MAX_LENGTH) . '...' : $sql,
-						$count,
-						$connection->getConfig('driver') . '/' . $connection->getConfig('name')
-					);
-				}
-
-				header('X-Wf-Protocol-dibi: http://meta.wildfirehq.org/Protocol/JsonStream/0.2');
-				header('X-Wf-dibi-Plugin-1: http://meta.firephp.org/Wildfire/Plugin/FirePHP/Library-FirePHPCore/0.2.0');
-				header('X-Wf-dibi-Structure-1: http://meta.firephp.org/Wildfire/Structure/FirePHP/FirebugConsole/0.1');
-
-				$payload = array(
-					array(
-						'Type' => 'TABLE',
-						'Label' => 'dibi profiler (' . dibi::$numOfQueries . ' SQL queries took ' . sprintf('%0.3f', dibi::$totalTime * 1000) . ' ms)',
-					),
-					self::$table,
+			if (count(self::$fireTable) < self::$maxQueries) {
+				self::$fireTable[] = array(
+					sprintf('%0.3f', $time * 1000),
+					strlen($sql) > self::$maxLength ? substr($sql, 0, self::$maxLength) . '...' : $sql,
+					$count,
+					$connection->getConfig('driver') . '/' . $connection->getConfig('name')
 				);
-				$payload = function_exists('json_encode') ? json_encode($payload) : self::json_encode($payload);
-				foreach (str_split($payload, 4990) as $num => $s) {
-					$num++;
-					header("X-Wf-dibi-1-1-d$num: |$s|\\"); // protocol-, structure-, plugin-, message-index
+
+				if ($event === self::SELECT) {
+					try {
+						$ticket[5] = dibi::dump($connection->setProfiler(NULL)->nativeQuery('EXPLAIN ' . $sql), TRUE);
+					} catch (DibiException $e) {}
+					$connection->setProfiler($this);
 				}
-				header("X-Wf-dibi-1-1-d$num: |$s|");
+
+				if ($this->useFirebug && !headers_sent()) {
+					header('X-Wf-Protocol-dibi: http://meta.wildfirehq.org/Protocol/JsonStream/0.2');
+					header('X-Wf-dibi-Plugin-1: http://meta.firephp.org/Wildfire/Plugin/FirePHP/Library-FirePHPCore/0.2.0');
+					header('X-Wf-dibi-Structure-1: http://meta.firephp.org/Wildfire/Structure/FirePHP/FirebugConsole/0.1');
+
+					$payload = json_encode(array(
+						array(
+							'Type' => 'TABLE',
+							'Label' => 'dibi profiler (' . dibi::$numOfQueries . ' SQL queries took ' . sprintf('%0.3f', dibi::$totalTime * 1000) . ' ms)',
+						),
+						self::$fireTable,
+					));
+					foreach (str_split($payload, 4990) as $num => $s) {
+						$num++;
+						header("X-Wf-dibi-1-1-d$num: |$s|\\"); // protocol-, structure-, plugin-, message-index
+					}
+					header("X-Wf-dibi-1-1-d$num: |$s|");
+				}
 			}
 
 			if ($this->file) {
 				$this->writeFile(
 					"OK: " . $sql
 					. ($res instanceof DibiResult ? ";\n-- rows: " . $count : '')
-					. "\n-- takes: " . sprintf('%0.3f', dibi::$elapsedTime * 1000) . ' ms'
+					. "\n-- takes: " . sprintf('%0.3f', $time * 1000) . ' ms'
 					. "\n-- driver: " . $connection->getConfig('driver') . '/' . $connection->getConfig('name')
 					. "\n-- " . date('Y-m-d H:i:s')
 					. "\n\n"
@@ -200,37 +216,73 @@ class DibiProfiler extends DibiObject implements IDibiProfiler
 
 
 
-	public static function json_encode($val)
+	/********************* interface Nette\IDebugPanel ****************d*g**/
+
+
+
+	/**
+	 * Returns HTML code for custom tab.
+	 * @return mixed
+	 */
+	public function getTab()
 	{
-		// indexed array
-		if (is_array($val) && (!$val
-			|| array_keys($val) === range(0, count($val) - 1))) {
-			return '[' . implode(',', array_map(array(__CLASS__, 'json_encode'), $val)) . ']';
-		}
+		return '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAEYSURBVBgZBcHPio5hGAfg6/2+R980k6wmJgsJ5U/ZOAqbSc2GnXOwUg7BESgLUeIQ1GSjLFnMwsKGGg1qxJRmPM97/1zXFAAAAEADdlfZzr26miup2svnelq7d2aYgt3rebl585wN6+K3I1/9fJe7O/uIePP2SypJkiRJ0vMhr55FLCA3zgIAOK9uQ4MS361ZOSX+OrTvkgINSjS/HIvhjxNNFGgQsbSmabohKDNoUGLohsls6BaiQIMSs2FYmnXdUsygQYmumy3Nhi6igwalDEOJEjPKP7CA2aFNK8Bkyy3fdNCg7r9/fW3jgpVJbDmy5+PB2IYp4MXFelQ7izPrhkPHB+P5/PjhD5gCgCenx+VR/dODEwD+A3T7nqbxwf1HAAAAAElFTkSuQmCC">'
+			. dibi::$numOfQueries . ' queries';
+	}
 
-		// associative array
-		if (is_array($val) || is_object($val)) {
-			$tmp = array();
-			foreach ($val as $k => $v) {
-				$tmp[] = self::json_encode((string) $k) . ':' . self::json_encode($v);
-			}
-			return '{' . implode(',', $tmp) . '}';
-		}
 
-		if (is_string($val)) {
-			$val = str_replace(array("\\", "\x00"), array("\\\\", "\\u0000"), $val); // due to bug #40915
-			return '"' . addcslashes($val, "\x8\x9\xA\xC\xD/\"") . '"';
-		}
 
-		if (is_int($val) || is_float($val)) {
-			return rtrim(rtrim(number_format($val, 5, '.', ''), '0'), '.');
-		}
+	/**
+	 * Returns HTML code for custom panel.
+	 * @return mixed
+	 */
+	public function getPanel()
+	{
+		if (!dibi::$numOfQueries) return;
 
-		if (is_bool($val)) {
-			return $val ? 'true' : 'false';
-		}
+		$content = "
+<h1>Queries: " . dibi::$numOfQueries . (dibi::$totalTime === NULL ? '' : ', time: ' . sprintf('%0.3f', dibi::$totalTime * 1000) . ' ms') . "</h1>
 
-		return 'null';
+<style>
+	#nette-debug-DibiProfiler td.dibi-sql { background: white }
+	#nette-debug-DibiProfiler .nette-alt td.dibi-sql { background: #F5F5F5 }
+	#nette-debug-DibiProfiler .dibi-sql div { display: none; margin-top: 10px; max-height: 150px; overflow:auto }
+</style>
+
+<div class='nette-inner'>
+<table>
+<tr>
+	<th>Time</th><th>SQL Statement</th><th>Rows</th><th>Connection</th>
+</tr>
+";
+		$i = 0; $classes = array('class="nette-alt"', '');
+		foreach (self::$tickets as $ticket) {
+			list($connection, $event, $sql, $time, $count, $explain) = $ticket;
+			if (!($event & self::QUERY)) continue;
+			$content .= "
+<tr {$classes[++$i%2]}>
+	<td>" . sprintf('%0.3f', $time * 1000) . "
+	<br><a href='#' class='nette-toggler' rel='#nette-debug-DibiProfiler-row-$i'>explain&nbsp;&#x25ba;</a></td>
+	<td class='dibi-sql'>" . dibi::dump(strlen($sql) > self::$maxLength ? substr($sql, 0, self::$maxLength) . '...' : $sql, TRUE) . "
+	<div id='nette-debug-DibiProfiler-row-$i'>{$explain}</div></td>
+	<td>{$count}</td>
+	<td>" . htmlSpecialChars($connection->getConfig('driver') . '/' . $connection->getConfig('name')) . "</td>
+</tr>
+";
+		}
+		$content .= '</table></div>';
+		return $content;
+	}
+
+
+
+	/**
+	 * Returns panel ID.
+	 * @return string
+	 */
+	public function getId()
+	{
+		return get_class($this);
 	}
 
 }

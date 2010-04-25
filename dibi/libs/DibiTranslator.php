@@ -218,7 +218,7 @@ final class DibiTranslator extends DibiObject
 
 						} else {
 							$v = $this->formatValue($v, $pair[1]);
-							$vx[] = $k . ($pair[1] === 'l' ? 'IN ' : ($v === 'NULL' ? 'IS ' : '= ')) . $v;
+							$vx[] = $k . ($pair[1] === 'l' || $pair[1] === 'in' ? 'IN ' : ($v === 'NULL' ? 'IS ' : '= ')) . $v;
 						}
 
 					} else {
@@ -230,9 +230,6 @@ final class DibiTranslator extends DibiObject
 			case 'n':  // key, key, ... identifier names
 				foreach ($value as $k => $v) {
 					if (is_string($k)) {
-						/**
-						 * @fixed by Jan Prachaø
-						 */
 						$pair = explode('%', $k, 2); // split into identifier & modifier
 						$vx[] = $this->formatValue($pair[0], isset($pair[1]) ? $pair[1] : 'n') . (empty($v) ? '' : ' AS ' . $v);
 					} else {
@@ -252,12 +249,13 @@ final class DibiTranslator extends DibiObject
 				return implode(', ', $vx);
 
 
+			case 'in':// replaces scalar %in modifier!
 			case 'l': // (val, val, ...)
 				foreach ($value as $k => $v) {
 					$pair = explode('%', $k, 2); // split into identifier & modifier
 					$vx[] = $this->formatValue($v, isset($pair[1]) ? $pair[1] : (is_array($v) ? 'ex' : FALSE));
 				}
-				return '(' . ($vx ? implode(', ', $vx) : 'NULL') . ')';
+				return '(' . (($vx || $modifier === 'l') ? implode(', ', $vx) : 'NULL') . ')';
 
 
 			case 'v': // (key, key, ...) VALUES (val, val, ...)
@@ -291,13 +289,15 @@ final class DibiTranslator extends DibiObject
 					}
 				}
 				foreach ($vx as $k => $v) {
-					$vx[$k] = '(' . ($v ? implode(', ', $v) : 'NULL') . ')';
+					$vx[$k] = '(' . implode(', ', $v) . ')';
 				}
 				return '(' . implode(', ', $kx) . ') VALUES ' . implode(', ', $vx);
 
 			case 'by': // key ASC, key DESC
 				foreach ($value as $k => $v) {
-					if (is_string($k)) {
+					if (is_array($v)) {
+						$vx[] = $this->formatValue($v, 'ex');
+					} elseif (is_string($k)) {
 						$v = (is_string($v) && strncasecmp($v, 'd', 1)) || $v > 0 ? 'ASC' : 'DESC';
 						$vx[] = $this->delimite($k) . ' ' . $v;
 					} else {
@@ -315,7 +315,7 @@ final class DibiTranslator extends DibiObject
 				foreach ($value as $v) {
 					$vx[] = $this->formatValue($v, $modifier);
 				}
-				return $vx ? implode(', ', $vx) : 'NULL';
+				return implode(', ', $vx);
 			}
 		}
 
@@ -333,10 +333,12 @@ final class DibiTranslator extends DibiObject
 			case 'b':  // boolean
 				return $value === NULL ? 'NULL' : $this->driver->escape($value, $modifier);
 
-			case 'sn': // string or NULL
+			case 'sN': // string or NULL
+			case 'sn':
 				return $value == '' ? 'NULL' : $this->driver->escape($value, dibi::TEXT); // notice two equal signs
 
-			case 'in': // signed int or NULL
+			case 'iN': // signed int or NULL
+			case 'in': // deprecated
 				if ($value == '') $value = NULL;
 				// intentionally break omitted
 

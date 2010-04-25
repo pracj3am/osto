@@ -7,7 +7,7 @@
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @license    http://dibiphp.com/license  dibi license
  * @link       http://dibiphp.com
- * @package    dibi
+ * @package    dibi\drivers
  */
 
 
@@ -30,7 +30,7 @@
  *   - 'resource' - connection resource (optional)
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
- * @package    dibi
+ * @package    dibi\drivers
  */
 class DibiMySqlDriver extends DibiObject implements IDibiDriver
 {
@@ -112,10 +112,7 @@ class DibiMySqlDriver extends DibiObject implements IDibiDriver
 				$ok = @mysql_set_charset($config['charset'], $this->connection); // intentionally @
 			}
 			if (!$ok) {
-				$ok = @mysql_query("SET NAMES '$config[charset]'", $this->connection); // intentionally @
-				if (!$ok) {
-					throw new DibiDriverException(mysql_error($this->connection), mysql_errno($this->connection));
-				}
+				$this->query("SET NAMES '$config[charset]'");
 			}
 		}
 
@@ -126,10 +123,10 @@ class DibiMySqlDriver extends DibiObject implements IDibiDriver
 		}
 
 		if (isset($config['sqlmode'])) {
-			if (!@mysql_query("SET sql_mode='$config[sqlmode]'", $this->connection)) { // intentionally @
-				throw new DibiDriverException(mysql_error($this->connection), mysql_errno($this->connection));
-			}
+			$this->query("SET sql_mode='$config[sqlmode]'");
 		}
+
+		$this->query("SET time_zone='" . date('P') . "'");
 
 		$this->buffered = empty($config['unbuffered']);
 	}
@@ -253,7 +250,7 @@ class DibiMySqlDriver extends DibiObject implements IDibiDriver
 	 */
 	public function inTransaction()
 	{
-		return (bool) mysql_fetch_field(mysql_query('SELECT @@autocommit', $this->connection));
+		return (bool) mysql_result(mysql_query('SELECT @@autocommit', $this->connection), 0);
 	}
 
 
@@ -479,6 +476,7 @@ class DibiMySqlDriver extends DibiObject implements IDibiDriver
 				'table' => $table,
 				'nativetype' => strtoupper($type[0]),
 				'size' => isset($type[1]) ? (int) $type[1] : NULL,
+				'unsigned' => (bool) strstr('unsigned', $row['Type']),
 				'nullable' => $row['Null'] === 'YES',
 				'default' => $row['Default'],
 				'autoincrement' => $row['Extra'] === 'auto_increment',

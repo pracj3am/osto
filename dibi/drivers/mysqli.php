@@ -7,7 +7,7 @@
  * @copyright  Copyright (c) 2005, 2010 David Grudl
  * @license    http://dibiphp.com/license  dibi license
  * @link       http://dibiphp.com
- * @package    dibi
+ * @package    dibi\drivers
  */
 
 
@@ -30,7 +30,7 @@
  *   - 'resource' - connection resource (optional)
  *
  * @copyright  Copyright (c) 2005, 2010 David Grudl
- * @package    dibi
+ * @package    dibi\drivers
  */
 class DibiMySqliDriver extends DibiObject implements IDibiDriver
 {
@@ -106,18 +106,15 @@ class DibiMySqliDriver extends DibiObject implements IDibiDriver
 				$ok = @mysqli_set_charset($this->connection, $config['charset']); // intentionally @
 			}
 			if (!$ok) {
-				$ok = @mysqli_query($this->connection, "SET NAMES '$config[charset]'"); // intentionally @
-				if (!$ok) {
-					throw new DibiDriverException(mysqli_error($this->connection), mysqli_errno($this->connection));
-				}
+				$this->query("SET NAMES '$config[charset]'");
 			}
 		}
 
 		if (isset($config['sqlmode'])) {
-			if (!@mysqli_query($this->connection, "SET sql_mode='$config[sqlmode]'")) { // intentionally @
-				throw new DibiDriverException(mysqli_error($this->connection), mysqli_errno($this->connection));
-			}
+			$this->query("SET sql_mode='$config[sqlmode]'");
 		}
+
+		$this->query("SET time_zone='" . date('P') . "'");
 
 		$this->buffered = empty($config['unbuffered']);
 	}
@@ -237,7 +234,8 @@ class DibiMySqliDriver extends DibiObject implements IDibiDriver
 	 */
 	public function inTransaction()
 	{
-		return (bool) mysqli_fetch_field_direct(mysqli_query($this->connection, 'SELECT @@autocommit'), 0);
+		$row = mysqli_fetch_row(mysqli_query($this->connection, 'SELECT @@autocommit'));
+		return (bool) $row[0];
 	}
 
 
@@ -482,6 +480,7 @@ class DibiMySqliDriver extends DibiObject implements IDibiDriver
 				'table' => $table,
 				'nativetype' => strtoupper($type[0]),
 				'size' => isset($type[1]) ? (int) $type[1] : NULL,
+				'unsigned' => (bool) strstr('unsigned', $row['Type']),
 				'nullable' => $row['Null'] === 'YES',
 				'default' => $row['Default'],
 				'autoincrement' => $row['Extra'] === 'auto_increment',
