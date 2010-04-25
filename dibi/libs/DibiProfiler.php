@@ -45,7 +45,7 @@ class DibiProfiler extends DibiObject implements IDibiProfiler, Nette\IDebugPane
 
 	public function __construct()
 	{
-		if (class_exists(Nette\'Debug', FALSE) && is_callable(Nette\'Debug::addPanel')) {
+		if (class_exists('Nette\Debug', FALSE) && is_callable('Nette\Debug::addPanel')) {
 			Nette\Debug::addPanel($this);
 		}
 
