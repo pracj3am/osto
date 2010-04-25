@@ -21,7 +21,7 @@ Documentation
 ###1.2 Table class properties annotations
  
  * @column - name of column
- * @null - wheter the column can have NULL value
+ * @null - wheter the column can has the NULL value
  
  
 License
