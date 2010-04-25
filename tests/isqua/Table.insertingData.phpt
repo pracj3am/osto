@@ -34,7 +34,7 @@ dibi::query('
 	CREATE TEMPORARY TABLE `test`.`lkjh` (
 	`l_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 	`p_id` INT NOT NULL ,
-	`l_content` TEXT,
+	`l_content` VARCHAR(2048) DEFAULT "",
 	KEY (p_id) /*,
 	FOREIGN KEY (p_id) REFERENCES `poiu` (`p_id`) ON DELETE CASCADE ON UPDATE CASCADE*/
 	) ENGINE = InnoDB;
@@ -48,23 +48,22 @@ class Poiu extends Table {
 	private $a;
 	private $p_koo;
 	private $koo;
-	/** @column zzz */
+	/** @column zzz @null */
 	private $zzz;
 
 	static $PARENTS = array();
 	static $CHILDREN = array('l'=>'Lkjh');
-	static $NULL_COLUMNS = array('zzz');
 }
 
 class Lkjh extends Table {
 
 	/** @column p_id */
 	private $p_id;
+	/** @null */
 	private $content;
 
 	static $PARENTS = array('p'=> 'Poiu');
 	static $CHILDREN = array();
-	static $NULL_COLUMNS = array();
 }
 
 
@@ -86,7 +85,6 @@ $p->zzz = '2009-01-01 12:00:01';
 $l1 = new Lkjh;
 $l1->content = 'bla1 bla1';
 $l2 = new Lkjh;
-$l2->content = 'bla2 bla2';
 
 $p->l[] = $l1;
 $p->l[] = $l2;
@@ -139,7 +137,7 @@ array(3) {
 array(3) {
 	"id" => int(2)
 	"p_id" => string(1) "2"
-	"content" => string(9) "bla2 bla2"
+	"content" => NULL
 }
 
 array(6) {
@@ -157,7 +155,7 @@ array(6) {
 		2 => array(3) {
 			"id" => int(2)
 			"p_id" => string(1) "2"
-			"content" => string(9) "bla2 bla2"
+			"content" => NULL
 		}
 	}
 }

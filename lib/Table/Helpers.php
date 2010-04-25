@@ -156,6 +156,13 @@ class Helpers
 		return in_array($name, self::_getColumns($class), TRUE);
 	}
 	
+	private static function isNullColumn($class, $name) {
+		if (($propName = array_search($name, self::_getColumns($class), TRUE)) === FALSE) 
+			$propName = $name;
+		$isNull = self::getPropertyAnnotation($class, $name, 'null');
+		return $isNull === TRUE;
+	}
+	
 	private static function isSelfReferencing($class) {
 		return self::_getColumnName($class, 'parent_id') && in_array($class, $class::$CHILDREN);
 	}

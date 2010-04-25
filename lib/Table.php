@@ -21,7 +21,6 @@ abstract class Table implements \ArrayAccess
 	static $PARENTS = array();
 	static $CHILDREN = array();
 	static $FIELDS = array();
-	static $NULL_COLUMNS = array();
 	
 	private $_id;
 	private $_values = array();
@@ -142,7 +141,7 @@ abstract class Table implements \ArrayAccess
 			// ukládáme jen hodnoty, které se změnily
 			elseif ($this->id && $this->_modified[static::getColumnName($key)] !== self::VALUE_MODIFIED)
 				$values[$key] = '`'.static::getColumnName($key).'`';
-			elseif ($value === NULL && !in_array($key, static::$NULL_COLUMNS)) 
+			elseif ($value === NULL && !static::isNullColumn($key)) 
 				unset($values[$key]);
 		}
 		return $values;
