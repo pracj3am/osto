@@ -377,7 +377,7 @@ abstract class Table implements \ArrayAccess
 		if (
 			$name == self::ID ||
 			method_exists($this, 'get'.ucfirst(Helpers::toCamelCase($name)) ) ||
-			self::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
+			static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
 			array_key_exists($name, $this->_children) ||
 			(array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
 			array_key_exists($name, $this->_aux)
