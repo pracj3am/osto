@@ -29,9 +29,16 @@ class Test extends Table {
 	private $b;
 	private $t_b;
 
-	static $PARENTS = array();
-	static $CHILDREN = array();
-	static $NULL_COLUMNS = array();
+
+	/** @belongs_to B */
+	private $bb;
+
+	/** @has_many V */
+	private $vv;
+}
+
+class B extends Table {
+	
 }
 
 
@@ -45,10 +52,11 @@ __halt_compiler();
 ------EXPECT------
 Table Test columns:
 
-array(5) {
+array(6) {
 	"id" => string(4) "t_id"
 	"main" => string(6) "a_main"
 	"a_alt" => string(5) "a_alt"
 	"b" => string(3) "t_b"
 	"t_b" => string(5) "t_t_b"
+	"b_id" => string(4) "b_id"
 } 

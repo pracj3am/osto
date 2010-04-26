@@ -50,20 +50,19 @@ class Poiu extends Table {
 	private $koo;
 	/** @column zzz @null */
 	private $zzz;
+	
+	/** @has_many Lkjh */
+	private $L;
 
-	static $PARENTS = array();
-	static $CHILDREN = array('l'=>'Lkjh');
 }
 
 class Lkjh extends Table {
 
-	/** @column p_id */
-	private $p_id;
 	/** @null */
 	private $content;
-
-	static $PARENTS = array('p'=> 'Poiu');
-	static $CHILDREN = array();
+	
+	/** @belongs_to Poiu */
+	private $p;
 }
 
 
@@ -86,23 +85,27 @@ $l1 = new Lkjh;
 $l1->content = 'bla1 bla1';
 $l2 = new Lkjh;
 
-$p->l[] = $l1;
-$p->l[] = $l2;
+$p->L[] = $l1;
+$p->L[] = $l2;
 
 $p->save();
 
 unset($p);
 
+output('All P\'s:');
 foreach (Poiu::getAll() as $row)
 	dump($row->values);
 
 $p = Poiu::getOne(array('a'=>3));
 
-foreach ($p->l as $row)
+output('Children of P with a=3:');
+foreach ($p->L as $row)
 	dump($row->values);
 
+output('... and the P itself');
 dump($p->values);
 
+output('Parent of the first L:');
 $ls = Lkjh::getAll();
 
 $l = $ls->getFirst();
@@ -112,6 +115,8 @@ dump($l->values);
 __halt_compiler();
 
 ------EXPECT------
+All P's:
+
 array(5) {
 	"id" => int(1)
 	"a" => string(1) "1"
@@ -128,17 +133,21 @@ array(5) {
 	"zzz" => string(19) "2009-01-01 12:00:01"
 }
 
+Children of P with a=3:
+
 array(3) {
 	"id" => int(1)
-	"p_id" => string(1) "2"
 	"content" => string(9) "bla1 bla1"
+	"p_id" => string(1) "2"
 }
 
 array(3) {
 	"id" => int(2)
-	"p_id" => string(1) "2"
 	"content" => NULL
+	"p_id" => string(1) "2"
 }
+
+... and the P itself
 
 array(6) {
 	"id" => int(2)
@@ -146,24 +155,26 @@ array(6) {
 	"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 	"koo" => string(3) "wer"
 	"zzz" => string(19) "2009-01-01 12:00:01"
-	"l" => array(2) {
+	"L" => array(2) {
 		1 => array(3) {
 			"id" => int(1)
-			"p_id" => string(1) "2"
 			"content" => string(9) "bla1 bla1"
+			"p_id" => string(1) "2"
 		}
 		2 => array(3) {
 			"id" => int(2)
-			"p_id" => string(1) "2"
 			"content" => NULL
+			"p_id" => string(1) "2"
 		}
 	}
 }
 
+Parent of the first L:
+
 array(4) {
 	"id" => int(1)
-	"p_id" => string(1) "2"
 	"content" => string(9) "bla1 bla1"
+	"p_id" => string(1) "2"
 	"p" => array(5) {
 		"id" => int(2)
 		"a" => string(1) "3"

@@ -32,9 +32,6 @@ class Test extends Table {
 	private $a_alt;
 	private $b;
 
-	static $PARENTS = array();
-	static $CHILDREN = array();
-	static $NULL_COLUMNS = array();
 }
 
 

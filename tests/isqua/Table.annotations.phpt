@@ -33,8 +33,6 @@ class Test extends Table {
 	/** @column wolf */	
 	private $sheep;
 
-	static $PARENTS = array();
-	static $CHILDREN = array();
 }
 
 

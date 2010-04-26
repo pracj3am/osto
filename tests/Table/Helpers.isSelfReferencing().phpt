@@ -18,32 +18,35 @@ use isqua\Table\Helpers;
 require __DIR__ . '/../NetteTest/initialize.php';
 
 
-
+/** @prefix t */
 class Test extends Table {
-	static $PREFIX = 't';
 
-	private $t_one;
-	private $t_two;
+	private $one;
+	private $two;
+	/** @column parent_id */
 	private $parent_id;
 
-	static $PARENTS = array();
-	static $CHILDREN = array('children'=>'Test');
+	/** @has_many Test */
+	private $children;
 }
 
+/** @prefix t2 */
 class Test2 extends Table {
-	static $PREFIX = 't2';
 
 	private $parent_id;
 
-	static $PARENTS = array();
-	static $CHILDREN = array('children'=>'Test');
+	/** @has_many Test */
+	private $children;
 }
 
+/** @prefix t3 */
 class Test3 extends Table {
-	static $PREFIX = 't3';
 
-	static $PARENTS = array();
-	static $CHILDREN = array('children'=>'Test3');
+	/** @column rrrent_id */
+	private $parent_id;
+
+	/** @has_many Test3 */
+	private $children;
 }
 
 Assert::true( Test::isSelfReferencing() );

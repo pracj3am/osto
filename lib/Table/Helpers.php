@@ -61,6 +61,7 @@ class Helpers
 			$rp = $class;
 		else
 			$rp = new \ReflectionProperty($class, $prop);
+			
 		return AnnotationsParser::getAll($rp);
 	} 
 
@@ -77,8 +78,9 @@ class Helpers
 	private static function getColumnName($class, $name, $alias = FALSE) {
 		if ( ($pos = strpos($name, '.')) !== FALSE) {
 			$parentName = substr($name, 0, $pos);
-			if (isset($class::$PARENTS[$parentName])) {
-				$class = $class::$PARENTS[$parentName];
+			$parents = self::_getParents($class);
+			if (isset($parents[$parentName])) {
+				$class = $parents[$parentName];
 				$name = substr($name, $pos+1);
 				$r =  self::_getColumnName($class, $name,$parentName);
 			 	return $r === FALSE ? $r : ($alias ? $alias.Table::ALIAS_DELIM : '').$r;
@@ -120,6 +122,42 @@ class Helpers
 		return preg_replace_callback('/(?<=[^_])_([^_])/', function($matches){return strtoupper($matches[1]);}, $name);
 	}
 	
+	private static function getParents($class) {
+		$parents = array();
+		$rc = new \ReflectionClass($class);
+		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
+			if (($parentClass = self::getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
+				$parents[$rp->getName()] = str_replace('%namespace%', $rc->getNamespaceName(), $parentClass);
+			}
+		}
+
+		return $parents;
+	}
+
+	private static function getChildren($class) {
+		$children = array();
+		$rc = new \ReflectionClass($class);
+		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
+			if (($childClass = self::getPropertyAnnotation($rp, 'has_many')) !== NULL) {
+				$children[$rp->getName()] = str_replace('%namespace%', $rc->getNamespaceName(), $childClass);
+			}
+		}
+
+		return $children;
+	}
+
+	private static function getSingles($class) {
+		$singles = array();
+		$rc = new \ReflectionClass($class);
+		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
+			if (($singleClass = self::getPropertyAnnotation($rp, 'has_one')) !== NULL) {
+				$singles[$rp->getName()] = str_replace('%namespace%', $rc->getNamespaceName(), $singleClass);
+			}
+		}
+
+		return $singles;
+	}
+
 	/**
 	 * Vrátí pole názvů sloupců tabulky
 	 */
@@ -129,26 +167,36 @@ class Helpers
 		$rc = new \ReflectionClass($class);
 		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
 			if (strpos($cn = $rp->getName(), '_') !== 0) {
-				$columns[$cn] = ($columnName = self::getPropertyAnnotation($rp, 'column')) && is_string($columnName) ?
-					$columnName :
-					self::_getPrefix($class).'_'.$rp->getName();
+				if (self::getPropertyAnnotation($rp, 'has_many') !== NULL) {
+					//skip
+				} elseif (self::getPropertyAnnotation($rp, 'has_one') !== NULL) {
+					//skip
+				} elseif (($parentClass = self::getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
+					$parentClass = str_replace('%namespace%', $rc->getNamespaceName(), $parentClass);
+					$columnName = self::_getPrefix($parentClass).'_'.Table::ID;
+					$columns[$columnName] = $columnName;
+				} else {
+					$columns[$cn] = ($columnName = self::getPropertyAnnotation($rp, 'column')) && is_string($columnName) ?
+						$columnName :
+						self::_getPrefix($class).'_'.$rp->getName();
+				}
 			}
 		}
 
 		return $columns;
 	}
 
-	/**
-	 * Vrátí pole názvů sloupců vlastní tabulky a tabulek rodičů 
-	 */
-	private static function getAllColumns($class) {
-		$columns = self::_getColumns($class);
-
-		foreach ($class::$PARENTS as $parentClass) {
-			$columns = array_merge($columns, self::_getColumns($parentClass));
+	private static function getForeignKeys($class) {
+		$fks = array();
+		$rc = new \ReflectionClass($class);
+		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
+			if (($parentClass = self::getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
+				$parentClass = str_replace('%namespace%', $rc->getNamespaceName(), $parentClass);
+				$fk = self::_getPrefix($parentClass).'_'.Table::ID;
+				$fks[$fk] = $parentClass; 
+			}
 		}
-		
-		return array_unique($columns);
+		return $fks;
 	}
 	
 	
@@ -159,12 +207,20 @@ class Helpers
 	private static function isNullColumn($class, $name) {
 		if (($propName = array_search($name, self::_getColumns($class), TRUE)) === FALSE) 
 			$propName = $name;
-		$isNull = self::getPropertyAnnotation($class, $name, 'null');
-		return $isNull === TRUE;
+		if (property_exists($class, $propName)) {
+			return self::getPropertyAnnotation($class, $propName, 'null') === TRUE;
+	 	} 
+		 
+ 		$fks = self::_getForeignKeys($class);
+	 	if (isset($fks[$propName]) && ($propName = array_search($fks[$propName], self::_getParents($class))) !== FALSE) {
+			return self::getPropertyAnnotation($class, $propName, 'null') === TRUE;
+		}
+			
+		return FALSE;
 	}
 	
 	private static function isSelfReferencing($class) {
-		return self::_getColumnName($class, 'parent_id') && in_array($class, $class::$CHILDREN);
+		return self::_getColumnName($class, 'parent_id') && in_array($class, self::_getChildren($class));
 	}
 	
 	

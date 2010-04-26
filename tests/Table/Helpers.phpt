@@ -28,9 +28,10 @@ class TestA extends Table {
 	private $two;
 	/** @column x_y */
 	private $x_y;
+	
+	/** @has_many subTest */
+	private $sub;
 
-	static $PARENTS = array();
-	static $CHILDREN = array('sub'=>'subTest');
 }
 
 /** @prefix st */
@@ -40,8 +41,8 @@ class subTest extends Table {
 	/** @column x_y */
 	private $x_y;
 
-	static $PARENTS = array('test'=>'TestA');
-	static $CHILDREN = array();
+	/** @belongs_to TestA */
+	private $test;	
 }
 
 Assert::same(TestA::getAnnotation('table'), 'model_test');
@@ -75,10 +76,6 @@ dump(TestA::getColumns());
 
 dump(subTest::getColumns());
 
-dump(subTest::getAllColumns());
-
-
-
 __halt_compiler();
 
 ------EXPECT------
@@ -102,16 +99,10 @@ array(4) {
 	"x_y" => string(3) "x_y"
 }
 
-array(4) {
+array(5) {
 	"id" => string(5) "st_id"
 	"one" => string(6) "st_one"
 	"two" => string(6) "st_two"
 	"x_y" => string(3) "x_y"
-}
-
-array(4) {
-	"id" => string(4) "t_id"
-	"one" => string(5) "t_one"
-	"two" => string(5) "t_two"
-	"x_y" => string(3) "x_y"
+	"t_id" => string(4) "t_id"
 }

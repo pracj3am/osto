@@ -22,6 +22,9 @@ Documentation
  
  * @column - name of column
  * @null - wheter the column can has the NULL value
+ * @belongs_to - references another table
+ * @has_many - is referenced by another table (relation one-to-many)
+ * @has_one - is referenced by another table (relation one-to-one)
  
  
 License
