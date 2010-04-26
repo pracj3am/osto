@@ -19,7 +19,7 @@ require __DIR__ . '/../../dibi/dibi.php';
 
 
 
-NetteTestHelpers::startup();
+\NetteTestHelpers::startup();
 
 
 
@@ -38,7 +38,7 @@ function dump($var, $message = NULL)
 		echo $message . (preg_match('#[.:?]$#', $message) ? ' ' : ': ');
 	}
 
-	NetteTestHelpers::dump($var, 0);
+	\NetteTestHelpers::dump($var, 0);
 	echo "\n";
 	return $var;
 }
