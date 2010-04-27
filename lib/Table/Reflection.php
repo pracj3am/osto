@@ -5,6 +5,7 @@ namespace isqua\Table;
 
 
 use isqua\Table;
+use isqua\Table\Helpers;
 use isqua\Nette\AnnotationsParser;
 
 
@@ -100,7 +101,7 @@ abstract class Reflection
 		if (($tn = self::_getAnnotation($class, 'table')) && is_string($tn))
 			return $tn;
 		else
-			return self::fromCamelCase( strrpos($class,'\\') !== FALSE ? substr($class, strrpos($class,'\\')+1) : $class );
+			return Helpers::fromCamelCase( strrpos($class,'\\') !== FALSE ? substr($class, strrpos($class,'\\')+1) : $class );
 	}
 	
 	private static function getPrefix($class) {
@@ -108,16 +109,6 @@ abstract class Reflection
 			return $prefix;
 		else
 			return strtolower(preg_replace('/[^A-Z0-9]*/', '', $class));
-	}
-	
-	// helper
-	public static function fromCamelCase($name) {
-		return strtolower(preg_replace('/(?<=[^_])([A-Z])/', '_\1', $name));
-	}
-	
-	// helper
-	public static function toCamelCase($name) {
-		return preg_replace_callback('/(?<=[^_])_([^_])/', function($matches){return strtoupper($matches[1]);}, $name);
 	}
 	
 	private static function getParents($class) {
