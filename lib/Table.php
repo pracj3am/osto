@@ -465,7 +465,7 @@ abstract class Table implements \ArrayAccess
 	public static function getFromSql($withParents) {
 		$args = func_get_args();
 		if (is_bool($withParents)) {
-			array_shift($args);
+			unset($args[0]);
 		} else {
 			$withParents = FALSE;
 		}

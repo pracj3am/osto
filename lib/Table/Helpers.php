@@ -21,9 +21,7 @@ class Helpers
 		$class = $arguments[0];
 		//Debug::dump(array($name,$arguments)); die();
 		if (method_exists(__CLASS__, $name) || method_exists(__CLASS__, $name = ltrim($name, '_'))) { //caching results of static methods
-			$cachePath = array(md5(serialize($arguments)));
-			array_unshift($cachePath, $class);
-			array_unshift($cachePath, $name);
+			$cachePath = array($name, $class, md5(serialize($arguments)));
 			$cache =& self::getCache($cachePath);
 			if ($cache === array()) {
 				$cache = call_user_func_array(array(__CLASS__, $name), $arguments);
