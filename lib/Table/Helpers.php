@@ -15,4 +15,12 @@ abstract class Helpers
 		return preg_replace_callback('/(?<=[^_])_([^_])/', function($matches){return strtoupper($matches[1]);}, $name);
 	}
 	
+	public static function setter($name) {
+		return 'set'.ucfirst(self::toCamelCase($name));
+	}
+	
+	public static function getter($name) {
+		return 'get'.ucfirst(self::toCamelCase($name));
+	}
+	
 } 

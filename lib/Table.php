@@ -332,7 +332,7 @@ abstract class Table implements \ArrayAccess
 			return $this->_id;
 		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
 			return $this->_values[self::getColumnName($_name)];
-		} elseif (method_exists($this, ($m_name = 'get'.ucfirst(Helpers::toCamelCase($name))) )) {//get{Name}
+		} elseif (method_exists($this, ($m_name = Helpers::getter($name)) )) {//get{Name}
 			return $this->{$m_name}();
 		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
 			return $this->_values[self::getColumnName($name)];
@@ -368,7 +368,7 @@ abstract class Table implements \ArrayAccess
 			return $this->_aux[$name];
 		} elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
 			return new \DateTime($this->{$matches[1]});
-		} elseif (static::isCallable( $method = 'get'.ucfirst(Helpers::toCamelCase($name)) )) {//static get{Name}
+		} elseif (static::isCallable( $method = Helpers::getter($name) )) {//static get{Name}
 			//Debug::dump($method);
 			return static::$method();
 		/*} else {
@@ -402,7 +402,7 @@ abstract class Table implements \ArrayAccess
 				$this->_modified[$cn] = self::VALUE_MODIFIED;
 			
 			$this->_values[$cn] = $value;
-		} elseif (method_exists($this, ($m_name = 'set'.ucfirst(Helpers::toCamelCase($name))) )) {//get{Name}
+		} elseif (method_exists($this, ($m_name = Helpers::setter($name)) )) {//set{Name}
 			return $this->{$m_name}($value);
 		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
 			$cn = self::getColumnName($name);
@@ -420,7 +420,7 @@ abstract class Table implements \ArrayAccess
 	public function __isset($name) {
 		if (
 			$name == self::ID ||
-			method_exists($this, 'get'.ucfirst(Helpers::toCamelCase($name)) ) ||
+			method_exists($this, Helpers::getter($name) ) ||
 			static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
 			array_key_exists($name, $this->_children) ||
 			(array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
