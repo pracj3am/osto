@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table\Helpers::isSelfReferencing()
+ * Test: isqua\Table\Reflection::isSelfReferencing()
  *
  * @author     Jan Prachař
  * @category   isqua

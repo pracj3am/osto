@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table\Helpers::isNullColumn
+ * Test: isqua\Table\Reflection::isNullColumn
  *
  * @author     Jan Prachař
  * @category   isqua

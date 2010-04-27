@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table\Helpers::getColumnName()
+ * Test: isqua\Table\Reflection::getColumnName()
  *
  * @author     Jan Prachař
  * @category   isqua

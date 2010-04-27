@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table\Helpers::getPrefix()
+ * Test: isqua\Table\Reflection::getPrefix()
  *
  * @author     Jan Prachař
  * @category   isqua

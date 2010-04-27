@@ -2,7 +2,7 @@
 namespace Test;
 
 /**
- * Test: isqua\Table\Helpers relations
+ * Test: isqua\Table\Reflection relations
  *
  * @author     Jan Prachař
  * @category   isqua

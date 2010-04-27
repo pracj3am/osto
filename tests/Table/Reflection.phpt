@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table\Helpers global.
+ * Test: isqua\Table\Reflection global.
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -10,7 +10,6 @@
  */
 
 use isqua\Table;
-use isqua\Table\Helpers;
 
 
 
