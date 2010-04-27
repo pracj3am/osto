@@ -31,7 +31,26 @@ class Test extends Table {
 	private $alt;
 	private $a_alt;
 	private $b;
+	
+	/** @has_one A */
+	private $A;
+	/** @has_many B */
+	private $B;
+	/** @belongs_to C */
+	private $C;
 
+}
+
+class A extends Table {
+	private $a;
+}
+class B extends Table {
+	private $b;
+}
+class C extends Table {
+	private $a;
+	private $b;
+	private $c;
 }
 
 
@@ -41,6 +60,11 @@ $t->alt = 2;
 $t->a_alt = 3;
 $t->a_a_alt = 4;
 $t->b = 5;
+$t->A->a = 6;
+$t->B[] = new B;
+$t->B->getFirst()->b = 7;
+$t->C->a = 8;
+$t->C->b = 9;
 
 output('Table Test values:');
 dump($t->values);
@@ -50,9 +74,23 @@ __halt_compiler();
 ------EXPECT------
 Table Test values:
 
-array(4) {
+array(8) {
 	"main" => int(1)
 	"alt" => int(2)
 	"a_alt" => int(4)
 	"b" => int(5)
+	"c_id" => NULL
+	"C" => array(3) {
+		"a" => int(8)
+		"b" => int(9)
+		"c" => NULL
+	}
+	"B" => array(1) {
+		0 => array(1) {
+			"b" => int(7)
+		}
+	}
+	"A" => array(1) {
+		"a" => int(6)
+	}
 }

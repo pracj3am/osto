@@ -150,8 +150,8 @@ abstract class Table implements \ArrayAccess
 	
 	final public function save() {
 		//uložíme rodiče
-		foreach ($this->_parents as $parentName=>$parentEntity) {
-			if ($parentEntity instanceof Table) {
+		foreach ($this->_parents as $parentEntity) {
+			if ($parentEntity instanceof self) {
 				$parentEntity->save();
 				$this->{$parentEntity::getColumnName(self::ID)} = $parentEntity->id;
 			}
@@ -184,8 +184,16 @@ abstract class Table implements \ArrayAccess
 			}
 		}
 		
-		// a uložíme děti
-		foreach ($this->_children as $childName=>$children) {
+		//save singles
+		foreach ($this->_singles as $single) {
+			if ($single instanceof self) {
+				$single->{static::getColumnName(self::ID)} = $this->id;
+				$single->save();
+			}
+		}
+
+		//save children
+		foreach ($this->_children as $children) {
 			foreach ($children as $i=>$childEntity) {
 				$childEntity->{static::getColumnName(self::ID)} = $this->id;
 				$childEntity->save();
@@ -221,6 +229,11 @@ abstract class Table implements \ArrayAccess
 				foreach ($copy->_children[$childName] as $i=>$childEntity) {
 					$copy->_children[$childName][$i] = $this->_children[$childName][$i]->copy();
 				}
+		if (is_array($copy->_singles))
+			foreach ($copy->_singles as $singleName=>$singleEntity) {
+				if ($singleEntity !== NULL)
+					$copy->_singles[$singleName] = $this->_singles[$singleName]->copy();
+			}
 				
 		return $copy;
 		
@@ -238,12 +251,16 @@ abstract class Table implements \ArrayAccess
 		}
 
 		foreach ($this->_parents as $parentName=>$parentEntity) {
-			if ($parentEntity instanceof Table) 
+			if ($parentEntity instanceof self) 
 				$values[$parentName] = $parentEntity->values;
 		}
 		foreach ($this->_children as $childName=>$children) {
 			foreach ($children as $i=>$childEntity)
 				$values[$childName][$i] = $childEntity->values;
+		}
+		foreach ($this->_singles as $singleName=>$single) {
+			if ($single instanceof self) 
+				$values[$singleName] = $single->values;
 		}
 		return $values;
 	}
@@ -287,6 +304,15 @@ abstract class Table implements \ArrayAccess
 						$this->_children[$childName] = $childEntities;
 				}
 			}
+			foreach ($this->_singles as $singleName=>$singleEntity) {
+				if (is_array($value) && isset($value[$singleName]) || isset($value->$singleName)) { 
+					if (!isset($this->_singles[$singleName])) {
+						$singleClass = $this->singles[$singleName];
+						$this->_singles[$singleName] = new $singleClass();	
+					}
+					$this->_singles[$singleName]->values = is_array($value) ? $value[$singleName] : $value->$singleName;
+				}
+			} 
 		}
 	}
 	
@@ -313,6 +339,10 @@ abstract class Table implements \ArrayAccess
 			if ( (!$this->_parents[$name] instanceof self /*|| !$this->_parents[$name]->_self_loaded*/) &&
 				 (!isset($this->_loaded[$name]) || !$this->_loaded[$name]) ) //lazy loading
 				$this->{'load'.ucfirst($name)}();
+			if (!$this->_parents[$name] instanceof self) {
+				$parentClass = $this->parents[$name];
+				$this->_parents[$name] = new $parentClass;
+			}
 			return $this->_parents[$name];
 		} elseif ($_name && array_key_exists($_name, $this->_parents)) {
 			return $this->_parents[$_name];
@@ -322,6 +352,17 @@ abstract class Table implements \ArrayAccess
 			return $this->_children[$name];
 		} elseif ($_name && array_key_exists($_name, $this->_children)) {
 			return $this->_children[$_name];
+		} elseif (array_key_exists($name = trim($name, '0'), $this->_singles)) {
+			if ( (!$this->_singles[$name] instanceof self /*|| !$this->_parents[$name]->_self_loaded*/) &&
+				 (!isset($this->_loaded[$name]) || !$this->_loaded[$name]) ) //lazy loading
+				$this->{'load'.ucfirst($name)}();
+			if (!$this->_singles[$name] instanceof self) {
+				$singleClass = $this->singles[$name];
+				$this->_singles[$name] = new $singleClass;
+			}
+			return $this->_singles[$name];
+		} elseif ($_name && array_key_exists($_name, $this->_singles)) {
+			return $this->_singles[$_name];
 		} elseif (array_key_exists($name, $this->_aux)) {
 			return $this->_aux[$name];
 		} elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
@@ -341,6 +382,8 @@ abstract class Table implements \ArrayAccess
 
 		if (is_object($value) && in_array(get_class($value), $this->parents)) {
 			$this->_parents[trim($name, '0')] = $value;
+		} elseif (is_object($value) && in_array(get_class($value), $this->singles)) {
+			$this->_singles[trim($name, '0')] = $value;
 		} elseif (($value instanceof RowCollection) && array_key_exists($name = trim($name, '0'), $this->_children)) {
 			if ($value->isEmpty() || in_array($value->getClass(), static::getChildren()))
 				$this->_children[$name] = $value;
@@ -380,6 +423,7 @@ abstract class Table implements \ArrayAccess
 			static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
 			array_key_exists($name, $this->_children) ||
 			(array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
+			(array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL) ||
 			array_key_exists($name, $this->_aux)
 		) {
 			return true;
@@ -400,6 +444,11 @@ abstract class Table implements \ArrayAccess
 				foreach ($this->_children[$childName] as $i=>$childEntity) {
 					$this->_children[$childName][$i] = clone $this->_children[$childName][$i];
 				}
+			}
+		if (is_array($this->_singles))
+			foreach ($this->_singles as $singleName=>$singleEntity) {
+				if ($singleEntity !== NULL)
+					$this->_singles[$singleName] = clone $this->_singles[$singleName];
 			}
 	}
 	

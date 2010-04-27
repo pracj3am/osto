@@ -40,6 +40,14 @@ dibi::query('
 	) ENGINE = InnoDB;
 ');
 
+dibi::query('
+	CREATE TEMPORARY TABLE `test`.`mnbv` (
+	`m_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+	`p_id` INT NULL ,
+	`m_boo` VARCHAR(2048) NOT NULL DEFAULT "-",
+	KEY (p_id)
+	) ENGINE = InnoDB;
+');
 
 /**
  */
@@ -53,6 +61,8 @@ class Poiu extends Table {
 	
 	/** @has_many Lkjh */
 	private $L;
+	/** @has_one Mnbv */
+	private $M;
 
 }
 
@@ -65,12 +75,22 @@ class Lkjh extends Table {
 	private $p;
 }
 
+class Mnbv extends Table {
+
+	private $boo;
+	
+	/** @belongs_to Poiu */
+	private $p;
+}
 
 $p = new Poiu;
 
 $p->a = 1;
 $p->p_koo = 2;
 $p->koo = 'jut';
+
+$p->M = new Mnbv;
+
 $p->save();
 
 unset($p);
@@ -87,6 +107,9 @@ $l2 = new Lkjh;
 
 $p->L[] = $l1;
 $p->L[] = $l2;
+
+$p->M = new Mnbv;
+$p->M->boo = 'Howgh';
 
 $p->save();
 
@@ -112,10 +135,14 @@ $l = $ls->getFirst();
 $l->loadP();
 dump($l->values);
 
+output('All M\'s:');
+foreach (Mnbv::getAll() as $row)
+	dump($row->values);
+
 __halt_compiler();
 
 ------EXPECT------
-All P's:
+All P%c%s:
 
 array(5) {
 	"id" => int(1)
@@ -182,4 +209,18 @@ array(4) {
 		"koo" => string(3) "wer"
 		"zzz" => string(19) "2009-01-01 12:00:01"
 	}
+} 
+
+All M%c%s:
+
+array(3) {
+	"id" => int(1)
+	"boo" => string(1) "-"
+	"p_id" => string(1) "1"
+}
+
+array(3) {
+	"id" => int(2)
+	"boo" => string(5) "Howgh"
+	"p_id" => string(1) "2"
 } 
