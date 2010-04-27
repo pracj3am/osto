@@ -4,7 +4,7 @@ namespace isqua;
 
 
 use dibi;
-use isqua\Table\Helpers;
+use isqua\Table\Reflection;
 
 
 
@@ -331,7 +331,7 @@ abstract class Table implements \ArrayAccess
 			return $this->_id;
 		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
 			return $this->_values[self::getColumnName($_name)];
-		} elseif (method_exists($this, ($m_name = 'get'.ucfirst(Helpers::toCamelCase($name))) )) {//get{Name}
+		} elseif (method_exists($this, ($m_name = 'get'.ucfirst(Reflection::toCamelCase($name))) )) {//get{Name}
 			return $this->{$m_name}();
 		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
 			return $this->_values[self::getColumnName($name)];
@@ -367,7 +367,7 @@ abstract class Table implements \ArrayAccess
 			return $this->_aux[$name];
 		} elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
 			return new \DateTime($this->{$matches[1]});
-		} elseif (static::isCallable( $method = 'get'.ucfirst(Helpers::toCamelCase($name)) )) {//static get{Name}
+		} elseif (static::isCallable( $method = 'get'.ucfirst(Reflection::toCamelCase($name)) )) {//static get{Name}
 			//Debug::dump($method);
 			return static::$method();
 		/*} else {
@@ -401,7 +401,7 @@ abstract class Table implements \ArrayAccess
 				$this->_modified[$cn] = self::VALUE_MODIFIED;
 			
 			$this->_values[$cn] = $value;
-		} elseif (method_exists($this, ($m_name = 'set'.ucfirst(Helpers::toCamelCase($name))) )) {//get{Name}
+		} elseif (method_exists($this, ($m_name = 'set'.ucfirst(Reflection::toCamelCase($name))) )) {//get{Name}
 			return $this->{$m_name}($value);
 		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
 			$cn = self::getColumnName($name);
@@ -419,7 +419,7 @@ abstract class Table implements \ArrayAccess
 	public function __isset($name) {
 		if (
 			$name == self::ID ||
-			method_exists($this, 'get'.ucfirst(Helpers::toCamelCase($name)) ) ||
+			method_exists($this, 'get'.ucfirst(Reflection::toCamelCase($name)) ) ||
 			static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) || 
 			array_key_exists($name, $this->_children) ||
 			(array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
@@ -475,11 +475,11 @@ abstract class Table implements \ArrayAccess
 	
 	public static function __callStatic($name, $arguments) {
 		array_unshift($arguments, get_called_class());
-		return call_user_func_array(array(__CLASS__.'\Helpers', $name), $arguments);
+		return call_user_func_array(array(__CLASS__.'\Reflection', $name), $arguments);
 	}
 	
 	private static function isCallable($method) {
-		return method_exists(get_called_class(), $method) || method_exists(__CLASS__.'\Helpers', $method);
+		return method_exists(get_called_class(), $method) || method_exists(__CLASS__.'\Reflection', $method);
 	}
 	
 	public static function count($where = array()) {

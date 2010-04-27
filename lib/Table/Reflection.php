@@ -11,7 +11,7 @@ use isqua\Nette\AnnotationsParser;
 /**
  * @todo Implement Nette caching?
  */
-class Helpers 
+abstract class Reflection 
 {
 
 	private static $_cache;
