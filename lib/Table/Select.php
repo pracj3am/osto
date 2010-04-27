@@ -131,9 +131,6 @@ abstract class Select
 	}
 	
 	public static function getFromClause($class, $withParents = FALSE, $alias = self::ALIAS) {
-if (!is_string($class)) {
-	dump($class); throw new \Exception();die();
-}
 		$from = '`'.$class::getTableName().'` AS `'.$alias.'`';
 		if ($withParents)
 			foreach ($class::getParents() as $parentName=>$parentClass) {
