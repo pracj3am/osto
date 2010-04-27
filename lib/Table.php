@@ -3,17 +3,14 @@ namespace isqua;
 
 
 
-use dibi;
-use isqua\Table\Reflection;
 use isqua\Table\Helpers;
+use dibi;
 
 
 
 abstract class Table implements \ArrayAccess
 {
 	const ID = 'id';
-	const ALIAS = '$this';
-	const ALIAS_DELIM = '->';
 	
 	const VALUE_NOT_SET = 0;
 	const VALUE_NOT_MODIFIED = 1;
@@ -321,7 +318,9 @@ abstract class Table implements \ArrayAccess
 		$this->setValues($values, TRUE);
 	}
 	
-	
+	private static function replaceKeys(&$array, $alias = FALSE) {
+		return Table\Select::replaceKeys(get_called_class(), $array, $alias);
+	} 
 	
 	public function __get($name) {
 		if (strpos($name, '_') === 0) //name starts with undescore
@@ -476,173 +475,16 @@ abstract class Table implements \ArrayAccess
 	
 	public static function __callStatic($name, $arguments) {
 		array_unshift($arguments, get_called_class());
-		return call_user_func_array(array(__CLASS__.'\Reflection', $name), $arguments);
+		if (method_exists(__CLASS__.'\Reflection', $name))
+			return call_user_func_array(array(__CLASS__.'\Reflection', $name), $arguments);
+			
+		return call_user_func_array(array(__CLASS__.'\Select', $name), $arguments);
 	}
 	
 	private static function isCallable($method) {
 		return method_exists(get_called_class(), $method) || method_exists(__CLASS__.'\Reflection', $method);
 	}
 	
-	public static function count($where = array()) {
-		return (int)dibi::fetchSingle(
-			static::getSql(	array('COUNT(*)%ex'=>'count'), $where, array(), array(), TRUE ) //vždy s parents? co třeba podle where?
-		);
-	}
-	
-	public static function getOne_($where = array(), $sort = array(), $limit = array()) {
-		return static::getOne($where, $sort, $limit, TRUE);
-	}
-
-	public static function getOne($where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
-		$rows = static::getAll($where, $sort, $limit, $withParents);
-		return $rows->getFirst();
-	}
-	
-	public static function getAll_($where = array(), $sort = array(), $limit = array()) {
-		return static::getAll($where, $sort, $limit, TRUE);
-	}
-
-	public static function getAll($where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
-		return static::getFromSql(
-			$withParents,
-			static::getSql(
-				array('*'),
-				$where, $sort, $limit, $withParents
-			)
-		);
-	}
-	
-	public static function getFromSql($withParents) {
-		$args = func_get_args();
-		if (is_bool($withParents)) {
-			unset($args[0]);
-		} else {
-			$withParents = FALSE;
-		}
-		//dibi::test($args);
-		$cursor = dibi::fetchAll($args);
-		$rows = new RowCollection();
-		foreach ($cursor as $row) {
-			$model_class = get_called_class();
-			$entity = new $model_class($row->{static::getColumnName(self::ID)});
-			$entity->column_values = $row;
-			//$entity->loadChildren();
-			if ($withParents)
-				foreach (static::getParents() as $parentName=>$parentClass) {
-					$parentEntity = new $parentClass();
-					$parentEntity->column_values = $row;
-					/**
-					 * @todo FUJ - lépe!
-					 */
-					foreach ($parentClass::getParents() as $supParentName=>$supParentClass) {
-						$supParentEntity = new $supParentClass();
-						$supParentEntity->column_values = $row;
-						$parentEntity->{is_string($supParentName) ? $supParentName : $supParentClass::getVariableName()} = $supParentEntity; 
-					}
-					$entity->{is_string($parentName) ? $parentName : $parentClass::getVariableName()} = $parentEntity; 
-				}
-			
-			$rows[$row->{static::getColumnName(self::ID)}] = $entity;
-		}
-		return $rows;		
-	}
-	
-	public static function getColumn_($column = 'name', $where = array(), $sort = array(), $limit = array(), $concatNamesInTree = FALSE) {
-		return static::getColumn($column, $where, $sort, $limit, $concatNamesInTree, TRUE);
-	}
-	
-	public static function getColumn($column = 'name', $where = array(), $sort = array(), $limit = array(), $concatNamesInTree = FALSE, $withParents = FALSE) {
-		
-		$cursor = dibi::fetchAll(
-			static::getSql(
-				array(
-					static::getPrefix().'_'.self::ID=>'id',
-					static::getColumnName($column)=>'name'
-				),
-				$where, $sort, $limit, $withParents
-			)
-		);
-		$rows = array();
-		foreach ($cursor as $row) {
-			if (static::isSelfReferencing() && ($children = static::getColumn($column, array_merge( $where, array('parent_id'=>$row->id) ), $sort)) ) {
-				
-				$rows[$row->name] = 
-					array($row->id => $row->name) +  
-					($concatNamesInTree ? array_map(function($_)use ($row){return $row->name.' - '.$_;}, $children) : $children);
-			} else {
-				$rows[$row->id] = $row->name;
-			}
-		}
-		return $rows;
-	}
-	
-	/**
-	 * 
-	 * @param $columns
-	 * @param $where
-	 * @param $sort
-	 * @param $limit
-	 * @return SQL string
-	 */
-	protected static function getSql($columns = array('*'), $where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
-		//dibi::test(
-		return dibi::sql(
-			'SELECT %n', $columns,
-			' FROM '.static::getFromClause($withParents).
-			static::getWhereClause($where, $sort, $limit)
-		);
-		//return 'SELECT * FROM '.static::getFromClause() . ' LIMIT 1 ';
-	}
-	
-	protected static function getFromClause($withParents = FALSE, $alias = self::ALIAS) {
-
-		$from = '`'.static::getTableName().'` AS `'.$alias.'`';
-		if ($withParents)
-			foreach (static::getParents() as $parentName=>$parentClass) {
-				if ($parentClass != get_called_class())
-					$from .= ' LEFT JOIN (' . $parentClass::getFromClause($withParents, $alias.self::ALIAS_DELIM.$parentName) . ') '. 
-						'ON (`'.$alias.'.'.$parentClass::getPrefix().'_'.self::ID.'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::getPrefix().'_'.self::ID.'`)';
-			}
-		return $from;
-	}
-	
-	protected static function getWhereClause($where = array(), $sort = array(), $limit = array(), $alias = self::ALIAS) {
-		static::replaceKeys($where, $alias);
-		static::replaceKeys($sort, $alias);
-		
-		foreach ($where as $column=>$value) {
-			if (is_string($value) && strlen(trim($value, '%')) != strlen($value)) {
-				$where[] = array('`'.$column.'` LIKE %s', $value);
-				unset($where[$column]);
-			}
-		}
-		array_map(function($item){
-			$item = $item == 1 ? 'asc' : 'desc';
-		}, $sort);		
-		if (!is_array($limit)) $limit = array($limit);
-
-		//dibi::test(
-		return dibi::sql(
-			'%if', $where, 'WHERE %and', $where, '%end',
-			'%if', $sort, 'ORDER BY %by', $sort, '%end', 
-			'%if', $limit && is_array($limit) , ' LIMIT %i, %i', key($limit), current($limit), '%end'
-		);
-	}
-	
-	private static function replaceKeys(&$array, $alias = FALSE) {
-		$newArray = array();
-		foreach ($array as $key=>$item) { 
-			if ($column = static::getColumnName($key, $alias))
-				$newArray[$column] = $item;
-			elseif (is_int($key)) //numeric index
-				$newArray[$key] = $item;
-			else 
-				$newArray[$key] = $item; //zkusíme ho nechat na pokoj
-		} 
-		$array = $newArray;
-	}
-
-
 	final public function offsetSet($name, $value)
 	{
 		if (array_key_exists($name, $this->_values))

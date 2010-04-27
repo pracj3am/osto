@@ -82,7 +82,7 @@ abstract class Reflection
 				$class = $parents[$parentName];
 				$name = substr($name, $pos+1);
 				$r =  self::_getColumnName($class, $name,$parentName);
-			 	return $r === FALSE ? $r : ($alias ? $alias.Table::ALIAS_DELIM : '').$r;
+			 	return $r === FALSE ? $r : ($alias ? $alias.Table\Select::ALIAS_DELIM : '').$r;
 			}
 
 			return FALSE;
