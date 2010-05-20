@@ -15,7 +15,7 @@ require __DIR__ . '/NetteTestHelpers.php';
 
 require __DIR__ . '/Assert.php';
 
-require __DIR__ . '/../../dibi/dibi.php';
+require __DIR__ . '/../../dibi/dibi/dibi.php';
 
 
 
