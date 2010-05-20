@@ -1,0 +1,3 @@
+[submodule "dibi"]
+	path = dibi
+	url = git://github.com/pracj3am/dibi.git
