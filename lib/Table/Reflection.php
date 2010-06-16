@@ -5,8 +5,8 @@ namespace isqua\Table;
 
 
 use isqua\Entity;
-use isqua\Table\Helpers;
 use isqua\Nette\AnnotationsParser;
+
 
 
 /**
