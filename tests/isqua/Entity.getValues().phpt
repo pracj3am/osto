@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table::getValues()
+ * Test: isqua\Entity::getValues()
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -9,7 +9,7 @@
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 
 
 
@@ -21,7 +21,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
  * @table model_test
  * @prefix a
  */
-class Test extends Table {
+class Test extends Entity {
 
 	/**
 	 * @null
@@ -41,13 +41,13 @@ class Test extends Table {
 
 }
 
-class A extends Table {
+class A extends Entity {
 	private $a;
 }
-class B extends Table {
+class B extends Entity {
 	private $b;
 }
-class C extends Table {
+class C extends Entity {
 	private $a;
 	private $b;
 	private $c;

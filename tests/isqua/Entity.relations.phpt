@@ -2,7 +2,7 @@
 namespace Test;
 
 /**
- * Test: isqua\Table relations
+ * Test: isqua\Entity relations
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -10,7 +10,7 @@ namespace Test;
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 
 
 
@@ -18,7 +18,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 
 
-class A extends Table {
+class A extends Entity {
 	/** @belongs_to Test\B */
 	private $ab;
 	/** @has_many %namespace%\C */
@@ -27,14 +27,14 @@ class A extends Table {
 	private $ad;
 }
 
-class B extends Table {
+class B extends Entity {
 }
 
-class C extends Table {
+class C extends Entity {
 	
 }
 
-class D extends Table {
+class D extends Entity {
 	/** @belongs_to %namespace%\A */
 	private $x1;
 	/** @belongs_to %namespace%\B */

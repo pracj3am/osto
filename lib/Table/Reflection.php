@@ -4,7 +4,7 @@ namespace isqua\Table;
 
 
 
-use isqua\Table;
+use isqua\Entity;
 use isqua\Table\Helpers;
 use isqua\Nette\AnnotationsParser;
 
@@ -82,7 +82,7 @@ abstract class Reflection
 				$class = $parents[$parentName];
 				$name = substr($name, $pos+1);
 				$r =  self::_getColumnName($class, $name,$parentName);
-			 	return $r === FALSE ? $r : ($alias ? $alias.Table\Select::ALIAS_DELIM : '').$r;
+			 	return $r === FALSE ? $r : ($alias ? $alias.Select::ALIAS_DELIM : '').$r;
 			}
 
 			return FALSE;
@@ -151,7 +151,7 @@ abstract class Reflection
 	 * Vrátí pole názvů sloupců tabulky
 	 */
 	private static function getColumns($class) {
-		$columns = array(Table::ID=>self::_getPrefix($class).'_'.Table::ID);
+		$columns = array(Entity::ID=>self::_getPrefix($class).'_'.Entity::ID);
 		
 		$rc = new \ReflectionClass($class);
 		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
@@ -162,7 +162,7 @@ abstract class Reflection
 					//skip
 				} elseif (($parentClass = self::getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
 					$parentClass = str_replace('%namespace%', $rc->getNamespaceName(), $parentClass);
-					$columnName = self::_getPrefix($parentClass).'_'.Table::ID;
+					$columnName = self::_getPrefix($parentClass).'_'.Entity::ID;
 					$columns[$columnName] = $columnName;
 				} else {
 					$columns[$cn] = ($columnName = self::getPropertyAnnotation($rp, 'column')) && is_string($columnName) ?
@@ -181,7 +181,7 @@ abstract class Reflection
 		foreach ($rc->getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
 			if (($parentClass = self::getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
 				$parentClass = str_replace('%namespace%', $rc->getNamespaceName(), $parentClass);
-				$fk = self::_getPrefix($parentClass).'_'.Table::ID;
+				$fk = self::_getPrefix($parentClass).'_'.Entity::ID;
 				$fks[$fk] = $parentClass; 
 			}
 		}

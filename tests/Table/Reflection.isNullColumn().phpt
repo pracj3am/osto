@@ -9,7 +9,7 @@
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 
 
 
@@ -17,7 +17,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 
 
-class A extends Table {
+class A extends Entity {
 	/** @null */
 	private $n;
 	private $m;
@@ -28,11 +28,11 @@ class A extends Table {
 	private $ac;
 }
 
-class B extends Table {
+class B extends Entity {
 	
 }
 
-class C extends Table {
+class C extends Entity {
 	
 }
 

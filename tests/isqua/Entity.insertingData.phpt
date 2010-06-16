@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table inserting data.
+ * Test: isqua\Entity inserting data.
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -9,7 +9,7 @@
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 
 
 
@@ -51,7 +51,7 @@ dibi::query('
 
 /**
  */
-class Poiu extends Table {
+class Poiu extends Entity {
 
 	private $a;
 	private $p_koo;
@@ -66,7 +66,7 @@ class Poiu extends Table {
 
 }
 
-class Lkjh extends Table {
+class Lkjh extends Entity {
 
 	/** @null */
 	private $content;
@@ -75,7 +75,7 @@ class Lkjh extends Table {
 	private $p;
 }
 
-class Mnbv extends Table {
+class Mnbv extends Entity {
 
 	private $boo;
 	

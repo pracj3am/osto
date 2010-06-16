@@ -9,7 +9,7 @@
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 use isqua\Table\Helpers;
 
 
@@ -19,7 +19,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 
 /** @prefix t */
-class Test extends Table {
+class Test extends Entity {
 
 	private $one;
 	private $two;
@@ -31,7 +31,7 @@ class Test extends Table {
 }
 
 /** @prefix t2 */
-class Test2 extends Table {
+class Test2 extends Entity {
 
 	private $parent_id;
 
@@ -40,7 +40,7 @@ class Test2 extends Table {
 }
 
 /** @prefix t3 */
-class Test3 extends Table {
+class Test3 extends Entity {
 
 	/** @column parent_id */
 	private $xxxent_id;
@@ -50,7 +50,7 @@ class Test3 extends Table {
 }
 
 /** @prefix t4 */
-class Test4 extends Table {
+class Test4 extends Entity {
 
 	/** @column xxxent_id */
 	private $xxxent_id;

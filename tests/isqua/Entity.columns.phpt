@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table columns.
+ * Test: isqua\Entity columns.
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -9,7 +9,7 @@
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 
 
 
@@ -20,7 +20,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 /**
  * @table model_test
  */
-class Test extends Table {
+class Test extends Entity {
 
 	/** @column a_main */
 	private $main;
@@ -37,7 +37,7 @@ class Test extends Table {
 	private $vv;
 }
 
-class B extends Table {
+class B extends Entity {
 	
 }
 

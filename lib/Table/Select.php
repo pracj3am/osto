@@ -3,7 +3,7 @@
 namespace isqua\Table;
 
 
-use isqua\Table;
+use isqua\Entity;
 use isqua\RowCollection;
 use dibi;
 
@@ -59,7 +59,7 @@ abstract class Select
 		$cursor = dibi::fetchAll($args);
 		$rows = new RowCollection();
 		foreach ($cursor as $row) {
-			$entity = new $class($row->{$class::getColumnName(Table::ID)});
+			$entity = new $class($row->{$class::getColumnName(Entity::ID)});
 			$entity->column_values = $row;
 			//$entity->loadChildren();
 			if ($withParents)
@@ -77,7 +77,7 @@ abstract class Select
 					$entity->{$parentName} = $parentEntity; 
 				}
 			
-			$rows[$row->{$class::getColumnName(Table::ID)}] = $entity;
+			$rows[$row->{$class::getColumnName(Entity::ID)}] = $entity;
 		}
 		return $rows;		
 	}
@@ -92,7 +92,7 @@ abstract class Select
 			self::getSql(
 				$class,
 				array(
-					$class::getPrefix().'_'.Table::ID=>'id',
+					$class::getPrefix().'_'.Entity::ID=>'id',
 					$class::getColumnName($column)=>'name'
 				),
 				$where, $sort, $limit, $withParents
@@ -136,7 +136,7 @@ abstract class Select
 			foreach ($class::getParents() as $parentName=>$parentClass) {
 				if ($parentClass != $class)
 					$from .= ' LEFT JOIN (' . self::getFromClause($parentClass, $withParents, $alias.self::ALIAS_DELIM.$parentName) . ') '. 
-						'ON (`'.$alias.'.'.$parentClass::getPrefix().'_'.Table::ID.'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::getPrefix().'_'.Table::ID.'`)';
+						'ON (`'.$alias.'.'.$parentClass::getPrefix().'_'.Entity::ID.'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::getPrefix().'_'.Entity::ID.'`)';
 			}
 		return $from;
 	}

@@ -8,7 +8,7 @@ use dibi;
 
 
 
-abstract class Table implements \ArrayAccess
+abstract class Entity implements \ArrayAccess
 {
 	const ID = 'id';
 	
@@ -391,7 +391,7 @@ abstract class Table implements \ArrayAccess
 		} elseif ($name == 'id' || $name == static::getColumnName(self::ID)) {
 			$newId = intval($value) === 0 ? NULL : intval($value);
 			if ($this->_id !== $newId && $this->_id !== NULL)
-				array_map(function($item){return Table::VALUE_MODIFIED;}, $this->_modified);
+				array_map(function($item){return Entity::VALUE_MODIFIED;}, $this->_modified);
 			
 			$this->_id = $newId;
 				
@@ -475,14 +475,14 @@ abstract class Table implements \ArrayAccess
 	
 	public static function __callStatic($name, $arguments) {
 		array_unshift($arguments, get_called_class());
-		if (method_exists(__CLASS__.'\Reflection', $name))
-			return call_user_func_array(array(__CLASS__.'\Reflection', $name), $arguments);
+		if (method_exists(__NAMESPACE__.'\Table\Reflection', $name))
+			return call_user_func_array(array(__NAMESPACE__.'\Table\Reflection', $name), $arguments);
 			
-		return call_user_func_array(array(__CLASS__.'\Select', $name), $arguments);
+		return call_user_func_array(array(__NAMESPACE__.'\Table\Select', $name), $arguments);
 	}
 	
 	private static function isCallable($method) {
-		return method_exists(get_called_class(), $method) || method_exists(__CLASS__.'\Reflection', $method);
+		return method_exists(get_called_class(), $method) || method_exists(__NAMESPACE__.'\Table\Reflection', $method);
 	}
 	
 	final public function offsetSet($name, $value)

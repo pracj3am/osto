@@ -9,7 +9,7 @@
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 use isqua\Table\Helpers;
 
 
@@ -19,26 +19,26 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 
 
-class FooBar extends Table {
+class FooBar extends Entity {
 }
 
 /**
  * @prefix zd
  */
-class FooBar2 extends Table {
+class FooBar2 extends Entity {
 }
 
 /**
  * @prefix
  */
-class FooBar3 extends Table {
+class FooBar3 extends Entity {
 }
 
 /** @prefix bf */
-class BarFoo extends Table {
+class BarFoo extends Entity {
 }
 
-class aAaAaAaAAA extends Table {
+class aAaAaAaAAA extends Entity {
 }
 
 Assert::same( FooBar::getPrefix(), 'fb' );

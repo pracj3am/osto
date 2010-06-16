@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table annotations.
+ * Test: isqua\Entity annotations.
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -9,7 +9,7 @@
  * @subpackage UnitTests
  */
 
-use isqua\Table;
+use isqua\Entity;
 use isqua\Nette\AnnotationsParser as A;
 
 
@@ -21,7 +21,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 /**
  * @table model_test
  */
-class Test extends Table {
+class Test extends Entity {
 	static $PREFIX = 'a';
 
 	/**
