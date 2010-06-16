@@ -126,7 +126,7 @@ final class AnnotationsParser
 		preg_match_all('~
 			@('.self::RE_IDENTIFIER.')[ \t]*             ##  annotation
 			(
-				\((?>'.self::RE_STRING.'|[^\'")@]+)+\)|  ##  (value)
+				(?>'.self::RE_STRING.'|[^\'")@\r\n]+)+|  ##  (value)
 				[^(@\r\n][^@\r\n]*|)                     ##  value
 		~xi', trim($comment, '/*'), $matches, PREG_SET_ORDER);
 
@@ -135,11 +135,11 @@ final class AnnotationsParser
 		{
 			list(, $name, $value) = $match;
 
-			if (substr($value, 0, 1) === '(') {
+			if (strpos($value, ',') !== FALSE) {
 				$items = array();
 				$key = '';
 				$val = TRUE;
-				$value[0] = ',';
+				$value = ','.$value;
 				while (preg_match('#\s*,\s*(?>('.self::RE_IDENTIFIER.')\s*=\s*)?('.self::RE_STRING.'|[^\'"),\s][^\'"),]*)#A', $value, $m)) {
 					$value = substr($value, strlen($m[0]));
 					list(, $key, $val) = $m;
