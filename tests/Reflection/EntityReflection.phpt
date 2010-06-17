@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table\Reflection global.
+ * Test: isqua\Reflection\EntityReflection global.
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -21,6 +21,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 /**
  * @table model_test
  * @prefix t
+ * @property string $name, column="v"
  */
 class TestA extends Entity {
 	private $one;
@@ -75,6 +76,8 @@ dump(TestA::getColumns());
 
 dump(subTest::getColumns());
 
+dump(TestA::getAnnotation('property'));
+
 __halt_compiler();
 
 ------EXPECT------
@@ -104,4 +107,9 @@ array(5) {
 	"two" => string(6) "st_two"
 	"x_y" => string(3) "x_y"
 	"t_id" => string(4) "t_id"
+}
+
+object(ArrayObject) (2) {
+	"value" => string(12) "string $name"
+	"column" => string(1) "v"
 }

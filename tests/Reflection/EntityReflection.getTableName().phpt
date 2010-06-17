@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: isqua\Table\Reflection::getPrefix()
+ * Test: isqua\Reflection\EntityReflection::getTableName()
  *
  * @author     Jan Prachař
  * @category   isqua
@@ -23,26 +23,26 @@ class FooBar extends Entity {
 }
 
 /**
- * @prefix zd
+ * @table fooo_bar
  */
 class FooBar2 extends Entity {
 }
 
 /**
- * @prefix
+ * @table
  */
 class FooBar3 extends Entity {
 }
 
-/** @prefix bf */
+/** @table BarFoo */
 class BarFoo extends Entity {
 }
 
 class aAaAaAaAAA extends Entity {
 }
 
-Assert::same( FooBar::getPrefix(), 'fb' );
-Assert::same( FooBar2::getPrefix(), 'zd' );
-Assert::same( FooBar3::getPrefix(), 'fb3' );
-Assert::same( BarFoo::getPrefix(), 'bf' );
-Assert::same( aAaAaAaAAA::getPrefix(), 'aaaaaa' );
+Assert::same( FooBar::getTableName(), 'foo_bar' );
+Assert::same( FooBar2::getTableName(), 'fooo_bar' );
+Assert::same( FooBar3::getTableName(), 'foo_bar3' );
+Assert::same( BarFoo::getTableName(), 'BarFoo' );
+Assert::same( aAaAaAaAAA::getTableName(), 'a_aa_aa_aa_a_a_a' );

@@ -475,14 +475,14 @@ abstract class Entity implements \ArrayAccess
 	
 	public static function __callStatic($name, $arguments) {
 		array_unshift($arguments, get_called_class());
-		if (method_exists(__NAMESPACE__.'\Table\Reflection', $name))
-			return call_user_func_array(array(__NAMESPACE__.'\Table\Reflection', $name), $arguments);
+		if (method_exists(__NAMESPACE__.'\Reflection\EntityReflection', $name))
+			return call_user_func_array(array(__NAMESPACE__.'\Reflection\EntityReflection', $name), $arguments);
 			
 		return call_user_func_array(array(__NAMESPACE__.'\Table\Select', $name), $arguments);
 	}
 	
 	private static function isCallable($method) {
-		return method_exists(get_called_class(), $method) || method_exists(__NAMESPACE__.'\Table\Reflection', $method);
+		return method_exists(get_called_class(), $method) || method_exists(__NAMESPACE__.'\Reflection\EntityReflection', $method);
 	}
 	
 	final public function offsetSet($name, $value)

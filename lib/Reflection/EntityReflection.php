@@ -1,6 +1,6 @@
 <?php
 
-namespace isqua\Table;
+namespace isqua\Reflection;
 
 
 
@@ -12,7 +12,7 @@ use isqua\Nette\AnnotationsParser;
 /**
  * @todo Implement Nette caching?
  */
-abstract class Reflection 
+abstract class EntityReflection 
 {
 
 	private static $_cache;
