@@ -16,7 +16,7 @@ abstract class Entity implements \ArrayAccess
 	const VALUE_NOT_MODIFIED = 1;
 	const VALUE_MODIFIED = 2;
 	
-	static $FIELDS = array();
+	protected static $_REFLECTIONS = array();
 	
 	private $_id;
 	private $_values = array();
@@ -322,6 +322,12 @@ abstract class Entity implements \ArrayAccess
 		return Table\Select::replaceKeys(get_called_class(), $array, $alias);
 	} 
 	
+	private static function getReflection() {
+		if (!isset(static::$_REFLECTIONS[get_called_class()]))
+			static::$_REFLECTIONS[get_called_class()] = new Reflection\EntityReflection(get_called_class());
+		return static::$_REFLECTIONS[get_called_class()];
+	}
+	
 	public function __get($name) {
 		if (strpos($name, '_') === 0) //name starts with undescore
 			$_name = substr($name, 1);
@@ -474,10 +480,10 @@ abstract class Entity implements \ArrayAccess
 	}
 	
 	public static function __callStatic($name, $arguments) {
-		array_unshift($arguments, get_called_class());
-		if (method_exists(__NAMESPACE__.'\Reflection\EntityReflection', $name))
-			return call_user_func_array(array(__NAMESPACE__.'\Reflection\EntityReflection', $name), $arguments);
+		if (method_exists(static::getReflection(), $name))
+			return call_user_func_array(array(static::getReflection(), $name), $arguments);
 			
+		array_unshift($arguments, get_called_class());
 		return call_user_func_array(array(__NAMESPACE__.'\Table\Select', $name), $arguments);
 	}
 	
