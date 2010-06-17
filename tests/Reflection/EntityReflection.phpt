@@ -109,7 +109,10 @@ array(5) {
 	"t_id" => string(4) "t_id"
 }
 
-object(ArrayObject) (2) {
-	"0" => string(12) "string $name"
+object(isqua\Reflection\PropertyAnnotation) (5) {
+	"type" => string(6) "string"
+	"name" => string(4) "name"
 	"column" => string(1) "v"
-}
+	"null" => bool(FALSE)
+	"relation" => NULL
+} 
