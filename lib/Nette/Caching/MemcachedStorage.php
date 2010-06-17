@@ -105,11 +105,11 @@ class MemcachedStorage implements ICacheStorage
 	public function write($key, $data, array $dp)
 	{
 		if (!empty($dp[Cache::TAGS]) || isset($dp[Cache::PRIORITY]) || !empty($dp[Cache::ITEMS])) {
-			throw new \LogicException('Tags, priority and dependent items are not supported by MemcachedStorage.');
+			throw new \NotSupportedException('Tags, priority and dependent items are not supported by MemcachedStorage.');
 		}
 
 		$meta = array(
-			self::META_DATA => $data,
+			self::META_DATA => $data instanceof Nette\Callback || $data instanceof \Closure ? $data->__invoke() : $data,
 		);
 
 		$expire = 0;
@@ -152,7 +152,7 @@ class MemcachedStorage implements ICacheStorage
 			$this->memcache->flush();
 
 		} elseif (isset($conds[Cache::TAGS]) || isset($conds[Cache::PRIORITY])) {
-			throw new \LogicException('Tags and priority is not supported by MemcachedStorage.');
+			throw new \NotSupportedException('Tags and priority is not supported by MemcachedStorage.');
 		}
 	}
 

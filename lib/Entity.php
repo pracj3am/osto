@@ -324,7 +324,7 @@ abstract class Entity implements \ArrayAccess
 	
 	private static function getReflection() {
 		if (!isset(static::$_REFLECTIONS[get_called_class()]))
-			static::$_REFLECTIONS[get_called_class()] = new Reflection\EntityReflection(get_called_class());
+			static::$_REFLECTIONS[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
 		return static::$_REFLECTIONS[get_called_class()];
 	}
 	

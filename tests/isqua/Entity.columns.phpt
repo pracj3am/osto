@@ -11,9 +11,10 @@
 
 use isqua\Entity;
 
-
-
 require __DIR__ . '/../NetteTest/initialize.php';
+
+define('ISQUA_TMP_DIR', __DIR__ . '/tmp');
+NetteTestHelpers::purge(ISQUA_TMP_DIR);
 
 
 

@@ -1,5 +1,4 @@
 <?php
-
 namespace isqua\Reflection;
 
 
@@ -8,12 +7,16 @@ use isqua\Entity;
 use isqua\Table\Helpers;
 use isqua\Table\Select;
 use isqua\Nette\AnnotationsParser;
+use isqua\Nette\Caching;
 
 
 
-/**
- * @todo Implement Nette caching?
- */
+if (!defined('ISQUA_TMP_DIR') && defined('TMP_DIR')) {
+	define('ISQUA_TMP_DIR', TMP_DIR);
+}
+
+
+
 final class EntityReflection extends \ReflectionClass
 {
 
@@ -193,5 +196,30 @@ final class EntityReflection extends \ReflectionClass
 		return $this->_getColumnName('parent_id') && in_array($this->name, $this->children);
 	}
 	
+	public static function instantiateCache()
+	{
+		$cacheStorage = new Caching\FileStorage(ISQUA_TMP_DIR);
+		return new Caching\Cache($cacheStorage, 'entityReflection');
+	}
 	
+	public static function create($entityClass)
+	{
+		$cache = self::instantiateCache();
+		if (isset($cache[$entityClass])) {
+			return $cache[$entityClass];
+		} else {
+			return new self($entityClass);
+		}
+		
+	}
+	
+	public function __destruct() 
+	{
+		$cache = self::instantiateCache();
+		if (!isset($cache[$this->name])) {
+			$cache->save($this->name, $this, array(
+				Caching\Cache::FILES => array($this->getFileName())
+			));
+		}
+	}
 } 

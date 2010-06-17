@@ -22,7 +22,7 @@ use isqua\Nette;
  * @copyright  Copyright (c) 2004, 2010 David Grudl
  * @package    Nette\Caching
  */
-class FileStorage extends Nette\Object implements ICacheStorage
+class FileStorage implements ICacheStorage
 {
 	/**
 	 * Atomic thread safe logic:
@@ -72,8 +72,6 @@ class FileStorage extends Nette\Object implements ICacheStorage
 	public function __construct($dir)
 	{
 		if (self::$useDirectories === NULL) {
-			self::$useDirectories = !ini_get('safe_mode');
-
 			// checks whether directory is writable
 			$uniq = uniqid('_', TRUE);
 			umask(0000);
@@ -82,6 +80,7 @@ class FileStorage extends Nette\Object implements ICacheStorage
 			}
 
 			// tests subdirectory mode
+			self::$useDirectories = !ini_get('safe_mode');
 			if (!self::$useDirectories && @file_put_contents("$dir/$uniq/_", '') !== FALSE) { // intentionally @
 				self::$useDirectories = TRUE;
 				unlink("$dir/$uniq/_");
@@ -168,11 +167,6 @@ class FileStorage extends Nette\Object implements ICacheStorage
 			self::META_TIME => microtime(),
 		);
 
-		if (!is_string($data)) {
-			$data = serialize($data);
-			$meta[self::META_SERIALIZED] = TRUE;
-		}
-
 		if (!empty($dp[Cache::EXPIRE])) {
 			if (empty($dp[Cache::SLIDING])) {
 				$meta[self::META_EXPIRE] = $dp[Cache::EXPIRE] + time(); // absolute time
@@ -222,12 +216,21 @@ class FileStorage extends Nette\Object implements ICacheStorage
 				$query .= "INSERT INTO cache (file, priority) VALUES ('$dbFile', '" . (int) $dp[Cache::PRIORITY] . "');";
 			}
 			if (!sqlite_exec($db, "BEGIN; DELETE FROM cache WHERE file = '$dbFile'; $query COMMIT;")) {
+				sqlite_exec($db, "ROLLBACK");
 				return;
 			}
 		}
 
 		flock($handle, LOCK_EX);
 		ftruncate($handle, 0);
+
+		if ($data instanceof Nette\Callback || $data instanceof \Closure) {
+			$data = $data->__invoke();
+		}
+		if (!is_string($data)) {
+			$data = serialize($data);
+			$meta[self::META_SERIALIZED] = TRUE;
+		}
 
 		$head = serialize($meta) . '?>';
 		$head = '<?php //netteCache[01]' . str_pad((string) strlen($head), 6, '0', STR_PAD_LEFT) . $head;
@@ -443,7 +446,7 @@ class FileStorage extends Nette\Object implements ICacheStorage
 	{
 		if ($this->db === NULL) {
 			if (!extension_loaded('sqlite')) {
-				throw new \RuntimeException("SQLite extension is required for storing tags and priorities.");
+				throw new \InvalidStateException("SQLite extension is required for storing tags and priorities.");
 			}
 			$this->db = sqlite_open($this->dir . '/cachejournal.sdb');
 			@sqlite_exec($this->db, 'CREATE TABLE cache (file VARCHAR NOT NULL, priority, tag VARCHAR);
