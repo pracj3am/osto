@@ -5,6 +5,8 @@ namespace isqua\Reflection;
 
 
 use isqua\Entity;
+use isqua\Table\Helpers;
+use isqua\Table\Select;
 use isqua\Nette\AnnotationsParser;
 
 

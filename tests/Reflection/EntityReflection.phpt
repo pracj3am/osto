@@ -110,6 +110,6 @@ array(5) {
 }
 
 object(ArrayObject) (2) {
-	"value" => string(12) "string $name"
+	"0" => string(12) "string $name"
 	"column" => string(1) "v"
 }
