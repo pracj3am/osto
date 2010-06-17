@@ -29,7 +29,7 @@ final class AnnotationsParser
 	const RE_STRING = '\'(?:\\\\.|[^\'\\\\])*\'|"(?:\\\\.|[^"\\\\])*"';
 
 	/** @internal PHP identifier */
-	const RE_IDENTIFIER = '[_a-zA-Z\x7F-\xFF][_a-zA-Z0-9\x7F-\xFF]*';
+	const RE_IDENTIFIER = '[_a-zA-Z\x7F-\xFF\\\\][_a-zA-Z0-9\x7F-\xFF\\\\]*';
 
 	/** @var bool */
 	public static $useReflection;
@@ -140,7 +140,7 @@ final class AnnotationsParser
 				$key = '';
 				$val = TRUE;
 				$value = ','.$value;
-				while (preg_match('#\s*,\s*(?>('.self::RE_IDENTIFIER.')\s*=\s*)?('.self::RE_STRING.'|[^\'"),\s][^\'"),]*)#A', $value, $m)) {
+				while (preg_match('#\s*,\s*(?>('.self::RE_IDENTIFIER.')\s*=\s*)?('.self::RE_STRING.'|[^\'"),\s][^\'"),]*[^\'"),\s])#A', $value, $m)) {
 					$value = substr($value, strlen($m[0]));
 					list(, $key, $val) = $m;
 					if ($val[0] === "'" || $val[0] === '"') {
