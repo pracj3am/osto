@@ -21,36 +21,33 @@ require __DIR__ . '/../NetteTest/initialize.php';
 /**
  * @table model_test
  * @prefix t
- * @property string $name, column="v"
+ * @property string $one
+ * @property string $two
+ * @property string $x_y, column=x_y
+ * @property subTest $sub, has_many
  */
-class TestA extends Entity {
-	private $one;
-	private $two;
-	/** @column x_y */
-	private $x_y;
-	
-	/** @has_many subTest */
-	private $sub;
+class TestA extends Entity 
+{
 
 }
 
-/** @prefix st */
-class subTest extends Entity {
-	private $one;
-	private $two;
-	/** @column x_y */
-	private $x_y;
+/** 
+ * @prefix st
+ * @property string $one
+ * @property string $two
+ * @property string $x_y, column=x_y
+ * @property TestA $test, belongs_to
+ */
+class subTest extends Entity 
+{
 
-	/** @belongs_to TestA */
-	private $test;	
 }
 
 Assert::same(TestA::getAnnotation('table'), 'model_test');
 Assert::same(TestA::getAnnotation('prefix'), 't');
 Assert::same(subTest::getAnnotation('prefix'), 'st');
-Assert::same(subTest::getPropertyAnnotation('x_y', 'column'), 'x_y');
-Assert::null(subTest::getPropertyAnnotation('x_y', 'pokutre'));
-dump(TestA::getPropertyAnnotations('x_y'));
+
+dump(TestA::getAnnotations('property'));
 
 Assert::same( TestA::getColumnName('one'),  't_one' );
 Assert::same( TestA::getColumnName('one'),  't_one' );
@@ -76,14 +73,37 @@ dump(TestA::getColumns());
 
 dump(subTest::getColumns());
 
-dump(TestA::getAnnotation('property'));
-
 __halt_compiler();
 
 ------EXPECT------
-array(1) {
-	"column" => array(1) {
-		0 => string(3) "x_y"
+array(4) {
+	0 => object(isqua\Reflection\PropertyAnnotation) (5) {
+		"type" => string(6) "string"
+		"name" => string(3) "one"
+		"column" => NULL
+		"null" => bool(FALSE)
+		"relation" => bool(FALSE)
+	}
+	1 => object(isqua\Reflection\PropertyAnnotation) (5) {
+		"type" => string(6) "string"
+		"name" => string(3) "two"
+		"column" => NULL
+		"null" => bool(FALSE)
+		"relation" => bool(FALSE)
+	}
+	2 => object(isqua\Reflection\PropertyAnnotation) (5) {
+		"type" => string(6) "string"
+		"name" => string(3) "x_y"
+		"column" => string(3) "x_y"
+		"null" => bool(FALSE)
+		"relation" => bool(FALSE)
+	}
+	3 => object(isqua\Reflection\PropertyAnnotation) (5) {
+		"type" => string(7) "subTest"
+		"name" => string(3) "sub"
+		"column" => NULL
+		"null" => bool(FALSE)
+		"relation" => string(8) "has_many"
 	}
 } 
 
@@ -108,11 +128,3 @@ array(5) {
 	"x_y" => string(3) "x_y"
 	"t_id" => string(4) "t_id"
 }
-
-object(isqua\Reflection\PropertyAnnotation) (5) {
-	"type" => string(6) "string"
-	"name" => string(4) "name"
-	"column" => string(1) "v"
-	"null" => bool(FALSE)
-	"relation" => NULL
-} 

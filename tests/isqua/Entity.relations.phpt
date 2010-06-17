@@ -17,14 +17,14 @@ use isqua\Entity;
 require __DIR__ . '/../NetteTest/initialize.php';
 
 
+/**
+ * @property Test\B $ab, belongs_to
+ * @property Test\C $ac, has_many
+ * @property Test\D $ad, has_one
+ */
+class A extends Entity 
+{
 
-class A extends Entity {
-	/** @belongs_to Test\B */
-	private $ab;
-	/** @has_many %namespace%\C */
-	private $ac;
-	/** @has_one Test\D */
-	private $ad;
 }
 
 class B extends Entity {
@@ -34,15 +34,14 @@ class C extends Entity {
 	
 }
 
-class D extends Entity {
-	/** @belongs_to %namespace%\A */
-	private $x1;
-	/** @belongs_to %namespace%\B */
-	private $x2;
-	/** @belongs_to %namespace%\C */
-	private $x3;
-	/** @has_many Test\D */
-	private $x4;
+/**
+ * @property Test\A $x1, belongs_to
+ * @property Test\B $x2, belongs_to
+ * @property Test\C $x3, belongs_to
+ * @property Test\D $x4, has_many
+ */
+class D extends Entity 
+{
 	
 }
 

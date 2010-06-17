@@ -50,37 +50,34 @@ dibi::query('
 ');
 
 /**
+ * @property int $a
+ * @property string $p_koo
+ * @property string $koo
+ * @property Datetime $zzz, column=zzz, null
+ * @property Lkjh $L, has_many
+ * @property Mnbv $M, has_one
  */
-class Poiu extends Entity {
-
-	private $a;
-	private $p_koo;
-	private $koo;
-	/** @column zzz @null */
-	private $zzz;
-	
-	/** @has_many Lkjh */
-	private $L;
-	/** @has_one Mnbv */
-	private $M;
+class Poiu extends Entity 
+{
 
 }
 
-class Lkjh extends Entity {
+/**
+ * @property string $content, null
+ * @property Poiu $p, belongs_to
+ */
+class Lkjh extends Entity 
+{
 
-	/** @null */
-	private $content;
-	
-	/** @belongs_to Poiu */
-	private $p;
 }
 
-class Mnbv extends Entity {
+/**
+ * @property string $boo
+ * @property Poiu $p, belongs_to
+ */
+class Mnbv extends Entity 
+{
 
-	private $boo;
-	
-	/** @belongs_to Poiu */
-	private $p;
 }
 
 $p = new Poiu;

@@ -51,8 +51,13 @@ final class EntityReflection extends \ReflectionClass
 		return $cache;
 	}
 	
-	private function getAnnotations() {
-		return AnnotationsParser::getAll($this);
+	private function getAnnotations($name = NULL) {
+		$res = AnnotationsParser::getAll($this);
+		if ($name === NULL) {
+			return $res;
+		} else {
+			return isset($res[$name]) ? $res[$name] : NULL;
+		}
 	}
 	
 	private function getAnnotation($name) {
@@ -113,9 +118,9 @@ final class EntityReflection extends \ReflectionClass
 	
 	private function getParents() {
 		$parents = array();
-		foreach ($this->_getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
-			if (($parentClass = $this->getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
-				$parents[$rp->getName()] = str_replace('%namespace%', $this->_getNamespaceName(), $parentClass);
+		foreach ($this->_getAnnotations('property') as $pa) {
+			if ($pa->relation === 'belongs_to') {
+				$parents[$pa->name] = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
 			}
 		}
 
@@ -124,20 +129,20 @@ final class EntityReflection extends \ReflectionClass
 
 	private function getChildren() {
 		$children = array();
-		foreach ($this->_getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
-			if (($childClass = $this->getPropertyAnnotation($rp, 'has_many')) !== NULL) {
-				$children[$rp->getName()] = str_replace('%namespace%', $this->_getNamespaceName(), $childClass);
+		foreach ($this->_getAnnotations('property') as $pa) {
+			if ($pa->relation === 'has_many') {
+				$children[$pa->name] = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
 			}
 		}
-
+		
 		return $children;
 	}
 
 	private function getSingles() {
 		$singles = array();
-		foreach ($this->_getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
-			if (($singleClass = $this->getPropertyAnnotation($rp, 'has_one')) !== NULL) {
-				$singles[$rp->getName()] = str_replace('%namespace%', $this->_getNamespaceName(), $singleClass);
+		foreach ($this->_getAnnotations('property') as $pa) {
+			if ($pa->relation === 'has_one') {
+				$singles[$pa->name] = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
 			}
 		}
 
@@ -150,21 +155,15 @@ final class EntityReflection extends \ReflectionClass
 	private function getColumns() {
 		$columns = array(Entity::ID=>$this->prefix.'_'.Entity::ID);
 		
-		foreach ($this->_getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
-			if (strpos($cn = $rp->getName(), '_') !== 0) {
-				if ($this->getPropertyAnnotation($rp, 'has_many') !== NULL) {
-					//skip
-				} elseif ($this->getPropertyAnnotation($rp, 'has_one') !== NULL) {
-					//skip
-				} elseif (($parentClass = $this->getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
-					$parentClass = str_replace('%namespace%', $this->_getNamespaceName(), $parentClass);
-					$columnName = $parentClass::getPrefix().'_'.Entity::ID;
-					$columns[$columnName] = $columnName;
-				} else {
-					$columns[$cn] = ($columnName = $this->getPropertyAnnotation($rp, 'column')) && is_string($columnName) ?
-						$columnName :
-						$this->prefix.'_'.$rp->getName();
-				}
+		foreach ($this->_getAnnotations('property') as $pa) {
+			if ($pa->relation === 'belongs_to') {
+				$parentClass = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
+				$columnName = $parentClass::getPrefix().'_'.Entity::ID;
+				$columns[$columnName] = $columnName;
+			} elseif ($pa->relation === FALSE) {
+				$columns[$pa->name] = is_string($pa->column) ?
+					$pa->column :
+					$this->prefix.'_'.$pa->name;
 			}
 		}
 
@@ -173,9 +172,9 @@ final class EntityReflection extends \ReflectionClass
 
 	private function getForeignKeys() {
 		$fks = array();
-		foreach ($this->_getProperties(\ReflectionProperty::IS_PRIVATE) as $rp) {
-			if (($parentClass = $this->getPropertyAnnotation($rp, 'belongs_to')) !== NULL) {
-				$parentClass = str_replace('%namespace%', $this->_getNamespaceName(), $parentClass);
+		foreach ($this->_getAnnotations('property') as $pa) {
+			if ($pa->relation === 'belongs_to') {
+				$parentClass = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
 				$fk = $parentClass::getPrefix().'_'.Entity::ID;
 				$fks[$fk] = $parentClass; 
 			}
@@ -189,16 +188,12 @@ final class EntityReflection extends \ReflectionClass
 	}
 	
 	private function isNullColumn($name) {
-		if (($propName = array_search($name, $this->columns, TRUE)) === FALSE) 
-			$propName = $name;
-		if ($this->_hasProperty($propName)) {
-			return $this->getPropertyAnnotation($propName, 'null') === TRUE;
-	 	} 
-		 
  		$fks = $this->foreignKeys;
-	 	if (isset($fks[$propName]) && ($propName = array_search($fks[$propName], $this->parents)) !== FALSE) {
-			return $this->getPropertyAnnotation($propName, 'null') === TRUE;
-		}
+	 	if (isset($fks[$name]) && ($propName = array_search($fks[$name], $this->parents)) !== FALSE) ;
+		elseif (($propName = array_search($name, $this->columns, TRUE)) === FALSE) $propName = $name;
+
+		foreach ($this->_getAnnotations('property') as $pa)
+			if ($pa->name === $propName) return $pa->null;
 			
 		return FALSE;
 	}

@@ -13,18 +13,11 @@ Documentation
 1. Annotations
 --------------
 
-###1.1 Table class annotations
+###1.1 Entity class annotations
 
  * @table - name of DB table
  * @prefix - prefix of table columns
- 
-###1.2 Table class properties annotations
- 
- * @column - name of column
- * @null - wheter the column can has the NULL value
- * @belongs_to - references another table
- * @has_many - is referenced by another table (relationship one-to-many)
- * @has_one - is referenced by another table (relationship one-to-one)
+ * @property - defines class property mapping onto table column or relation
  
  
 License

@@ -19,22 +19,16 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 /**
  * @table model_test
+ * @property string $main, column=a_main
+ * @property string $a_alt, column=a_alt
+ * @property float $b
+ * @property int $t_b
+ * @property B $bb, belongs_to
+ * @property V $vv, has_many
  */
-class Test extends Entity {
+class Test extends Entity 
+{
 
-	/** @column a_main */
-	private $main;
-	/** @column a_alt */
-	private $a_alt;
-	private $b;
-	private $t_b;
-
-
-	/** @belongs_to B */
-	private $bb;
-
-	/** @has_many V */
-	private $vv;
 }
 
 class B extends Entity {

@@ -20,6 +20,7 @@ require __DIR__ . '/../NetteTest/initialize.php';
 
 /**
  * @table model_test
+ * @prefix a
  */
 class Test extends Entity {
 	static $PREFIX = 'a';

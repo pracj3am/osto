@@ -20,37 +20,41 @@ require __DIR__ . '/../NetteTest/initialize.php';
 /**
  * @table model_test
  * @prefix a
+ * @property string $main, column=a_main, null
+ * @property string $alt
+ * @property string $a_alt
+ * @property string $b
+ * @property A $A, has_one
+ * @property B $B, has_many
+ * @property C $C, belongs_to
  */
-class Test extends Entity {
-
-	/**
-	 * @null
-	 * @column a_main
-	 */	
-	private $main;
-	private $alt;
-	private $a_alt;
-	private $b;
-	
-	/** @has_one A */
-	private $A;
-	/** @has_many B */
-	private $B;
-	/** @belongs_to C */
-	private $C;
+class Test extends Entity 
+{
 
 }
 
-class A extends Entity {
-	private $a;
+/**
+ * @property int $a
+ */
+class A extends Entity 
+{
+
 }
-class B extends Entity {
-	private $b;
+/**
+ * @property int $b
+ */
+class B extends Entity 
+{
+
 }
-class C extends Entity {
-	private $a;
-	private $b;
-	private $c;
+/**
+ * @property int $a
+ * @property int $b
+ * @property int $c
+ */
+class C extends Entity 
+{
+
 }
 
 
