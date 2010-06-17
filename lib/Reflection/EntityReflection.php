@@ -17,8 +17,43 @@ use isqua\Nette\AnnotationsParser;
 final class EntityReflection extends \ReflectionClass
 {
 
+	public $children = array();
+	public $parents = array();
+	public $singles = array();
+	public $columns;
+
 	private $_cache;
-	
+	private $_properties;
+	private $_prefix;
+	private $_tableName;
+
+
+	public function __construct($argument) {
+		parent::__construct($argument);
+
+		$this->columns = array(Entity::ID=>$this->prefix.'_'.Entity::ID);
+		
+		$this->_properties = $this->getAnnotations('property');
+		foreach ($this->_properties as &$pa) {
+			if ($pa->relation === 'belongs_to') {
+				$this->parents[$pa->name] = $pa->type;
+				
+				$parentClass = $pa->type;
+				$columnName = $parentClass::getPrefix().'_'.Entity::ID;
+				$this->columns[$columnName] = $columnName;
+				$pa->column = $columnName;
+			} elseif ($pa->relation === 'has_many') {
+				$this->children[$pa->name] = $pa->type;
+			} elseif ($pa->relation === 'has_one') {
+				$this->singles[$pa->name] = $pa->type;
+			} elseif ($pa->relation === FALSE) {
+				$this->columns[$pa->name] = is_string($pa->column) ?
+					$pa->column :
+					($pa->column = $this->prefix.'_'.$pa->name);
+			}
+		}
+	}
+
 	public function __get($name) {
 		return $this->__call(Helpers::getter($name), array());
 	}
@@ -56,7 +91,7 @@ final class EntityReflection extends \ReflectionClass
 		if ($name === NULL) {
 			return $res;
 		} else {
-			return isset($res[$name]) ? $res[$name] : NULL;
+			return isset($res[$name]) ? $res[$name] : array();
 		}
 	}
 	
@@ -102,103 +137,59 @@ final class EntityReflection extends \ReflectionClass
 	 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
 	}
 	
-	private function getTableName() {
-		if (($tn = $this->getAnnotation('table')) && is_string($tn))
-			return $tn;
-		else
-			return Helpers::fromCamelCase( strrpos($this->name,'\\') !== FALSE ? substr($this->name, strrpos($this->name,'\\')+1) : $this->name );
-	}
-	
-	private function getPrefix() {
-		if (($prefix = $this->getAnnotation('prefix')) && is_string($prefix))
-			return $prefix;
-		else
-			return strtolower(preg_replace('/[^A-Z0-9]*/', '', $this->name));
-	}
-	
-	private function getParents() {
-		$parents = array();
-		foreach ($this->_getAnnotations('property') as $pa) {
-			if ($pa->relation === 'belongs_to') {
-				$parents[$pa->name] = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
-			}
-		}
-
-		return $parents;
-	}
-
-	private function getChildren() {
-		$children = array();
-		foreach ($this->_getAnnotations('property') as $pa) {
-			if ($pa->relation === 'has_many') {
-				$children[$pa->name] = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
-			}
+	public function getTableName() {
+		if (!isset($this->_tableName)) {
+			if (($tn = $this->getAnnotation('table')) && is_string($tn))
+				$this->_tableName = $tn;
+			else
+				$this->_tableName = Helpers::fromCamelCase( strrpos($this->name,'\\') !== FALSE ? substr($this->name, strrpos($this->name,'\\')+1) : $this->name );
 		}
 		
-		return $children;
+		return $this->_tableName;
 	}
-
-	private function getSingles() {
-		$singles = array();
-		foreach ($this->_getAnnotations('property') as $pa) {
-			if ($pa->relation === 'has_one') {
-				$singles[$pa->name] = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
-			}
+	
+	public function getPrefix() {
+		if (!isset($this->_prefix)) {
+			if (($prefix = $this->getAnnotation('prefix')) && is_string($prefix))
+				$this->_prefix = $prefix;
+			else
+				$this->_prefix = strtolower(preg_replace('/[^A-Z0-9]*/', '', $this->name));
 		}
-
-		return $singles;
-	}
-
-	/**
-	 * Vrátí pole názvů sloupců tabulky
-	 */
-	private function getColumns() {
-		$columns = array(Entity::ID=>$this->prefix.'_'.Entity::ID);
 		
-		foreach ($this->_getAnnotations('property') as $pa) {
-			if ($pa->relation === 'belongs_to') {
-				$parentClass = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
-				$columnName = $parentClass::getPrefix().'_'.Entity::ID;
-				$columns[$columnName] = $columnName;
-			} elseif ($pa->relation === FALSE) {
-				$columns[$pa->name] = is_string($pa->column) ?
-					$pa->column :
-					$this->prefix.'_'.$pa->name;
-			}
-		}
-
-		return $columns;
-	}
-
-	private function getForeignKeys() {
-		$fks = array();
-		foreach ($this->_getAnnotations('property') as $pa) {
-			if ($pa->relation === 'belongs_to') {
-				$parentClass = str_replace('%namespace%', $this->_getNamespaceName(), $pa->type);
-				$fk = $parentClass::getPrefix().'_'.Entity::ID;
-				$fks[$fk] = $parentClass; 
-			}
-		}
-		return $fks;
+		return $this->_prefix;
 	}
 	
-	
-	private function isColumn($name) {
+	public function getParents() {
+		return $this->parents;
+	}
+
+	public function getChildren() {
+		return $this->children;
+	}
+
+	public function getSingles() {
+		return $this->singles;
+	}
+
+	public function getColumns() {
+		return $this->columns;
+	}
+
+	public function isColumn($name) {
 		return in_array($name, $this->columns, TRUE);
 	}
 	
 	private function isNullColumn($name) {
- 		$fks = $this->foreignKeys;
-	 	if (isset($fks[$name]) && ($propName = array_search($fks[$name], $this->parents)) !== FALSE) ;
-		elseif (($propName = array_search($name, $this->columns, TRUE)) === FALSE) $propName = $name;
+		foreach ($this->_properties as $pa)
+			if ($pa->column === $name) return $pa->null;
 
-		foreach ($this->_getAnnotations('property') as $pa)
-			if ($pa->name === $propName) return $pa->null;
+		foreach ($this->_properties as $pa)
+			if ($pa->name === $name) return $pa->null;
 			
 		return FALSE;
 	}
 	
-	private function isSelfReferencing() {
+	public function isSelfReferencing() {
 		return $this->_getColumnName('parent_id') && in_array($this->name, $this->children);
 	}
 	

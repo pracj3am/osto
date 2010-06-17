@@ -80,14 +80,14 @@ array(4) {
 	0 => object(isqua\Reflection\PropertyAnnotation) (5) {
 		"type" => string(6) "string"
 		"name" => string(3) "one"
-		"column" => NULL
+		"column" => string(5) "t_one"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
 	}
 	1 => object(isqua\Reflection\PropertyAnnotation) (5) {
 		"type" => string(6) "string"
 		"name" => string(3) "two"
-		"column" => NULL
+		"column" => string(5) "t_two"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
 	}
@@ -105,7 +105,7 @@ array(4) {
 		"null" => bool(FALSE)
 		"relation" => string(8) "has_many"
 	}
-} 
+}
 
 array(4) {
 	"id" => string(4) "t_id"

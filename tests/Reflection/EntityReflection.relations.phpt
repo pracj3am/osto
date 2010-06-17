@@ -75,8 +75,6 @@ dump(C::getChildren());
 output('D columns:');
 dump(D::getColumns());
 
-output('D foreign keys:');
-dump(D::getForeignKeys());
 
 __halt_compiler();
 
@@ -120,12 +118,4 @@ array(4) {
 	"ta_id" => string(5) "ta_id"
 	"tb_id" => string(5) "tb_id"
 	"tc_id" => string(5) "tc_id"
-}
-
-D foreign keys:
-
-array(3) {
-	"ta_id" => string(6) "Test\A"
-	"tb_id" => string(6) "Test\B"
-	"tc_id" => string(6) "Test\C"
 }

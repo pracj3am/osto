@@ -34,16 +34,6 @@ class C extends Entity {
 	
 }
 
-/**
- * @property Test\A $x1, belongs_to
- * @property Test\B $x2, belongs_to
- * @property Test\C $x3, belongs_to
- * @property Test\D $x4, has_many
- */
-class D extends Entity 
-{
-	
-}
 
 output('A parents:');
 $a = new A;
@@ -55,9 +45,6 @@ dump($a->children);
 output('A singles:');
 dump($a->singles);
 
-$d = new D;
-output('D foreign keys:');
-dump($d->foreign_keys);
 
 __halt_compiler();
 
@@ -78,12 +65,4 @@ A singles:
 
 array(1) {
 	"ad" => string(6) "Test\D"
-}
-
-D foreign keys:
-
-array(3) {
-	"ta_id" => string(6) "Test\A"
-	"tb_id" => string(6) "Test\B"
-	"tc_id" => string(6) "Test\C"
 }

@@ -23,4 +23,10 @@ abstract class Helpers
 		return 'get'.ucfirst(self::toCamelCase($name));
 	}
 	
+	public static function fromGetter($name) {
+		if (preg_match('/^(is|has|get)(.*)$/', $name, $matches))
+			return lcfirst($matches[1]);
+		else return FALSE;
+	}
+	
 } 
