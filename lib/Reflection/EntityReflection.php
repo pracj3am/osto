@@ -89,17 +89,17 @@ final class EntityReflection extends \ReflectionClass
 		return $cache;
 	}
 	
-	private function getAnnotations($name = NULL) {
-		$res = AnnotationsParser::getAll($this);
-		if ($name === NULL) {
-			return $res;
-		} else {
-			return isset($res[$name]) ? $res[$name] : array();
-		}
+	private function getAllAnnotations() {
+		return AnnotationsParser::getAll($this);
+	}
+	
+	private function getAnnotations($name) {
+		$res = $this->_getAllAnnotations();
+		return isset($res[$name]) ? $res[$name] : array();
 	}
 	
 	private function getAnnotation($name) {
-		$res = $this->annotations;
+		$res = $this->_getAllAnnotations();
 		return isset($res[$name]) ? end($res[$name]) : NULL;
 	}
 	
