@@ -140,6 +140,14 @@ final class EntityReflection extends \ReflectionClass
 	 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
 	}
 	
+	private function isEntity() {
+		return $this->isSubClassOf('isqua\Entity') && !$this->isAbstract();
+	}
+	
+	private function isExtendedEntity() {
+		return $this->_isEntity() && ($pc = $this->getParentClass()) && $pc->name != 'isqua\Entity';
+	}
+	
 	public function getTableName() {
 		if (!isset($this->_tableName)) {
 			if (($tn = $this->getAnnotation('table')) && is_string($tn))
