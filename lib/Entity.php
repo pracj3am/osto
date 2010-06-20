@@ -11,6 +11,8 @@ use dibi;
 abstract class Entity implements \ArrayAccess
 {
 	const ID = 'id';
+	const PARENT = 'ParentEntity';
+	const ENTITY_COLUMN = 'entity';
 	
 	const VALUE_NOT_SET = 0;
 	const VALUE_NOT_MODIFIED = 1;
@@ -148,10 +150,15 @@ abstract class Entity implements \ArrayAccess
 	
 	final public function save() {
 		//uložíme rodiče
-		foreach ($this->_parents as $parentEntity) {
+		foreach ($this->_parents as $parentName=>$parentEntity) {
 			if ($parentEntity instanceof self) {
+				if ($parentName === self::PARENT) {
+					$parentEntity[self::ENTITY_COLUMN] = get_class($this);
+				}
 				$parentEntity->save();
-				$this->{$parentEntity::getColumnName(self::ID)} = $parentEntity->id;
+				$this[$parentEntity::getReflection()->getColumnName(self::ID)] = $parentEntity->id;
+				//$this->{$parentEntity::getColumnName(self::ID)} = $parentEntity->id;
+				//dump($this);
 			}
 		}
 
@@ -249,7 +256,10 @@ abstract class Entity implements \ArrayAccess
 		}
 
 		foreach ($this->_parents as $parentName=>$parentEntity) {
-			if ($parentEntity instanceof self) 
+			if ($parentName === self::PARENT && !$parentEntity instanceof self) {
+				$parentEntity = $this->{self::PARENT};
+			}
+			if ($parentEntity instanceof self)
 				$values[$parentName] = $parentEntity->values;
 		}
 		foreach ($this->_children as $childName=>$children) {
@@ -322,10 +332,10 @@ abstract class Entity implements \ArrayAccess
 		return Table\Select::replaceKeys(get_called_class(), $array, $alias);
 	} 
 	
-	private static function getReflection() {
-		if (!isset(static::$_REFLECTIONS[get_called_class()]))
-			static::$_REFLECTIONS[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
-		return static::$_REFLECTIONS[get_called_class()];
+	public static function getReflection() {
+		if (!isset(self::$_REFLECTIONS[get_called_class()]))
+			self::$_REFLECTIONS[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
+		return self::$_REFLECTIONS[get_called_class()];
 	}
 	
 	public function __get($name) {
@@ -378,6 +388,8 @@ abstract class Entity implements \ArrayAccess
 			return static::$method();
 		/*} else {
 			return $this->$name;*/
+		} elseif (array_key_exists(self::PARENT, $this->_parents)) {
+			return $this->{self::PARENT}->$name;
 		}
 	}
 	
@@ -416,6 +428,8 @@ abstract class Entity implements \ArrayAccess
 			
 			$this->_values[$cn] = $value;
 
+		} elseif (array_key_exists(self::PARENT, $this->_parents)) {
+			$this->{self::PARENT}->$name = $value;
 		} else {
 			//throw new \Exception('Undefined property '.$name.' (class '.get_class($this).')');
 			$this->_aux[$name] = $value;
@@ -480,15 +494,16 @@ abstract class Entity implements \ArrayAccess
 	}
 	
 	public static function __callStatic($name, $arguments) {
-		if (method_exists(static::getReflection(), $name))
+		if (method_exists(static::getReflection(), $name)) {
 			return call_user_func_array(array(static::getReflection(), $name), $arguments);
+		}
 			
 		array_unshift($arguments, get_called_class());
 		return call_user_func_array(array(__NAMESPACE__.'\Table\Select', $name), $arguments);
 	}
 	
 	private static function isCallable($method) {
-		return method_exists(get_called_class(), $method) || method_exists(__NAMESPACE__.'\Reflection\EntityReflection', $method);
+		return method_exists(get_called_class(), $method) || method_exists(static::getReflection(), $method);
 	}
 	
 	final public function offsetSet($name, $value)

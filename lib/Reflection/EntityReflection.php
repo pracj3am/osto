@@ -20,10 +20,10 @@ if (!defined('ISQUA_TMP_DIR') && defined('TMP_DIR')) {
 final class EntityReflection extends \ReflectionClass
 {
 
-	public $children = array();
-	public $parents = array();
-	public $singles = array();
-	public $columns;
+	protected $children = array();
+	protected $parents = array();
+	protected $singles = array();
+	protected $columns;
 
 	private $_cache;
 	private $_properties;
@@ -34,14 +34,18 @@ final class EntityReflection extends \ReflectionClass
 	public function __construct($argument) {
 		parent::__construct($argument);
 
+		if (!$this->_isEntity()) {
+			//throw new Exception()
+		}
+
 		$this->columns = array(Entity::ID=>$this->prefix.'_'.Entity::ID);
 		
 		$this->_properties = $this->getAnnotations('property');
 		foreach ($this->_properties as &$pa) {
 			if ($pa->relation === 'belongs_to') {
-				$this->parents[$pa->name] = $pa->type;
-				
 				$parentClass = $pa->type;
+				$this->parents[$pa->name] = $parentClass;
+				
 				$columnName = $parentClass::getPrefix().'_'.Entity::ID;
 				$this->columns[$columnName] = $columnName;
 				$pa->column = $columnName;
@@ -54,6 +58,14 @@ final class EntityReflection extends \ReflectionClass
 					$pa->column :
 					($pa->column = $this->prefix.'_'.$pa->name);
 			}
+		}
+		
+		if ($this->_isExtendedEntity()) {
+			$parentEntity = $this->_getParentEntity();
+			$this->parents[Entity::PARENT] = $parentEntity;
+			$columnName = $parentEntity::getPrefix().'_'.Entity::ID;
+			$this->columns[$columnName] = $columnName;
+			$parentEntity::getReflection()->columns[Entity::ENTITY_COLUMN] = Entity::ENTITY_COLUMN;
 		}
 	}
 
@@ -118,6 +130,10 @@ final class EntityReflection extends \ReflectionClass
 	}
 	
 	private function getColumnName($name, $alias = FALSE) {
+		/*dump($name);
+		dump('for');
+		dump($this->name);
+		dump('returns');*/
 		if ( ($pos = strpos($name, '.')) !== FALSE) {
 			$parentName = substr($name, 0, $pos);
 			$parents = $this->parents;
@@ -137,6 +153,7 @@ final class EntityReflection extends \ReflectionClass
 						FALSE
 					)
 		);
+		//dump($r);
 	 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
 	}
 	
@@ -145,7 +162,12 @@ final class EntityReflection extends \ReflectionClass
 	}
 	
 	private function isExtendedEntity() {
-		return $this->_isEntity() && ($pc = $this->getParentClass()) && $pc->name != 'isqua\Entity';
+		$parentEntity = $this->_getParentEntity();
+		return $parentEntity && $this->_isEntity() && $parentEntity::isEntity();
+	}
+	
+	private function getParentEntity() {
+		return ($pc = $this->getParentClass()) ? $this->getParentClass()->name : FALSE;
 	}
 	
 	public function getTableName() {
@@ -191,6 +213,9 @@ final class EntityReflection extends \ReflectionClass
 	}
 	
 	private function isNullColumn($name) {
+		if ($name === Entity::ENTITY_COLUMN)
+			return TRUE;
+
 		foreach ($this->_properties as $pa)
 			if ($pa->column === $name) return $pa->null;
 

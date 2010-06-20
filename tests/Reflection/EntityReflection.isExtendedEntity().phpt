@@ -49,5 +49,5 @@ Assert::true(C::isEntity());
 
 Assert::false(A::isExtendedEntity());
 Assert::false(B::isExtendedEntity());
-Assert::true(C::isExtendedEntity());
+Assert::false(C::isExtendedEntity());
 Assert::true(D::isExtendedEntity());
