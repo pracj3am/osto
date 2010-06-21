@@ -232,7 +232,7 @@ final class EntityReflection extends \ReflectionClass
 	public static function instantiateCache()
 	{
 		$cacheStorage = new Caching\FileStorage(ISQUA_TMP_DIR);
-		return new Caching\Cache($cacheStorage, 'entityReflection');
+		return new Caching\Cache($cacheStorage, 'Isqua.EntityReflection');
 	}
 	
 	public static function create($entityClass)
