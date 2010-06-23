@@ -61,13 +61,11 @@ abstract class Select
 		foreach ($cursor as $row) {
 			// handle entity inheritance
 			if (isset($row[Entity::ENTITY_COLUMN])) {
-				$tmpClass = $row[Entity::ENTITY_COLUMN];
-				$parent_id_column = $class::getColumnName(Entity::ID);
-				$entity = $tmpClass::getOne(array($parent_id_column=>$row->$parent_id_column));
+				$entity = $class::create($row->{$class::getColumnName(Entity::ID)});
 			} else {
 				$entity = new $class($row->{$class::getColumnName(Entity::ID)});
-				$entity->column_values = $row;
 			}
+			$entity->column_values = $row;
 			//$entity->loadChildren();
 			if ($withParents)
 				foreach ($entity::getParents() as $parentName=>$parentClass) {
@@ -107,13 +105,13 @@ abstract class Select
 		);
 		$rows = array();
 		foreach ($cursor as $row) {
-			if ($class::isSelfReferencing() && ($children = self::getColumn($class, $column, array_merge( $where, array('parent_id'=>$row->id) ), $sort)) ) {
+			if ($class::isSelfReferencing() && ($children = self::getColumn($class, $column, array_merge( $where, array('parent_id'=>$row->_id) ), $sort)) ) {
 				
 				$rows[$row->name] = 
-					array($row->id => $row->name) +  
+					array($row->_id => $row->name) +  
 					($concatNamesInTree ? array_map(function($_)use ($row){return $row->name.' - '.$_;}, $children) : $children);
 			} else {
-				$rows[$row->id] = $row->name;
+				$rows[$row->_id] = $row->name;
 			}
 		}
 		return $rows;
