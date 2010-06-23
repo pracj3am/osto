@@ -59,11 +59,18 @@ abstract class Select
 		$cursor = dibi::fetchAll($args);
 		$rows = new RowCollection();
 		foreach ($cursor as $row) {
-			$entity = new $class($row->{$class::getColumnName(Entity::ID)});
-			$entity->column_values = $row;
+			// handle entity inheritance
+			if (isset($row[Entity::ENTITY_COLUMN])) {
+				$tmpClass = $row[Entity::ENTITY_COLUMN];
+				$parent_id_column = $class::getColumnName(Entity::ID);
+				$entity = $tmpClass::getOne(array($parent_id_column=>$row->$parent_id_column));
+			} else {
+				$entity = new $class($row->{$class::getColumnName(Entity::ID)});
+				$entity->column_values = $row;
+			}
 			//$entity->loadChildren();
 			if ($withParents)
-				foreach ($class::getParents() as $parentName=>$parentClass) {
+				foreach ($entity::getParents() as $parentName=>$parentClass) {
 					$parentEntity = new $parentClass();
 					$parentEntity->column_values = $row;
 					/**
