@@ -109,6 +109,21 @@ abstract class Entity implements \ArrayAccess
 		}
 	}
 	
+	final public function loadSingles($singleNames = array(), $withChildren = FALSE) {
+		if ($this->_id) {
+			if (empty($singleNames)) $singleNames = array_keys($this->_singles);
+
+			foreach ($this->singles as $singleName=>$singleClass) {
+				if (in_array($singleName, $singleNames)) {
+					$this->$singleName = $singleClass::getOne(array(
+						static::getColumnName(self::ID)=>$this->_id
+					));
+					$this->_loaded[$singleName] = TRUE;
+				}
+			}
+		}
+	}
+
 	final public function loadChildren($childrenNames = array(), $where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
 		if ($this->_id) {
 			if (empty($childrenNames)) $childrenNames = array_keys($this->_children); 
@@ -492,13 +507,17 @@ abstract class Entity implements \ArrayAccess
 	}
 	
 	public function __call($name, $arguments) {
-		if (strpos($name, 'load') === 0) {//load{Parent} or load{Children}
+		if (strpos($name, 'load') === 0) {//load{Parent} or load{Single} or load{Children}
 			$varName = strtolower(substr($name, 4, 1)).substr($name, 5);
 			$VarName = ucfirst($varName);
 			if (($a = array_key_exists($varName, $this->parents)) || array_key_exists($VarName, $this->parents)) {
 				$parentName = $a ? $varName : $VarName;
 				$withChildren = isset($arguments[0]) && $arguments[0];
 				return $this->loadParents(array($parentName), $withChildren);
+			} elseif (($a = array_key_exists($varName, $this->singles)) || array_key_exists($VarName, $this->singles)) {
+				$singleName = $a ? $varName : $VarName;
+				$withChildren = isset($arguments[0]) && $arguments[0];
+				return $this->loadSingles(array($singleName), $withChildren);
 			} elseif (($a = array_key_exists($varName, static::getChildren())) ||  array_key_exists($VarName, static::getChildren())) {
 				$childName = $a ? $varName : $VarName;
 				$where = isset($arguments[0]) ? array($childName=>$arguments[0]) : array();
