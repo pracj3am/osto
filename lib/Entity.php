@@ -79,8 +79,10 @@ abstract class Entity implements \ArrayAccess
 			} else return FALSE;
 			
 			// parents
-			if ($withParents)
+			if ($withParents) {
 				$this->loadParents();
+				$this->loadSingles();
+			}
 			
 			//children
 			if ($withChildren)

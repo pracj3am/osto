@@ -67,7 +67,7 @@ abstract class Select
 			}
 			$entity->column_values = $row;
 			//$entity->loadChildren();
-			if ($withParents)
+			if ($withParents) {
 				foreach ($entity::getParents() as $parentName=>$parentClass) {
 					$parentEntity = new $parentClass();
 					$parentEntity->column_values = $row;
@@ -81,6 +81,13 @@ abstract class Select
 					}
 					$entity->{$parentName} = $parentEntity; 
 				}
+				foreach ($entity::getSingles() as $singleName=>$singleClass) {
+					$singleEntity = new $singleClass();
+					$singleEntity->column_values = $row;
+					$entity->{$singleName} = $singleEntity;
+				}
+			}
+
 			
 			$rows[$row->{$class::getColumnName(Entity::ID)}] = $entity;
 		}
@@ -137,12 +144,19 @@ abstract class Select
 	
 	public static function getFromClause($class, $withParents = FALSE, $alias = self::ALIAS) {
 		$from = '`'.$class::getTableName().'` AS `'.$alias.'`';
-		if ($withParents)
+		if ($withParents) {
 			foreach ($class::getParents() as $parentName=>$parentClass) {
 				if ($parentClass != $class)
 					$from .= ' LEFT JOIN (' . self::getFromClause($parentClass, $withParents, $alias.self::ALIAS_DELIM.$parentName) . ') '. 
 						'ON (`'.$alias.'.'.$parentClass::getPrefix().'_'.Entity::ID.'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::getPrefix().'_'.Entity::ID.'`)';
 			}
+
+			foreach ($class::getSingles() as $singleName=>$singleClass) {
+				if ($singleClass != $class)
+					$from .= ' LEFT JOIN (' . self::getFromClause($singleClass, FALSE, $alias.self::ALIAS_DELIM.$singleName) . ') '.
+						'ON (`'.$alias.'.'.$class::getPrefix().'_'.Entity::ID.'`=`'.$alias.self::ALIAS_DELIM.$singleName.'.'.$class::getPrefix().'_'.Entity::ID.'`)';
+			}
+		}
 		return $from;
 	}
 	
