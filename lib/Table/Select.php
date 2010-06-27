@@ -118,7 +118,7 @@ abstract class Select
 					array($row->_id => $row->name) +  
 					($concatNamesInTree ? array_map(function($_)use ($row){return $row->name.' - '.$_;}, $children) : $children);
 			} else {
-				$rows[$row->_id] = $row->name;
+				$rows[$row->id] = $row->name;
 			}
 		}
 		return $rows;
