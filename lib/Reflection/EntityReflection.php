@@ -135,12 +135,13 @@ final class EntityReflection extends \ReflectionClass
 		dump($this->name);
 		dump('returns');*/
 		if ( ($pos = strpos($name, '.')) !== FALSE) {
-			$parentName = substr($name, 0, $pos);
+			$entityName = substr($name, 0, $pos);
 			$parents = $this->parents;
-			if (isset($parents[$parentName])) {
-				$class = $parents[$parentName];
+			$singles = $this->singles;
+			if (($a = isset($parents[$entityName])) || isset($singles[$entityName])) {
+				$class = $a ? $parents[$entityName] : $singles[$entityName];
 				$name = substr($name, $pos+1);
-				$r =  $class::getColumnName($name, $parentName);
+				$r =  $class::getColumnName($name, $entityName);
 			 	return $r === FALSE ? $r : ($alias ? $alias.Select::ALIAS_DELIM : '').$r;
 			}
 
