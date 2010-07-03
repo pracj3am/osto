@@ -24,6 +24,7 @@ final class EntityReflection extends \ReflectionClass
 	protected $parents = array();
 	protected $singles = array();
 	protected $columns;
+	protected $foreign_keys = array();
 
 	private $_cache;
 	private $_properties;
@@ -44,15 +45,21 @@ final class EntityReflection extends \ReflectionClass
 		foreach ($this->_properties as &$pa) {
 			if ($pa->relation === 'belongs_to') {
 				$parentClass = $pa->type;
+				is_string($pa->column) or
+						$pa->column = $parentClass::getPrefix().'_'.Entity::ID;
+
 				$this->parents[$pa->name] = $parentClass;
-				
-				$columnName = $parentClass::getPrefix().'_'.Entity::ID;
-				$this->columns[$columnName] = $columnName;
-				$pa->column = $columnName;
+				$this->columns[$pa->name] = $pa->column;
 			} elseif ($pa->relation === 'has_many') {
 				$this->children[$pa->name] = $pa->type;
+				$this->foreign_keys[$pa->name] = is_string($pa->column) ?
+					$pa->column :
+					$this->prefix.'_'.Entity::ID;
 			} elseif ($pa->relation === 'has_one') {
 				$this->singles[$pa->name] = $pa->type;
+				$this->foreign_keys[$pa->name] = is_string($pa->column) ?
+					$pa->column :
+					$this->prefix.'_'.Entity::ID;
 			} elseif ($pa->relation === FALSE) {
 				$this->columns[$pa->name] = is_string($pa->column) ?
 					$pa->column :
@@ -130,10 +137,6 @@ final class EntityReflection extends \ReflectionClass
 	}
 	
 	private function getColumnName($name, $alias = FALSE) {
-		/*dump($name);
-		dump('for');
-		dump($this->name);
-		dump('returns');*/
 		if ( ($pos = strpos($name, '.')) !== FALSE) {
 			$entityName = substr($name, 0, $pos);
 			$parents = $this->parents;
@@ -147,17 +150,17 @@ final class EntityReflection extends \ReflectionClass
 
 			return FALSE;
 		}
-		$r = ( ($t = $this->columns) && isset($t[$name]) ? 
-					$t[$name] :
-					($this->_isColumn($name) ? 
-						$name :
-						FALSE
-					)
+		$r = ( isset($this->columns[$name]) ? $this->columns[$name] :
+				( $this->_isColumn($name) ? $name : FALSE )
 		);
-		//dump($r);
 	 	return $r === FALSE ? $r : ($alias ? $alias.'.' : '').$r;
 	}
 	
+	private function getForeignKeyName($name) {
+		return isset($this->foreign_keys[$name]) ? $this->foreign_keys[$name] :
+					FALSE;
+	}
+
 	private function isEntity() {
 		return $this->isSubClassOf('isqua\Entity') && !$this->isAbstract();
 	}

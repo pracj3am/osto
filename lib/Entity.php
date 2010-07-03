@@ -98,11 +98,11 @@ abstract class Entity implements \ArrayAccess
 	
 		foreach ($this->parents as $parentName=>$parentClass) {
 			if (in_array($parentName, $parentNames)) 
-				if ($this->{$parentClass::getColumnName(self::ID)}) {
+				if ($this[static::getColumnName($parentName)]) {
 					if ($parentName === self::PARENT)
-						$parentEntity = new $parentClass($this->{$parentClass::getColumnName(self::ID)});
+						$parentEntity = new $parentClass($this[$parentClass::getColumnName(self::ID)]);
 					else 
-						$parentEntity = $parentClass::create($this->{$parentClass::getColumnName(self::ID)});
+						$parentEntity = $parentClass::create($this[static::getColumnName($parentName)]);
 
 					$parentEntity->load(FALSE, $withChildren);
 					$this->$parentName = $parentEntity;
@@ -118,7 +118,7 @@ abstract class Entity implements \ArrayAccess
 			foreach ($this->singles as $singleName=>$singleClass) {
 				if (in_array($singleName, $singleNames)) {
 					$this->$singleName = $singleClass::getOne(array(
-						static::getColumnName(self::ID)=>$this->_id
+						static::getForeignKeyName($singleName)=>$this->_id
 					));
 					$this->_loaded[$singleName] = TRUE;
 				}
@@ -134,7 +134,7 @@ abstract class Entity implements \ArrayAccess
 					if (get_class($this) == $childClass)//load children of the same class
 						$fk = 'parent_id';
 					else 						
-						$fk = static::getColumnName(self::ID);
+						$fk = static::getForeignKeyName($childName);
 					$whereTmp = array_merge(
 						isset($where[$childName]) ? $where[$childName] : array(), 
 						array($fk=>(int)$this->_id)
@@ -187,9 +187,7 @@ abstract class Entity implements \ArrayAccess
 					$parentEntity[self::ENTITY_COLUMN] = get_class($this);
 				}
 				$parentEntity->save();
-				$this[$parentEntity::getReflection()->getColumnName(self::ID)] = $parentEntity->_id;
-				//$this->{$parentEntity::getColumnName(self::ID)} = $parentEntity->id;
-				//dump($this);
+				$this[static::getColumnName($parentName)] = $parentEntity->_id;
 			}
 		}
 
@@ -221,17 +219,17 @@ abstract class Entity implements \ArrayAccess
 		}
 		
 		//save singles
-		foreach ($this->_singles as $single) {
+		foreach ($this->_singles as $singleName=>$single) {
 			if ($single instanceof self) {
-				$single->{static::getColumnName(self::ID)} = $this->_id;
+				$single[static::getForeignKeyName($singleName)] = $this->_id;
 				$single->save();
 			}
 		}
 
 		//save children
-		foreach ($this->_children as $children) {
+		foreach ($this->_children as $childName=>$children) {
 			foreach ($children as $i=>$childEntity) {
-				$childEntity->{static::getColumnName(self::ID)} = $this->_id;
+				$childEntity[static::getForeignKeyName($childName)] = $this->_id;
 				$childEntity->save();
 			}
 		}
@@ -381,12 +379,6 @@ abstract class Entity implements \ArrayAccess
 			return $this->_id;
 		} elseif ($_name == 'id' || $name == self::getColumnName('id')) {
 			return $this->_id;
-		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
-			return $this->_values[self::getColumnName($_name)];
-		} elseif (method_exists($this, ($m_name = Helpers::getter($name)) )) {//get{Name}
-			return $this->{$m_name}();
-		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
-			return $this->_values[self::getColumnName($name)];
 		} elseif (array_key_exists($name = trim($name, '0'), $this->_parents)) {
 			if ( (!$this->_parents[$name] instanceof self /*|| !$this->_parents[$name]->_self_loaded*/) &&
 				 (!isset($this->_loaded[$name]) || !$this->_loaded[$name]) ) //lazy loading
@@ -415,6 +407,12 @@ abstract class Entity implements \ArrayAccess
 			return $this->_singles[$name];
 		} elseif ($_name && array_key_exists($_name, $this->_singles)) {
 			return $this->_singles[$_name];
+		} elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
+			return $this->_values[self::getColumnName($_name)];
+		} elseif (method_exists($this, ($m_name = Helpers::getter($name)) )) {//get{Name}
+			return $this->{$m_name}();
+		} elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
+			return $this->_values[self::getColumnName($name)];
 		} elseif (array_key_exists($name, $this->_aux)) {
 			return $this->_aux[$name];
 		} elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
