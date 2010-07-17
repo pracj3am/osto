@@ -175,7 +175,7 @@ final class AnnotationsParser
 				}
 			}
 
-			$class = 'isqua\Reflection\\' . ucfirst($name) . 'Annotation';
+			$class = 'osto\Reflection\\' . ucfirst($name) . 'Annotation';
 			if (class_exists($class)) {
 				$res[$name][] = new $class(is_array($value) ? $value : array('value' => $value));
 
