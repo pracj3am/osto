@@ -80,28 +80,28 @@ __halt_compiler();
 
 ------EXPECT------
 array(4) {
-	0 => object(isqua\Reflection\PropertyAnnotation) (5) {
+	0 => object(osto\Reflection\PropertyAnnotation) (5) {
 		"type" => string(6) "string"
 		"name" => string(3) "one"
 		"column" => string(5) "t_one"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
 	}
-	1 => object(isqua\Reflection\PropertyAnnotation) (5) {
+	1 => object(osto\Reflection\PropertyAnnotation) (5) {
 		"type" => string(6) "string"
 		"name" => string(3) "two"
 		"column" => string(5) "t_two"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
 	}
-	2 => object(isqua\Reflection\PropertyAnnotation) (5) {
+	2 => object(osto\Reflection\PropertyAnnotation) (5) {
 		"type" => string(6) "string"
 		"name" => string(3) "x_y"
 		"column" => string(3) "x_y"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
 	}
-	3 => object(isqua\Reflection\PropertyAnnotation) (5) {
+	3 => object(osto\Reflection\PropertyAnnotation) (5) {
 		"type" => string(7) "subTest"
 		"name" => string(3) "sub"
 		"column" => NULL
@@ -129,5 +129,5 @@ array(5) {
 	"one" => string(6) "st_one"
 	"two" => string(6) "st_two"
 	"x_y" => string(3) "x_y"
-	"t_id" => string(4) "t_id"
+	"test" => string(4) "t_id"
 }
