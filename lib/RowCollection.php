@@ -1,5 +1,5 @@
 <?php
-namespace isqua;
+namespace osto;
 
 class RowCollection extends \ArrayObject{
 	

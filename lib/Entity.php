@@ -1,9 +1,9 @@
 <?php
-namespace isqua;
+namespace osto;
 
 
 
-use isqua\Table\Helpers;
+use osto\Table\Helpers;
 use dibi;
 
 

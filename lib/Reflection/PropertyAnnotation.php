@@ -1,7 +1,7 @@
 <?php
-namespace isqua\Reflection;
+namespace osto\Reflection;
 
-use isqua\Nette;
+use osto\Nette;
 
 
 

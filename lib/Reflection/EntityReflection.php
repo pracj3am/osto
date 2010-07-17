@@ -1,18 +1,18 @@
 <?php
-namespace isqua\Reflection;
+namespace osto\Reflection;
 
 
 
-use isqua\Entity;
-use isqua\Table\Helpers;
-use isqua\Table\Select;
-use isqua\Nette\AnnotationsParser;
-use isqua\Nette\Caching;
+use osto\Entity;
+use osto\Table\Helpers;
+use osto\Table\Select;
+use osto\Nette\AnnotationsParser;
+use osto\Nette\Caching;
 
 
 
-if (!defined('ISQUA_TMP_DIR') && defined('TMP_DIR')) {
-	define('ISQUA_TMP_DIR', TMP_DIR);
+if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
+	define('OSTO_TMP_DIR', TMP_DIR);
 }
 
 
@@ -162,7 +162,7 @@ final class EntityReflection extends \ReflectionClass
 	}
 
 	private function isEntity() {
-		return $this->isSubClassOf('isqua\Entity') && !$this->isAbstract();
+		return $this->isSubClassOf('osto\Entity') && !$this->isAbstract();
 	}
 	
 	private function isExtendedEntity() {
@@ -235,8 +235,8 @@ final class EntityReflection extends \ReflectionClass
 	
 	public static function instantiateCache()
 	{
-		$cacheStorage = new Caching\FileStorage(ISQUA_TMP_DIR);
-		return new Caching\Cache($cacheStorage, 'Isqua.EntityReflection');
+		$cacheStorage = new Caching\FileStorage(OSTO_TMP_DIR);
+		return new Caching\Cache($cacheStorage, 'Osto.EntityReflection');
 	}
 	
 	public static function create($entityClass)

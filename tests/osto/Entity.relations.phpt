@@ -2,22 +2,22 @@
 namespace Test;
 
 /**
- * Test: isqua\Entity relations
+ * Test: osto\Entity relations
  *
  * @author     Jan Prachař
- * @category   isqua
- * @package    isqua
+ * @category   osto
+ * @package    osto
  * @subpackage UnitTests
  */
 
-use isqua\Entity;
+use osto\Entity;
 
 
 
 require __DIR__ . '/../NetteTest/initialize.php';
 
-define('ISQUA_TMP_DIR', __DIR__ . '/tmp');
-\NetteTestHelpers::purge(ISQUA_TMP_DIR);
+define('OSTO_TMP_DIR', __DIR__ . '/tmp');
+\NetteTestHelpers::purge(OSTO_TMP_DIR);
 
 
 

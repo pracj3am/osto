@@ -1,5 +1,5 @@
-isqua 
-=====
+Osto 
+====
 
 Smart, Effective and Tiny ORM for PHP6
 

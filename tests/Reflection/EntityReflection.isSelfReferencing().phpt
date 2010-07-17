@@ -1,24 +1,24 @@
 <?php
 
 /**
- * Test: isqua\Reflection\EntityReflection::isSelfReferencing()
+ * Test: osto\Reflection\EntityReflection::isSelfReferencing()
  *
  * @author     Jan Prachař
- * @category   isqua
- * @package    isqua\Table
+ * @category   osto
+ * @package    osto\Table
  * @subpackage UnitTests
  */
 
-use isqua\Entity;
-use isqua\Table\Helpers;
+use osto\Entity;
+use osto\Table\Helpers;
 
 
 
 
 require __DIR__ . '/../NetteTest/initialize.php';
 
-define('ISQUA_TMP_DIR', __DIR__ . '/tmp');
-NetteTestHelpers::purge(ISQUA_TMP_DIR);
+define('OSTO_TMP_DIR', __DIR__ . '/tmp');
+NetteTestHelpers::purge(OSTO_TMP_DIR);
 
 
 

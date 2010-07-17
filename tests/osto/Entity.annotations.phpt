@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Test: isqua\Entity annotations.
+ * Test: osto\Entity annotations.
  *
  * @author     Jan Prachař
- * @category   isqua
- * @package    isqua
+ * @category   osto
+ * @package    osto
  * @subpackage UnitTests
  */
 
-use isqua\Entity;
-use isqua\Nette\AnnotationsParser as A;
+use osto\Entity;
+use osto\Nette\AnnotationsParser as A;
 
 
 

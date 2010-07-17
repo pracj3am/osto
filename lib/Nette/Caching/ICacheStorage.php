@@ -10,9 +10,9 @@
  * @package    Nette\Caching
  */
 
-namespace isqua\Nette\Caching;
+namespace osto\Nette\Caching;
 
-use isqua\Nette;
+use osto\Nette;
 
 
 

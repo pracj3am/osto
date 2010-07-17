@@ -2,23 +2,23 @@
 namespace Test;
 
 /**
- * Test: isqua\Reflection\EntityReflection caching
+ * Test: osto\Reflection\EntityReflection caching
  *
  * @author     Jan Prachař
- * @category   isqua
- * @package    isqua\Table
+ * @category   osto
+ * @package    osto\Table
  * @subpackage UnitTests
  */
 
-use isqua\Entity;
-use isqua\Reflection\EntityReflection;
+use osto\Entity;
+use osto\Reflection\EntityReflection;
 
 
 
 require __DIR__ . '/../NetteTest/initialize.php';
 
-define('ISQUA_TMP_DIR', __DIR__ . '/tmp');
-\NetteTestHelpers::purge(ISQUA_TMP_DIR);
+define('OSTO_TMP_DIR', __DIR__ . '/tmp');
+\NetteTestHelpers::purge(OSTO_TMP_DIR);
 
 
 

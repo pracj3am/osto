@@ -1,10 +1,10 @@
 <?php
 
-namespace isqua\Table;
+namespace osto \Table;
 
 
-use isqua\Entity;
-use isqua\RowCollection;
+use osto\Entity;
+use osto\RowCollection;
 use dibi;
 
 

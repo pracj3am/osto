@@ -1,4 +1,4 @@
 <?php
-namespace isqua;
+namespace osto;
 
 class Exception extends \Exception {}

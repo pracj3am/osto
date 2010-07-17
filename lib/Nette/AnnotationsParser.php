@@ -10,9 +10,9 @@
  * @package    Nette\Reflection
  */
 
-namespace isqua\Nette;
+namespace osto\Nette;
 
-use isqua\Nette;
+use osto\Nette;
 
 
 

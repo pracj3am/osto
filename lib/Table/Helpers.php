@@ -1,6 +1,6 @@
 <?php
 
-namespace isqua\Table;
+namespace osto\Table;
 
 
 
