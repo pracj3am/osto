@@ -29,7 +29,7 @@ dibi::query('
 	`p_p_koo` VARCHAR( 255 ) NOT NULL ,
 	`p_koo` VARCHAR( 255 ) NOT NULL ,
 	`zzz` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
-	) ENGINE = InnoDB;
+	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 ');
 
 
@@ -40,7 +40,7 @@ dibi::query('
 	`l_content` VARCHAR(2048) DEFAULT "",
 	KEY (p_id) /*,
 	FOREIGN KEY (p_id) REFERENCES `poiu` (`p_id`) ON DELETE CASCADE ON UPDATE CASCADE*/
-	) ENGINE = InnoDB;
+	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 ');
 
 dibi::query('
@@ -49,7 +49,7 @@ dibi::query('
 	`p_id` INT NULL ,
 	`m_boo` VARCHAR(2048) NOT NULL DEFAULT "-",
 	KEY (p_id)
-	) ENGINE = InnoDB;
+	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 ');
 
 /**
@@ -223,4 +223,4 @@ array(3) {
 	"id" => int(2)
 	"boo" => string(5) "Howgh"
 	"p_id" => string(1) "2"
-} 
+}

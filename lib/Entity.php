@@ -31,7 +31,7 @@ abstract class Entity implements \ArrayAccess
 	private $_aux = array();
 	
 	public function __construct($id = null) {
-		$this->_id = $id;
+		$this->_id = (int)$id;
 		foreach ($this->columns as $column) {
 			if ($column != static::getColumnName(self::ID)) {
 				$this->_modified[$column] = self::VALUE_NOT_SET;
@@ -56,7 +56,7 @@ abstract class Entity implements \ArrayAccess
 		$entity = new static($id);
 		if ($entity->load() && isset($entity[self::ENTITY_COLUMN])) {
 			$entityClass = $entity[self::ENTITY_COLUMN];
-			$entity = $entityClass::getOne(array(static::getColumnName(self::ID)=>$id));
+			$entity = $entityClass::getOne(array(self::PARENT=>$id));
 		}
 		
 		return $entity;
@@ -97,17 +97,20 @@ abstract class Entity implements \ArrayAccess
 		if (empty($parentNames)) $parentNames = array_keys($this->_parents); 
 	
 		foreach ($this->parents as $parentName=>$parentClass) {
-			if (in_array($parentName, $parentNames)) 
-				if ($this[static::getColumnName($parentName)]) {
-					if ($parentName === self::PARENT)
-						$parentEntity = new $parentClass($this[$parentClass::getColumnName(self::ID)]);
-					else 
-						$parentEntity = $parentClass::create($this[static::getColumnName($parentName)]);
+			if (in_array($parentName, $parentNames)) {
+				
+                if ($parentName === self::PARENT) {
+                    $parentEntity = new $parentClass($this[static::getColumnName($parentName)]);
+                } elseif (isset($this[static::getColumnName($parentName)])) {
+                    $parentEntity = $parentClass::create($this[static::getColumnName($parentName)]);
+                } else {
+                    continue;
+                }
 
-					$parentEntity->load(FALSE, $withChildren);
-					$this->$parentName = $parentEntity;
-					$this->_loaded[$parentName] = TRUE; 
-				}
+                $parentEntity->load(FALSE, $withChildren);
+                $this->$parentName = $parentEntity;
+                $this->_loaded[$parentName] = TRUE;
+            }
 		}
 	}
 	
@@ -192,7 +195,6 @@ abstract class Entity implements \ArrayAccess
 		}
 
 		$values = $v = $this->getValuesForSave();
-		//dump($v);
 		static::replaceKeys($values);
 		foreach ($values as $key => $value) {
 			if (strpos($value, '`') === 0) {
@@ -206,7 +208,7 @@ abstract class Entity implements \ArrayAccess
 			
 			dibi::query(
 				'INSERT INTO `'.static::getTableName().'`', $values,
-				'ON DUPLICATE KEY UPDATE '.static::getColumnName(self::ID).'=LAST_INSERT_ID('.static::getPrefix().'_'.self::ID.') 
+				'ON DUPLICATE KEY UPDATE '.static::getColumnName(self::ID).'=LAST_INSERT_ID('.static::getPrefix().'_'.self::ID.')
 				%if', $valuesWithoutPK, ', %a', $valuesWithoutPK, '%end'
 			);
 			$this->afterSave($v);
@@ -214,7 +216,7 @@ abstract class Entity implements \ArrayAccess
 			if (!$this->_id) {
 				$id = dibi::insertId();
 				if ($this->_id && $this->_id != $id) throw new Exception('ID changed!');
-				$this->_id = $id; 
+				$this->_id = (int)$id;
 			}
 		}
 		
@@ -285,6 +287,8 @@ abstract class Entity implements \ArrayAccess
 		}
 
 		foreach ($this->_parents as $parentName=>$parentEntity) {
+            unset($values[$parentName]);
+            $values[static::getColumnName($parentName)] = $this->_values[static::getColumnName($parentName)];
 			if ($parentName === self::PARENT && !$parentEntity instanceof self) {
 				$parentEntity = $this->{self::PARENT};
 			}
@@ -313,10 +317,10 @@ abstract class Entity implements \ArrayAccess
 						$this->$key = $val;
 			}
 			if (is_array($value) && isset($value[static::getColumnName(self::ID)])) {
-				$this->_id = $value[static::getColumnName(self::ID)];
+				$this->_id = (int)$value[static::getColumnName(self::ID)];
 			}
 			if (is_object($value) && isset($value->{static::getColumnName(self::ID)})) {
-				$this->_id = $value->{static::getColumnName(self::ID)};
+				$this->_id = (int)$value->{static::getColumnName(self::ID)};
 			}
 			foreach ($this->_parents as $parentName=>$parentEntity) {
 				if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) { 
@@ -545,7 +549,7 @@ abstract class Entity implements \ArrayAccess
 	}
 	
 	final public function offsetSet($name, $value)
-	{
+	{if($name===FALSE) throw new \Exception;
 		if (array_key_exists($name, $this->_values) || $name === self::ENTITY_COLUMN)
 			$this->_values[$name] = $value;
 	}

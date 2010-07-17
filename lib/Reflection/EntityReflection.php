@@ -71,7 +71,7 @@ final class EntityReflection extends \ReflectionClass
 			$parentEntity = $this->_getParentEntity();
 			$this->parents[Entity::PARENT] = $parentEntity;
 			$columnName = $parentEntity::getPrefix().'_'.Entity::ID;
-			$this->columns[$columnName] = $columnName;
+			$this->columns[Entity::PARENT] = $columnName;
 			$parentEntity::getReflection()->columns[Entity::ENTITY_COLUMN] = Entity::ENTITY_COLUMN;
 		}
 	}

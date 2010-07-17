@@ -119,7 +119,7 @@ D columns:
 
 array(4) {
 	"id" => string(5) "td_id"
-	"ta_id" => string(5) "ta_id"
-	"tb_id" => string(5) "tb_id"
-	"tc_id" => string(5) "tc_id"
+	"x1" => string(5) "ta_id"
+	"x2" => string(5) "tb_id"
+	"x3" => string(5) "tc_id"
 }
