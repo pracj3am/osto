@@ -7,8 +7,9 @@ use dibi;
 
 
 
-abstract class Entity implements \ArrayAccess
+abstract class Entity implements \ArrayAccess, \IteratorAggregate
 {
+    const ALL = 'all';
     const PARENT = 'ParentEntity';
     const ENTITY_COLUMN = 'entity';
 
@@ -25,29 +26,47 @@ abstract class Entity implements \ArrayAccess
     private $_children = array();
     private $_singles = array();
     private $_loaded;
-    private $_self_loaded = false;
+    private $_self_loaded;
     private $_aux = array();
 
 
 
+    /**
+     * Constructor
+     * @param int $id primary key value
+     */
     public function __construct($id = null)
     {
-        $this->_id = (int) $id;
-        foreach ($this->columns as $prop=>$column) {
-            if ($prop != static::getReflection()->getPrimaryKey) {
+        $this->id = $id;
+        $this->initialize();
+    }
+
+
+
+    /**
+     * Initializes entity internal properties. Called by the constructor
+     * @return void
+     */
+    private function initialize()
+    {
+        $this->_self_loaded = FALSE;
+        
+        $r = static::getReflection();
+        foreach ($r->columns as $prop=>$column) {
+            if ($prop != $r->primaryKey) {
                 $this->_modified[$column] = self::VALUE_NOT_SET;
                 $this->_values[$column] = NULL;
             }
         }
-        foreach ($this->parents as $parentName => $parentClass) {
+        foreach ($r->parents as $parentName => $parentClass) {
             $this->_parents[$parentName] = NULL;
             $this->_loaded[$parentName] = FALSE;
         }
-        foreach (static::getChildren() as $childName => $childClass) {
-            $this->_children[$childName] = new RowCollection;
+        foreach ($r->children as $childName => $childClass) {
+            $this->_children[$childName] = new EntityCollection;
             $this->_loaded[$childName] = FALSE;
         }
-        foreach ($this->singles as $singleName => $singleClass) {
+        foreach ($r->singles as $singleName => $singleClass) {
             $this->_singles[$singleName] = NULL;
             $this->_loaded[$singleName] = FALSE;
         }
@@ -55,91 +74,130 @@ abstract class Entity implements \ArrayAccess
 
 
 
-    public static function create($id = NULL)
+    /**
+     * Tells wheter it is a standalone entity or an ancestor-part of another standalone entity
+     * @return bool
+     */
+    private function isStandalone()
     {
-        $entity = new static($id);
-        if ($entity->load() && isset($entity[self::ENTITY_COLUMN])) {
-            $entityClass = $entity[self::ENTITY_COLUMN];
-            $entity = $entityClass::getOne(array(self::PARENT => $id));
-        }
-
-        return $entity;
+        return isset($this[self::ENTITY_COLUMN]) && $this[self::ENTITY_COLUMN] !== get_class($this);
     }
 
 
 
-    final public function load($withParents = FALSE, $withChildren = FALSE)
+    /**
+     * Returns entity class name with respect to inheritance issue
+     * @return string
+     */
+    private function getEntityClass()
     {
+        return $this->isStandalone() ? get_class($this) : $this[self::ENTITY_COLUMN];
+    }
 
-        if ($this->_id) {
-            $row = dibi::fetch(
-                            'SELECT * FROM `' . static::getTableName() . '` ' .
-                            'WHERE %and', array(static::getReflection()->getPrimaryKeyColumn() => $this->_id)
-            );
-            if ($row) {
-                foreach ($row as $name => $value)
-                    if ($name != static::getReflection()->getPrimaryKeyColumn()) {
-                        $this[$name] = $value;
-                        $this->_modified[$name] = self::VALUE_NOT_MODIFIED;
+
+
+    /**
+     * Is data loaded?
+     * @return bool
+     */
+    final public function isLoaded()
+    {
+        return $this->_self_loaded;
+    }
+
+
+
+    /**
+     * Loads entity data
+     * @param int $depth depth of loading recursion
+     * @return bool is loading successfull
+     */
+    final public function load($depth = 0)
+    {
+        if ($this->_id !== NULL) {
+            if (!($this->_self_loaded)) {
+                $row = dibi::fetch( static::getSql(array('*'), array(static::getReflection()->primaryKey=>$this->_id)) );
+                if ($row) {
+                    foreach ($row as $name => $value) {
+                        if ($name != static::getReflection()->primaryKeyColumn) {
+                            $this->_values[$name] = $value;
+                            $this->_modified[$name] = self::VALUE_NOT_MODIFIED;
+                        }
                     }
-                $this->_self_loaded = TRUE;
-            } else
-                return FALSE;
-
-            // parents
-            if ($withParents) {
-                $this->loadParents();
-                $this->loadSingles();
+                    $this->_self_loaded = TRUE;
+                } else {
+                    return FALSE;
+                }
             }
 
-            //children
-            if ($withChildren)
-                $this->loadChildren();
+            $this->loadParents(self::PARENT);
+            if ($depth > 0) {
+                $this->loadParents(self::ALL, $depth-1);
+                $this->loadSingles(self::ALL, $depth-1);
+                $this->loadChildren(self::ALL, $depth-1);
+            }
 
-            return $this;
-        } else
-            return NULL;
+            return TRUE;
+        }
+        
+        return FALSE;
     }
 
 
 
-    final public function loadParents($parentNames = array(), $withChildren = FALSE)
+    /**
+     * Instantiates parent entities for existing foreign keys ('belongs to' relation) and try to load their data
+     * @param array|string $parentNames Array of parent names or self::ALL
+     * @param int $depth depth of loading recursion
+     */
+    final public function loadParents($parentNames = self::ALL, $depth = 0)
     {
-        if (empty($parentNames))
+        if ($parentNames === self::ALL) {
             $parentNames = array_keys($this->_parents);
+        } elseif (!is_array($parentNames)) {
+            $parentNames = (array)$parentNames;
+        }
 
-        foreach ($this->parents as $parentName => $parentClass) {
-            if (in_array($parentName, $parentNames)) {
+        foreach (static::getReflection()->parents as $parentName => $parentClass) {
+            if (in_array($parentName, $parentNames) && isset($this[static::getColumnName($parentName)])) {
 
                 if ($parentName === self::PARENT) {
                     $parentEntity = new $parentClass($this[static::getColumnName($parentName)]);
-                } elseif (isset($this[static::getColumnName($parentName)])) {
-                    $parentEntity = $parentClass::create($this[static::getColumnName($parentName)]);
+                    $parentEntity->load($depth);
                 } else {
-                    continue;
+                    $parentEntity = $parentClass::findById($this[static::getColumnName($parentName)]);
                 }
 
-                $parentEntity->load(FALSE, $withChildren);
-                $this->$parentName = $parentEntity;
-                $this->_loaded[$parentName] = TRUE;
+                $this->_parents[$parentName] = $parentEntity;
+                $this->_loaded[$parentName] = $parentEntity->isLoaded();
             }
         }
     }
 
 
 
-    final public function loadSingles($singleNames = array(), $withChildren = FALSE)
+    /**
+     * Instantiates singles entities ('has one' relation) and try to load their data
+     * @param array|string $singleNames array of single names or self::ALL
+     * @param int $depth depth of loading recursion
+     */
+    final public function loadSingles($singleNames = self::ALL, $depth = 0)
     {
-        if ($this->_id) {
-            if (empty($singleNames))
+        if ($this->_id !== NULL) {
+            if ($singleNames === self::ALL) {
                 $singleNames = array_keys($this->_singles);
+            } elseif (!is_array($singleNames)) {
+                $singleNames = (array)$singleNames;
+            }
 
-            foreach ($this->singles as $singleName => $singleClass) {
+            foreach (static::getReflection()->singles as $singleName => $singleClass) {
                 if (in_array($singleName, $singleNames)) {
-                    $this->$singleName = $singleClass::getOne(array(
-                                static::getForeignKeyName($singleName) => $this->_id
+                    $entity = $singleClass::getOne(array(
+                                static::getForeignKeyName($singleName) => $this->id
                             ));
-                    $this->_loaded[$singleName] = TRUE;
+                    $entity->load($depth);
+                    $this->_singles[$singleName] = $entity;
+                    $this->_loaded[$singleName] = $entity->isLoaded();
                 }
             }
         }
@@ -657,6 +715,13 @@ abstract class Entity implements \ArrayAccess
     {
         if (array_key_exists($name, $this->_values))
             unset($this->_values[$name]);
+    }
+
+
+
+    final public function getIterator()
+    {
+        return new \ArrayIterator($this->_values);
     }
 
 }

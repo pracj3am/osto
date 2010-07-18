@@ -1,7 +1,7 @@
 <?php
 namespace osto;
 
-class RowCollection extends \ArrayObject{
+class EntityCollection extends \ArrayObject{
 	
 	public function isEmpty() {
 		return $this->count() === 0;
@@ -44,7 +44,7 @@ class RowCollection extends \ArrayObject{
 		if ( ($pos = strpos($index, '=')) !== FALSE) {
 			$property = substr($index, 0, $pos);
 			$value = substr($index, $pos+1);
-			$r = new RowCollection();
+			$r = new self();
 			foreach ($this->getIterator() as $key=>$current) {
 				if (isset($current->$property) && $current->$property == $value)
 					$r[$key] = $current;

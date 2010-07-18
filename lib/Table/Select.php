@@ -4,7 +4,7 @@ namespace osto \Table;
 
 
 use osto\Entity;
-use osto\RowCollection;
+use osto\EntityCollection;
 use dibi;
 
 
@@ -57,11 +57,13 @@ abstract class Select
 		}
 		//dibi::test($args);
 		$cursor = dibi::fetchAll($args);
-		$rows = new RowCollection();
+		$rows = new EntityCollection();
 		foreach ($cursor as $row) {
 			// handle entity inheritance
 			if (isset($row[Entity::ENTITY_COLUMN])) {
 				$entity = $class::create($row->{$class::getReflection()->primaryKeyColumn});
+                /*$subClass = $row[Entity::ENTITY_COLUMN];
+                return self::getOne($subClass, array($class::getReflection()->primaryKeyColumn=>$row[$class::getReflection()->primaryKeyColumn]));*/
 			} else {
 				$entity = new $class($row->{$class::getReflection()->primaryKeyColumn});
 			}
@@ -132,7 +134,7 @@ abstract class Select
 	 * @param $limit
 	 * @return SQL string
 	 */
-	private static function getSql($class, $columns = array('*'), $where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
+	public static function getSql($class, $columns = array('*'), $where = array(), $sort = array(), $limit = array(), $withParents = FALSE) {
 		//dibi::test(
 		return dibi::sql(
 			'SELECT %n', $columns,
@@ -195,6 +197,10 @@ abstract class Select
 		} 
 		$array = $newArray;
 	}
-	
+
+
+    public static function findById($class, $id) {
+        return self::getOne($class, array($class::getReflection()->primaryKey=>$id));
+    }
 	
 } 
