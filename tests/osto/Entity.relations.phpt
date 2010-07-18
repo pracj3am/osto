@@ -31,13 +31,20 @@ class A extends Entity
 
 }
 
-class B extends Entity {
+class B extends Entity
+{
+
 }
 
-class C extends Entity {
+class C extends Entity
+{
 	
 }
 
+class D extends Entity
+{
+
+}
 
 output('A parents:');
 $a = new A;

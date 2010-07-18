@@ -17,10 +17,14 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
 class EntityReflection extends \ReflectionClass
 {
 
+    const ID = 'id';
+
+
     protected $children = array();
     protected $parents = array();
     protected $singles = array();
     protected $columns = array();
+    protected $types = array();
     protected $foreign_keys = array();
     protected $primary_key;
     private $_cache;
@@ -41,7 +45,7 @@ class EntityReflection extends \ReflectionClass
             //throw new Exception()
         }
 
-        $default_primary_key =  $this->prefix . '_' . Entity::ID;
+        $default_primary_key =  $this->prefix . '_' . self::ID;
 
         $this->_properties = $this->getAnnotations('property');
 
@@ -51,12 +55,14 @@ class EntityReflection extends \ReflectionClass
                 $this->columns[$pa->name] = is_string($pa->column) ?
                         $pa->column :
                         $default_primary_key;
+                $this->types[$pa->name] = $pa->type;
             }
         }
 
         if ($this->primary_key === NULL) {
-            $this->primary_key = Entity::ID;
-            $this->columns[Entity::ID] = $default_primary_key;
+            $this->primary_key = self::ID;
+            $this->columns[self::ID] = $default_primary_key;
+            $this->types[self::ID] = 'int';
         }
 
         foreach ($this->_properties as &$pa) {
@@ -84,6 +90,7 @@ class EntityReflection extends \ReflectionClass
                         $pa->column :
                         ($pa->column = $this->prefix . '_' . $pa->name);
             }
+            $this->types[$pa->name] = $pa->type;
         }
 
         if ($this->_isExtendedEntity()) {
@@ -295,6 +302,13 @@ class EntityReflection extends \ReflectionClass
     public function isColumn($name)
     {
         return in_array($name, $this->columns, TRUE);
+    }
+
+
+
+    public function getTypes()
+    {
+        return $this->types;
     }
 
 

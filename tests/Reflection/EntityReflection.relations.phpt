@@ -42,11 +42,10 @@ class B extends Entity
 }
 
 /**
- * @property Test $x, has_many
+ * @property Test\D $x, has_many
  */
-class C extends Entity {
-	/** @has_many Test */
-	private $x;
+class C extends Entity
+{
 	
 }
 
@@ -112,7 +111,7 @@ array(3) {
 C children:
 
 array(1) {
-	"x" => string(4) "Test"
+	"x" => string(6) "Test\D"
 }
 
 D columns:

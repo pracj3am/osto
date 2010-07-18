@@ -9,7 +9,6 @@ use dibi;
 
 abstract class Entity implements \ArrayAccess
 {
-    const ID = 'id';
     const PARENT = 'ParentEntity';
     const ENTITY_COLUMN = 'entity';
 
@@ -18,6 +17,7 @@ abstract class Entity implements \ArrayAccess
     const VALUE_MODIFIED = 2;
 
     protected static $_REFLECTIONS = array();
+    
     private $_id;
     private $_values = array();
     private $_modified = array();

@@ -30,7 +30,11 @@ class PropertyAnnotation implements Nette\IAnnotation
             } elseif ($v === 'primary_key') {
                 $this->primary_key = TRUE;
             } elseif (preg_match('/^(' . Nette\AnnotationsParser::RE_IDENTIFIER . ')\s*\$(' . Nette\AnnotationsParser::RE_IDENTIFIER . ')$/i', $v, $matches)) {
-                $this->type = $matches[1];
+                $this->type = in_array($matches[1], array('int', 'integer', 'bool', 'boolean', 'float', 'double', 'string', 'array', 'object', 'null')) ?
+                        $matches[1] :
+                            class_exists($matches[1]) ?
+                            $matches[1] :
+                            'uknown type';//@todo throw Exception
                 $this->name = $matches[2];
             }
         }
