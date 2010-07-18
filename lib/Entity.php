@@ -33,8 +33,8 @@ abstract class Entity implements \ArrayAccess
     public function __construct($id = null)
     {
         $this->_id = (int) $id;
-        foreach ($this->columns as $column) {
-            if ($column != static::getColumnName(self::ID)) {
+        foreach ($this->columns as $prop=>$column) {
+            if ($prop != static::getReflection()->getPrimaryKey) {
                 $this->_modified[$column] = self::VALUE_NOT_SET;
                 $this->_values[$column] = NULL;
             }
@@ -74,11 +74,11 @@ abstract class Entity implements \ArrayAccess
         if ($this->_id) {
             $row = dibi::fetch(
                             'SELECT * FROM `' . static::getTableName() . '` ' .
-                            'WHERE %and', array(static::getColumnName(self::ID) => $this->_id)
+                            'WHERE %and', array(static::getReflection()->getPrimaryKeyColumn() => $this->_id)
             );
             if ($row) {
                 foreach ($row as $name => $value)
-                    if ($name != (static::getColumnName(self::ID))) {
+                    if ($name != static::getReflection()->getPrimaryKeyColumn()) {
                         $this[$name] = $value;
                         $this->_modified[$name] = self::VALUE_NOT_MODIFIED;
                     }
@@ -196,7 +196,7 @@ abstract class Entity implements \ArrayAccess
     {
         $values = $this->values;
         foreach ($values as $key => $value) {
-            if ($key == self::ID)
+            if ($key == static::getReflection()->primaryKey)
                 continue; // primární klíč vždy potřebujeme
 
                 if (!is_scalar($value) && $value !== NULL)
@@ -235,11 +235,11 @@ abstract class Entity implements \ArrayAccess
         }
         if ($values) {
             $valuesWithoutPK = $values;
-            unset($valuesWithoutPK[static::getColumnName(self::ID)]);
+            unset($valuesWithoutPK[static::getReflection()->primaryKeyColumn]);
 
             dibi::query(
                 'INSERT INTO `' . static::getTableName() . '`', $values,
-                'ON DUPLICATE KEY UPDATE ' . static::getColumnName(self::ID) . '=LAST_INSERT_ID(' . static::getPrefix() . '_' . self::ID . ')
+                'ON DUPLICATE KEY UPDATE ' . static::getReflection()->primaryKeyColumn . '=LAST_INSERT_ID(' . static::getReflection()->primaryKeyColumn . ')
                  %if', $valuesWithoutPK, ', %a', $valuesWithoutPK, '%end'
             );
             $this->afterSave($v);
@@ -284,7 +284,7 @@ abstract class Entity implements \ArrayAccess
         if ($this->_id) {
             dibi::query(
                 'DELETE FROM ' . static::getTableName() . ' WHERE %and',
-                array(static::getColumnName(self::ID) => $this->_id), 'LIMIT 1'
+                array(static::getReflection()->primaryKey => $this->_id), 'LIMIT 1'
             );
         }
         // mazání children zajištěno na úrovni databáze
@@ -321,9 +321,9 @@ abstract class Entity implements \ArrayAccess
     {
         $values = array();
         foreach ($this->columns as $prop => $name) {
-            if ($prop == self::ID) {
+            if ($prop == static::getReflection()->primaryKey) {
                 if ($this->_id)
-                    $values[self::ID] = $this->_id;
+                    $values[static::getReflection()->primaryKey] = $this->_id;
             } else {
                 $values[$prop] = $this->_values[$name];
             }
@@ -362,11 +362,11 @@ abstract class Entity implements \ArrayAccess
                     else
                         $this->$key = $val;
             }
-            if (is_array($value) && isset($value[static::getColumnName(self::ID)])) {
-                $this->_id = (int) $value[static::getColumnName(self::ID)];
+            if (is_array($value) && isset($value[static::getReflection()->primaryKeyColumn])) {
+                $this->_id = (int) $value[static::getReflection()->primaryKeyColumn];
             }
-            if (is_object($value) && isset($value->{static::getColumnName(self::ID)})) {
-                $this->_id = (int) $value->{static::getColumnName(self::ID)};
+            if (is_object($value) && isset($value->{static::getReflection()->primaryKeyColumn})) {
+                $this->_id = (int) $value->{static::getReflection()->primaryKeyColumn};
             }
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) {
@@ -435,12 +435,12 @@ abstract class Entity implements \ArrayAccess
         else
             $_name = FALSE;
 
-        if ($name == 'id') {
+        if ($name==static::getReflection()->primaryKey) {
             if (array_key_exists(self::PARENT, $this->_parents)) {
                 return $this->{self::PARENT}->id;
             }
             return $this->_id;
-        } elseif ($_name == 'id' || $name == self::getColumnName('id')) {
+        } elseif ($_name == 'id' || ($name==static::getReflection()->primaryKeyColumn)) {
             return $this->_id;
         } elseif (array_key_exists($name = trim($name, '0'), $this->_parents)) {
             if ((!$this->_parents[$name] instanceof self /* || !$this->_parents[$name]->_self_loaded */) &&
@@ -508,8 +508,8 @@ abstract class Entity implements \ArrayAccess
                 $this->_children[$name] = $value;
             else
                 throw new \Exception('The collection of objects (' . $name . ') that have class ' . $value->getClass() . ' not defined in CHILDREN');
-        } elseif ($name == 'id' || $name == static::getColumnName(self::ID)) {
-            $newId = intval($value) === 0 ? NULL : intval($value);
+        } elseif (($name==static::getReflection()->primaryKey) || ($name==static::getReflection()->primaryKeyColumn)) {
+            $newId = \intval($value) === 0 ? NULL : \intval($value);
             if ($this->_id !== $newId && $this->_id !== NULL)
                 array_map(function($item) {
                             return Entity::VALUE_MODIFIED;
@@ -543,7 +543,7 @@ abstract class Entity implements \ArrayAccess
     public function __isset($name)
     {
         if (
-                $name == self::ID ||
+                $name == 'id' || $name == static::getReflection()->primaryKey ||
                 method_exists($this, Helpers::getter($name)) ||
                 static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) ||
                 array_key_exists($name, $this->_children) ||

@@ -14,6 +14,7 @@ class PropertyAnnotation implements Nette\IAnnotation
     public $column;
     public $null = FALSE;
     public $relation = FALSE;
+    public $primary_key = FALSE;
 
 
 
@@ -26,6 +27,8 @@ class PropertyAnnotation implements Nette\IAnnotation
                 $this->null = $k === 'null' ? (bool) $v : TRUE;
             } elseif ($v === 'has_one' || $v === 'has_many' || $v === 'belongs_to') {
                 $this->relation = $v;
+            } elseif ($v === 'primary_key') {
+                $this->primary_key = TRUE;
             } elseif (preg_match('/^(' . Nette\AnnotationsParser::RE_IDENTIFIER . ')\s*\$(' . Nette\AnnotationsParser::RE_IDENTIFIER . ')$/i', $v, $matches)) {
                 $this->type = $matches[1];
                 $this->name = $matches[2];

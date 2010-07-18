@@ -14,14 +14,15 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
 
 
 
-final class EntityReflection extends \ReflectionClass
+class EntityReflection extends \ReflectionClass
 {
 
     protected $children = array();
     protected $parents = array();
     protected $singles = array();
-    protected $columns;
+    protected $columns = array();
     protected $foreign_keys = array();
+    protected $primary_key;
     private $_cache;
     private $_properties;
     private $_prefix;
@@ -29,6 +30,9 @@ final class EntityReflection extends \ReflectionClass
 
 
 
+    /**
+     * @todo vyjímku pro dva sloupce s stejným názvem, vč PK!
+     */
     public function __construct($argument)
     {
         parent::__construct($argument);
@@ -37,14 +41,31 @@ final class EntityReflection extends \ReflectionClass
             //throw new Exception()
         }
 
-        $this->columns = array(Entity::ID => $this->prefix . '_' . Entity::ID);
+        $default_primary_key =  $this->prefix . '_' . Entity::ID;
 
         $this->_properties = $this->getAnnotations('property');
+
         foreach ($this->_properties as &$pa) {
-            if ($pa->relation === 'belongs_to') {
+            if ($pa->primary_key) {
+                $this->primary_key = $pa->name;
+                $this->columns[$pa->name] = is_string($pa->column) ?
+                        $pa->column :
+                        $default_primary_key;
+            }
+        }
+
+        if ($this->primary_key === NULL) {
+            $this->primary_key = Entity::ID;
+            $this->columns[Entity::ID] = $default_primary_key;
+        }
+
+        foreach ($this->_properties as &$pa) {
+            if ($pa->primary_key) {
+                continue;
+            } elseif ($pa->relation === 'belongs_to') {
                 $parentClass = $pa->type;
                 is_string($pa->column) or
-                        $pa->column = $parentClass::getPrefix() . '_' . Entity::ID;
+                        $pa->column = $parentClass::getReflection()->getPrimaryKeyColumn();
 
                 $this->parents[$pa->name] = $parentClass;
                 $this->columns[$pa->name] = $pa->column;
@@ -52,12 +73,12 @@ final class EntityReflection extends \ReflectionClass
                 $this->children[$pa->name] = $pa->type;
                 $this->foreign_keys[$pa->name] = is_string($pa->column) ?
                         $pa->column :
-                        $this->prefix . '_' . Entity::ID;
+                        $this->columns[$this->primary_key];
             } elseif ($pa->relation === 'has_one') {
                 $this->singles[$pa->name] = $pa->type;
                 $this->foreign_keys[$pa->name] = is_string($pa->column) ?
                         $pa->column :
-                        $this->prefix . '_' . Entity::ID;
+                        $this->columns[$this->primary_key];
             } elseif ($pa->relation === FALSE) {
                 $this->columns[$pa->name] = is_string($pa->column) ?
                         $pa->column :
@@ -68,8 +89,7 @@ final class EntityReflection extends \ReflectionClass
         if ($this->_isExtendedEntity()) {
             $parentEntity = $this->_getParentEntity();
             $this->parents[Entity::PARENT] = $parentEntity;
-            $columnName = $parentEntity::getPrefix() . '_' . Entity::ID;
-            $this->columns[Entity::PARENT] = $columnName;
+            $this->columns[Entity::PARENT] = $parentEntity::getReflection()->getPrimaryKeyColumn();
             $parentEntity::getReflection()->columns[Entity::ENTITY_COLUMN] = Entity::ENTITY_COLUMN;
         }
     }
@@ -293,6 +313,20 @@ final class EntityReflection extends \ReflectionClass
                 return $pa->null;
 
         return FALSE;
+    }
+
+
+
+    public function getPrimaryKey()
+    {
+        return $this->primary_key;
+    }
+
+
+
+    public function getPrimaryKeyColumn()
+    {
+        return $this->columns[$this->primary_key];
     }
 
 

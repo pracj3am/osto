@@ -24,7 +24,7 @@ db_connect();
 
 dibi::query('
 	CREATE TEMPORARY TABLE `test`.`poiu` (
-	`p_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+	`id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 	`p_a` INT NOT NULL ,
 	`p_p_koo` VARCHAR( 255 ) NOT NULL ,
 	`p_koo` VARCHAR( 255 ) NOT NULL ,
@@ -46,18 +46,19 @@ dibi::query('
 dibi::query('
 	CREATE TEMPORARY TABLE `test`.`mnbv` (
 	`m_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-	`p_id` INT NULL ,
+	`id` INT NULL ,
 	`m_boo` VARCHAR(2048) NOT NULL DEFAULT "-",
-	KEY (p_id)
+	KEY (id)
 	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 ');
 
 /**
+ * @property int $id, column=id, primary_key
  * @property int $a
  * @property string $p_koo
  * @property string $koo
  * @property Datetime $zzz, column=zzz, null
- * @property Lkjh $L, has_many
+ * @property Lkjh $L, has_many, column=p_id
  * @property Mnbv $M, has_one
  */
 class Poiu extends Entity 
@@ -67,7 +68,7 @@ class Poiu extends Entity
 
 /**
  * @property string $content, null
- * @property Poiu $p, belongs_to
+ * @property Poiu $p, belongs_to, column=p_id
  */
 class Lkjh extends Entity 
 {
@@ -75,6 +76,7 @@ class Lkjh extends Entity
 }
 
 /**
+ * @property int $myid, primary_key
  * @property string $boo
  * @property Poiu $p, belongs_to
  */
@@ -214,13 +216,13 @@ array(4) {
 All M%c%s:
 
 array(3) {
-	"id" => int(1)
+	"myid" => int(1)
 	"boo" => string(1) "-"
-	"p_id" => string(1) "1"
+	"id" => string(1) "1"
 }
 
 array(3) {
-	"id" => int(2)
+	"myid" => int(2)
 	"boo" => string(5) "Howgh"
-	"p_id" => string(1) "2"
+	"id" => string(1) "2"
 }

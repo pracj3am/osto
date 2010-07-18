@@ -61,9 +61,9 @@ abstract class Select
 		foreach ($cursor as $row) {
 			// handle entity inheritance
 			if (isset($row[Entity::ENTITY_COLUMN])) {
-				$entity = $class::create($row->{$class::getColumnName(Entity::ID)});
+				$entity = $class::create($row->{$class::getReflection()->primaryKeyColumn});
 			} else {
-				$entity = new $class($row->{$class::getColumnName(Entity::ID)});
+				$entity = new $class($row->{$class::getReflection()->primaryKeyColumn});
 			}
 			$entity->column_values = $row;
 			//$entity->loadChildren();
@@ -89,7 +89,7 @@ abstract class Select
 			}
 
 			
-			$rows[$row->{$class::getColumnName(Entity::ID)}] = $entity;
+			$rows[$row->{$class::getReflection()->primaryKeyColumn}] = $entity;
 		}
 		return $rows;		
 	}
@@ -104,7 +104,7 @@ abstract class Select
 			self::getSql(
 				$class,
 				array(
-					$class::getColumnName(Entity::ID)=>'id',
+					$class::getReflection()->primaryKeyColumn=>'id',
 					$class::getColumnName($column)=>'name'
 				),
 				$where, $sort, $limit, $withParents
@@ -148,13 +148,13 @@ abstract class Select
 			foreach ($class::getParents() as $parentName=>$parentClass) {
 				if ($parentClass != $class)
 					$from .= ' LEFT JOIN (' . self::getFromClause($parentClass, $withParents, $alias.self::ALIAS_DELIM.$parentName) . ') '. 
-						'ON (`'.$alias.'.'.$class::getColumnName($parentName).'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::getColumnName(Entity::ID).'`)';
+						'ON (`'.$alias.'.'.$class::getColumnName($parentName).'`=`'.$alias.self::ALIAS_DELIM.$parentName.'.'.$parentClass::getReflection()->primaryKeyColumn.'`)';
 			}
 
 			foreach ($class::getSingles() as $singleName=>$singleClass) {
 				if ($singleClass != $class)
 					$from .= ' LEFT JOIN (' . self::getFromClause($singleClass, FALSE, $alias.self::ALIAS_DELIM.$singleName) . ') '.
-						'ON (`'.$alias.'.'.$class::getColumnName(Entity::ID).'`=`'.$alias.self::ALIAS_DELIM.$singleName.'.'.$class::getForeignKeyName($singleName).'`)';
+						'ON (`'.$alias.'.'.$class::getReflection()->primaryKeyColumn.'`=`'.$alias.self::ALIAS_DELIM.$singleName.'.'.$class::getForeignKeyName($singleName).'`)';
 			}
 		}
 		return $from;

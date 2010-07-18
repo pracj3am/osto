@@ -24,6 +24,7 @@ NetteTestHelpers::purge(OSTO_TMP_DIR);
 /**
  * @table model_test
  * @prefix t
+ * @property int $myid, primary_key, column=mymyid
  * @property string $one
  * @property string $two
  * @property string $x_y, column=x_y
@@ -79,46 +80,58 @@ dump(subTest::getColumns());
 __halt_compiler();
 
 ------EXPECT------
-array(4) {
-	0 => object(osto\Reflection\PropertyAnnotation) (5) {
+array(5) {
+	0 => object(osto\Reflection\PropertyAnnotation) (6) {
+		"type" => string(3) "int"
+		"name" => string(4) "myid"
+		"column" => string(6) "mymyid"
+		"null" => bool(FALSE)
+		"relation" => bool(FALSE)
+		"primary_key" => bool(TRUE)
+	}
+	1 => object(osto\Reflection\PropertyAnnotation) (6) {
 		"type" => string(6) "string"
 		"name" => string(3) "one"
 		"column" => string(5) "t_one"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
+		"primary_key" => bool(FALSE)
 	}
-	1 => object(osto\Reflection\PropertyAnnotation) (5) {
+	2 => object(osto\Reflection\PropertyAnnotation) (6) {
 		"type" => string(6) "string"
 		"name" => string(3) "two"
 		"column" => string(5) "t_two"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
+		"primary_key" => bool(FALSE)
 	}
-	2 => object(osto\Reflection\PropertyAnnotation) (5) {
+	3 => object(osto\Reflection\PropertyAnnotation) (6) {
 		"type" => string(6) "string"
 		"name" => string(3) "x_y"
 		"column" => string(3) "x_y"
 		"null" => bool(FALSE)
 		"relation" => bool(FALSE)
+		"primary_key" => bool(FALSE)
 	}
-	3 => object(osto\Reflection\PropertyAnnotation) (5) {
+	4 => object(osto\Reflection\PropertyAnnotation) (6) {
 		"type" => string(7) "subTest"
 		"name" => string(3) "sub"
 		"column" => NULL
 		"null" => bool(FALSE)
 		"relation" => string(8) "has_many"
+		"primary_key" => bool(FALSE)
 	}
 }
 
 array(4) {
-	"id" => string(4) "t_id"
+	"myid" => string(6) "mymyid"
 	"one" => string(5) "t_one"
 	"two" => string(5) "t_two"
 	"x_y" => string(3) "x_y"
 }
 
 array(4) {
-	"id" => string(4) "t_id"
+	"myid" => string(6) "mymyid"
 	"one" => string(5) "t_one"
 	"two" => string(5) "t_two"
 	"x_y" => string(3) "x_y"
@@ -129,5 +142,5 @@ array(5) {
 	"one" => string(6) "st_one"
 	"two" => string(6) "st_two"
 	"x_y" => string(3) "x_y"
-	"test" => string(4) "t_id"
+	"test" => string(6) "mymyid"
 }
