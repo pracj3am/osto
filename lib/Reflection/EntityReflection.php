@@ -306,6 +306,13 @@ class EntityReflection extends \ReflectionClass
 
 
 
+    public function isProperty($name)
+    {
+        return array_key_exists($name, $this->columns);
+    }
+
+
+
     public function getTypes()
     {
         return $this->types;

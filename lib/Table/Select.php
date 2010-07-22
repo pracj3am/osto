@@ -8,7 +8,9 @@ use osto\EntityCollection;
 use dibi;
 
 
-
+/**
+ * @deprecated
+ */
 abstract class Select 
 {
 

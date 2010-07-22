@@ -67,7 +67,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             $this->_loaded[$parentName] = FALSE;
         }
         foreach ($r->children as $childName => $childClass) {
-            $this->_children[$childName] = new EntityCollection;
+            $this->_children[$childName] = new DataSource;
             $this->_loaded[$childName] = FALSE;
         }
         foreach ($r->singles as $singleName => $singleClass) {
@@ -120,13 +120,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         if ($this->_id !== NULL) {
             if (!($this->_self_loaded)) {
-                $row = dibi::fetch( static::getSql(array('*'), array(static::getReflection()->primaryKey=>$this->_id)) );
+                $table = static::getTable();
+                $row = $table->where($table->id->eq($this->_id))->fetch();
                 if ($row) {
+                    $this->_id = $row->id;
                     foreach ($row as $name => $value) {
-                        if ($name != static::getReflection()->primaryKeyColumn) {
-                            $this->_values[$name] = $value;
-                            $this->_modified[$name] = self::VALUE_NOT_MODIFIED;
-                        }
+                        $this->_values[$name] = $value;
+                        $this->_modified[$name] = self::VALUE_NOT_MODIFIED;
                     }
                     $this->_self_loaded = TRUE;
                 } else {
@@ -157,8 +157,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     final public function loadParents($parentNames = self::ALL, $depth = 0)
     {
         if ($parentNames === self::ALL) {
-            $parentNames = array_keys($this->_parents);
-        } elseif (!is_array($parentNames)) {
+            $parentNames = \array_keys($this->_parents);
+        } elseif (!\is_array($parentNames)) {
             $parentNames = (array)$parentNames;
         }
 
@@ -169,7 +169,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                     $parentEntity = new $parentClass($this[static::getColumnName($parentName)]);
                     $parentEntity->load($depth);
                 } else {
-                    $parentEntity = $parentClass::findById($this[static::getColumnName($parentName)]);
+                    $parentEntity = $parentClass::find($this[static::getColumnName($parentName)]);
                 }
 
                 $this->_parents[$parentName] = $parentEntity;
@@ -189,16 +189,15 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         if ($this->_id !== NULL) {
             if ($singleNames === self::ALL) {
-                $singleNames = array_keys($this->_singles);
-            } elseif (!is_array($singleNames)) {
+                $singleNames = \array_keys($this->_singles);
+            } elseif (!\is_array($singleNames)) {
                 $singleNames = (array)$singleNames;
             }
 
             foreach (static::getReflection()->singles as $singleName => $singleClass) {
                 if (in_array($singleName, $singleNames)) {
-                    $entity = $singleClass::getOne(array(
-                                static::getForeignKeyName($singleName) => $this->id
-                            ));
+                    $fkColumn = $singleClass::getTable()->{static::getForeignKeyName($singleName)};
+                    $entity = $singleClass::findOne($fkColumn->eq($this->id));
                     $entity->load($depth);
                     $this->_singles[$singleName] = $entity;
                     $this->_loaded[$singleName] = $entity->isLoaded();
@@ -209,47 +208,32 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
-    final public function loadChildren($childrenNames = array(), $where = array(), $sort = array(), $limit = array(), $withParents = FALSE)
+    /**
+     * Loads children as a DataSource
+     * @param array|string $childrenNames array of children names or self::ALL
+     */
+    final public function loadChildren($childrenNames = self::ALL)
     {
-        if ($this->_id) {
-            if (empty($childrenNames))
-                $childrenNames = array_keys($this->_children);
-            foreach (static::getChildren() as $childName => $childClass) {
+        if ($this->_id !== NULL) {
+            if ($childrenNames === self::ALL) {
+                $childrenNames = \array_keys($this->_children);
+            } elseif (!\is_array($childrenNames)) {
+                $childrenNames = (array) $childrenNames;
+            }
+
+            foreach (static::getReflection()->children as $childName => $childClass) {
                 if (in_array($childName, $childrenNames)) {
-                    if (get_class($this) == $childClass)//load children of the same class
+                    if (get_class($this) == $childClass) {//load children of the same class
                         $fk = 'parent_id';
-                    else
+                    } else {
                         $fk = static::getForeignKeyName($childName);
-                    $whereTmp = array_merge(
-                                    isset($where[$childName]) ? $where[$childName] : array(),
-                                    array($fk => (int) $this->_id)
-                    );
-                    $sortTmp = isset($sort[$childName]) ? $sort[$childName] : array();
-                    $limitTmp = isset($limit[$childName]) ? $limit[$childName] : array();
-                    $this->$childName = $childClass::getAll($whereTmp, $sortTmp, $limitTmp, $withParents);
+                    }
+                    $fkColumn = $childClass::getTable()->$fk;
+                    $this->$childName = $childClass::getTable()->where($fkColumn->eq($this->id));
                     $this->_loaded[$childName] = TRUE;
                 }
             }
-        } else
-            return NULL;
-    }
-
-
-
-    public function getParent($root = false)
-    {
-        if (static::isSelfReferencing() && $this->parent_id) {
-            $parent = static::create($this->parent_id);
-            $parent->load();
-            if ($root)
-                while ($parent->parent_id !== NULL) {
-                    $parent = static::create($parent->parent_id);
-                    $parent->load();
-                }
-            return $parent;
         }
-
-        return NULL;
     }
 
 
@@ -481,6 +465,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     *
+     * @return Reflection\EntityReflection
+     */
     public static function getReflection()
     {
         if (!isset(self::$_REFLECTIONS[get_called_class()]))
@@ -488,6 +476,16 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         return self::$_REFLECTIONS[get_called_class()];
     }
 
+
+
+    /**
+     *
+     * @return Table
+     */
+    public static function getTable()
+    {
+        return new Table(\get_called_class());
+    }
 
 
     public function __get($name)
@@ -674,20 +672,34 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     public static function __callStatic($name, $arguments)
     {
-        if (method_exists(static::getReflection(), $name)) {
-            return call_user_func_array(array(static::getReflection(), $name), $arguments);
-        }
-
-        array_unshift($arguments, get_called_class());
-        return call_user_func_array(array(__NAMESPACE__ . '\Table\Select', $name), $arguments);
+        array_unshift($arguments, new Table(get_called_class()));
+        return call_user_func_array(array(__NAMESPACE__ . '\Table\Helpers', $name), $arguments);
     }
 
 
 
     private static function isCallable($method)
     {
-        return method_exists(get_called_class(), $method) || method_exists(static::getReflection(), $method);
+        return method_exists(get_called_class(), $method);
     }
+
+
+    public function getParent($root = false)
+    {
+        if (static::isSelfReferencing() && $this->parent_id) {
+            $parent = static::create($this->parent_id);
+            $parent->load();
+            if ($root)
+                while ($parent->parent_id !== NULL) {
+                    $parent = static::create($parent->parent_id);
+                    $parent->load();
+                }
+            return $parent;
+        }
+
+        return NULL;
+    }
+
 
 
 

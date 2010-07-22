@@ -1,6 +1,10 @@
 <?php
 namespace osto;
 
+
+/**
+ * @deprecated
+ */
 class EntityCollection extends \ArrayObject{
 	
 	public function isEmpty() {

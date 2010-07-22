@@ -1,5 +1,8 @@
 <?php
 
+require_once 'Exception.php';
+require_once 'osto.php';
+
 function __autoload($class_name)
 {
 	if (strpos($class_name, 'osto') === 0) {
