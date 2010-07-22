@@ -80,7 +80,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     private function isStandalone()
     {
-        return isset($this[self::ENTITY_COLUMN]) && $this[self::ENTITY_COLUMN] !== get_class($this);
+        return !isset($this[self::ENTITY_COLUMN]) || !($this[self::ENTITY_COLUMN] !== get_class($this));
     }
 
 
