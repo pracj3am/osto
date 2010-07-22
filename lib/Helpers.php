@@ -1,6 +1,6 @@
 <?php
 
-namespace osto\Table;
+namespace osto;
 
 
 
