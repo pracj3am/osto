@@ -35,10 +35,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      * Constructor
      * @param int $id primary key value
      */
-    public function __construct($id = null)
+    public function __construct($id = NULL)
     {
-        $this->id = $id;
         $this->initialize();
+        if (is_array($id)) {
+            $this->setColumnValues($id);
+        } else {
+            $this->id = $id;
+        }
     }
 
 
