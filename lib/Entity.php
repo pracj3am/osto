@@ -33,7 +33,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     /**
      * Constructor
-     * @param int $id primary key value
+     * @param int|array $id primary key value or array of values
      */
     public function __construct($id = NULL)
     {
@@ -54,7 +54,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     private function initialize()
     {
         $this->_self_loaded = FALSE;
-        
+
         $r = static::getReflection();
         foreach ($r->columns as $prop=>$column) {
             if ($prop != $r->primaryKey) {
@@ -97,6 +97,235 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         return $this->isStandalone() ? get_class($this) : $this[self::ENTITY_COLUMN];
     }
+
+
+
+    /******************** MAGIC METHODS *******************/
+
+
+
+    public function __get($name)
+    {
+        //name starts with underscore -> no magic functionality
+        if (strpos($name, '_') === 0) { 
+            $_name = substr($name, 1);
+        } else {
+            $_name = FALSE;
+        }
+
+        if ($name==static::getReflection()->primaryKey) {
+            if (array_key_exists(self::PARENT, $this->_parents)) {
+                return $this->{self::PARENT}->id;
+            }
+            return $this->_id;
+        } elseif ($_name == 'id' || ($name==static::getReflection()->primaryKeyColumn)) {
+            return $this->_id;
+        } elseif (array_key_exists($name = trim($name, '0'), $this->_parents)) {
+            if ((!$this->_parents[$name] instanceof self /* || !$this->_parents[$name]->_self_loaded */) &&
+                    (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
+                $this->{'load' . ucfirst($name)} ();
+            if (!$this->_parents[$name] instanceof self) {
+                $parentClass = $this->parents[$name];
+                $this->_parents[$name] = new $parentClass;
+            }
+            return $this->_parents[$name];
+        } elseif ($_name && array_key_exists($_name, $this->_parents)) {
+            return $this->_parents[$_name];
+        } elseif (array_key_exists($name = trim($name, '0'), $this->_children)) {
+            if ($this->_children[$name]->isEmpty() && (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
+                $this->{'load' . ucfirst($name)} ();
+            return $this->_children[$name];
+        } elseif ($_name && array_key_exists($_name, $this->_children)) {
+            return $this->_children[$_name];
+        } elseif (array_key_exists($name = trim($name, '0'), $this->_singles)) {
+            if ((!$this->_singles[$name] instanceof self /* || !$this->_parents[$name]->_self_loaded */) &&
+                    (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
+                $this->{'load' . ucfirst($name)} ();
+            if (!$this->_singles[$name] instanceof self) {
+                $singleClass = $this->singles[$name];
+                $this->_singles[$name] = new $singleClass;
+            }
+            return $this->_singles[$name];
+        } elseif ($_name && array_key_exists($_name, $this->_singles)) {
+            return $this->_singles[$_name];
+        } elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
+            return $this->_values[self::getColumnName($_name)];
+        } elseif (method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
+            return $this->{$m_name}();
+        } elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
+            return $this->_values[self::getColumnName($name)];
+        } elseif (array_key_exists($name, $this->_aux)) {
+            return $this->_aux[$name];
+        } elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
+            return new \DateTime($this->{$matches[1]});
+        } elseif (static::isCallable($method = Helpers::getter($name))) {//static get{Name}
+            //Debug::dump($method);
+            return static::$method();
+            /* } else {
+              return $this->$name; */
+        } elseif (array_key_exists(self::PARENT, $this->_parents)) {
+            return $this->{self::PARENT}->$name;
+        }
+    }
+
+
+
+    public function __isset($name)
+    {
+        if (
+                $name == 'id' || $name == static::getReflection()->primaryKey ||
+                method_exists($this, Helpers::getter($name)) ||
+                static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) ||
+                array_key_exists($name, $this->_children) ||
+                (array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
+                (array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL) ||
+                array_key_exists($name, $this->_aux)
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+
+    public function __set($name, $value)
+    {
+        if (strpos($name, '_') === 0) //name starts with undescore
+            $_name = substr($name, 1);
+        else
+            $_name = FALSE;
+
+        if (is_object($value) && in_array(get_class($value), $this->parents)) {
+            $this->_parents[trim($name, '0')] = $value;
+        } elseif (is_object($value) && in_array(get_class($value), $this->singles)) {
+            $this->_singles[trim($name, '0')] = $value;
+        } elseif (($value instanceof RowCollection) && array_key_exists($name = trim($name, '0'), $this->_children)) {
+            if ($value->isEmpty() || in_array($value->getClass(), static::getChildren()))
+                $this->_children[$name] = $value;
+            else
+                throw new \Exception('The collection of objects (' . $name . ') that have class ' . $value->getClass() . ' not defined in CHILDREN');
+        } elseif (($name==static::getReflection()->primaryKey) || ($name==static::getReflection()->primaryKeyColumn)) {
+            $newId = \intval($value) === 0 ? NULL : \intval($value);
+            if ($this->_id !== $newId && $this->_id !== NULL)
+                array_map(function($item) {
+                            return Entity::VALUE_MODIFIED;
+                        }, $this->_modified);
+
+            $this->_id = $newId;
+        } elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
+            $cn = self::getColumnName($_name);
+            if ($this->_values[$cn] !== $value)
+                $this->_modified[$cn] = self::VALUE_MODIFIED;
+
+            $this->_values[$cn] = $value;
+        } elseif (method_exists($this, ($m_name = Helpers::setter($name)))) {//set{Name}
+            return $this->{$m_name}($value);
+        } elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
+            $cn = self::getColumnName($name);
+            if ($this->_values[$cn] !== $value)
+                $this->_modified[$cn] = self::VALUE_MODIFIED;
+
+            $this->_values[$cn] = $value;
+        } elseif (array_key_exists(self::PARENT, $this->_parents)) {
+            $this->{self::PARENT}->$name = $value;
+        } else {
+            //throw new \Exception('Undefined property '.$name.' (class '.get_class($this).')');
+            $this->_aux[$name] = $value;
+        }
+    }
+
+
+
+    public function __call($name, $arguments)
+    {
+        if (strpos($name, 'load') === 0) {//load{Parent} or load{Single} or load{Children}
+            $varName = strtolower(substr($name, 4, 1)) . substr($name, 5);
+            $VarName = ucfirst($varName);
+            if (($a = array_key_exists($varName, $this->parents)) || array_key_exists($VarName, $this->parents)) {
+                $parentName = $a ? $varName : $VarName;
+                $withChildren = isset($arguments[0]) && $arguments[0];
+                return $this->loadParents(array($parentName), $withChildren);
+            } elseif (($a = array_key_exists($varName, $this->singles)) || array_key_exists($VarName, $this->singles)) {
+                $singleName = $a ? $varName : $VarName;
+                $withChildren = isset($arguments[0]) && $arguments[0];
+                return $this->loadSingles(array($singleName), $withChildren);
+            } elseif (($a = array_key_exists($varName, static::getChildren())) || array_key_exists($VarName, static::getChildren())) {
+                $childName = $a ? $varName : $VarName;
+                $where = isset($arguments[0]) ? array($childName => $arguments[0]) : array();
+                $sort = isset($arguments[1]) ? array($childName => $arguments[1]) : array();
+                $limit = isset($arguments[2]) ? array($childName => $arguments[2]) : array();
+                $withParents = isset($arguments[3]) && $arguments[3];
+                return $this->loadChildren(array($childName), $where, $sort, $limit, $withParents);
+            }
+        } else {
+            return static::__callStatic($name, $arguments);
+        }
+    }
+
+
+
+    public static function __callStatic($name, $arguments)
+    {
+        array_unshift($arguments, new Table(get_called_class()));
+        return call_user_func_array(array(__NAMESPACE__ . '\Table\Helpers', $name), $arguments);
+    }
+
+
+
+    /****************** COPYING *******************/
+
+
+
+    public function __clone()
+    {
+        if (is_array($this->_parents))
+            foreach ($this->_parents as $parentName => $parentEntity) {
+                if ($parentEntity !== NULL)
+                    $this->_parents[$parentName] = clone $this->_parents[$parentName];
+            }
+        if (is_array($this->_children))
+            foreach ($this->_children as $childName => $childEntities) {
+                $this->_children[$childName] = clone $this->_children[$childName];
+                foreach ($this->_children[$childName] as $i => $childEntity) {
+                    $this->_children[$childName][$i] = clone $this->_children[$childName][$i];
+                }
+            }
+        if (is_array($this->_singles))
+            foreach ($this->_singles as $singleName => $singleEntity) {
+                if ($singleEntity !== NULL)
+                    $this->_singles[$singleName] = clone $this->_singles[$singleName];
+            }
+    }
+
+
+
+    public function copy()
+    {
+        $copy = clone $this;
+        $copy->_id = NULL;
+        if (is_array($copy->_parents))
+            foreach ($copy->_parents as $parentName => $parentEntity) {
+                if ($parentEntity !== NULL)
+                    $copy->_parents[$parentName] = $this->_parents[$parentName]->copy();
+            }
+        if (is_array($copy->_children))
+            foreach ($copy->_children as $childName => $childEntities)
+                foreach ($copy->_children[$childName] as $i => $childEntity) {
+                    $copy->_children[$childName][$i] = $this->_children[$childName][$i]->copy();
+                }
+        if (is_array($copy->_singles))
+            foreach ($copy->_singles as $singleName => $singleEntity) {
+                if ($singleEntity !== NULL)
+                    $copy->_singles[$singleName] = $this->_singles[$singleName]->copy();
+            }
+
+        return $copy;
+    }
+
+
+
+    /******************** LOADING ********************/
 
 
 
@@ -238,6 +467,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /****************** DATA MANIPULATION *******************/
+
+
+
     public function getValuesForSave()
     {
         $values = $this->values;
@@ -337,28 +570,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     }
 
 
+    /****************** VALUES *******************/
 
-    public function copy()
+
+
+    final public function setColumnValues($values)
     {
-        $copy = clone $this;
-        $copy->_id = NULL;
-        if (is_array($copy->_parents))
-            foreach ($copy->_parents as $parentName => $parentEntity) {
-                if ($parentEntity !== NULL)
-                    $copy->_parents[$parentName] = $this->_parents[$parentName]->copy();
-            }
-        if (is_array($copy->_children))
-            foreach ($copy->_children as $childName => $childEntities)
-                foreach ($copy->_children[$childName] as $i => $childEntity) {
-                    $copy->_children[$childName][$i] = $this->_children[$childName][$i]->copy();
-                }
-        if (is_array($copy->_singles))
-            foreach ($copy->_singles as $singleName => $singleEntity) {
-                if ($singleEntity !== NULL)
-                    $copy->_singles[$singleName] = $this->_singles[$singleName]->copy();
-            }
-
-        return $copy;
+        $this->setValues($values, TRUE);
     }
 
 
@@ -451,10 +669,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
-    final public function setColumnValues($values)
-    {
-        $this->setValues($values, TRUE);
-    }
+    /****************** STATIC METHODS *******************/
 
 
 
@@ -488,196 +703,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     }
 
 
-    public function __get($name)
-    {
-        if (strpos($name, '_') === 0) //name starts with undescore
-            $_name = substr($name, 1);
-        else
-            $_name = FALSE;
-
-        if ($name==static::getReflection()->primaryKey) {
-            if (array_key_exists(self::PARENT, $this->_parents)) {
-                return $this->{self::PARENT}->id;
-            }
-            return $this->_id;
-        } elseif ($_name == 'id' || ($name==static::getReflection()->primaryKeyColumn)) {
-            return $this->_id;
-        } elseif (array_key_exists($name = trim($name, '0'), $this->_parents)) {
-            if ((!$this->_parents[$name] instanceof self /* || !$this->_parents[$name]->_self_loaded */) &&
-                    (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
-                $this->{'load' . ucfirst($name)} ();
-            if (!$this->_parents[$name] instanceof self) {
-                $parentClass = $this->parents[$name];
-                $this->_parents[$name] = new $parentClass;
-            }
-            return $this->_parents[$name];
-        } elseif ($_name && array_key_exists($_name, $this->_parents)) {
-            return $this->_parents[$_name];
-        } elseif (array_key_exists($name = trim($name, '0'), $this->_children)) {
-            if ($this->_children[$name]->isEmpty() && (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
-                $this->{'load' . ucfirst($name)} ();
-            return $this->_children[$name];
-        } elseif ($_name && array_key_exists($_name, $this->_children)) {
-            return $this->_children[$_name];
-        } elseif (array_key_exists($name = trim($name, '0'), $this->_singles)) {
-            if ((!$this->_singles[$name] instanceof self /* || !$this->_parents[$name]->_self_loaded */) &&
-                    (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
-                $this->{'load' . ucfirst($name)} ();
-            if (!$this->_singles[$name] instanceof self) {
-                $singleClass = $this->singles[$name];
-                $this->_singles[$name] = new $singleClass;
-            }
-            return $this->_singles[$name];
-        } elseif ($_name && array_key_exists($_name, $this->_singles)) {
-            return $this->_singles[$_name];
-        } elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
-            return $this->_values[self::getColumnName($_name)];
-        } elseif (method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
-            return $this->{$m_name}();
-        } elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
-            return $this->_values[self::getColumnName($name)];
-        } elseif (array_key_exists($name, $this->_aux)) {
-            return $this->_aux[$name];
-        } elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
-            return new \DateTime($this->{$matches[1]});
-        } elseif (static::isCallable($method = Helpers::getter($name))) {//static get{Name}
-            //Debug::dump($method);
-            return static::$method();
-            /* } else {
-              return $this->$name; */
-        } elseif (array_key_exists(self::PARENT, $this->_parents)) {
-            return $this->{self::PARENT}->$name;
-        }
-    }
-
-
-
-    public function __set($name, $value)
-    {
-        if (strpos($name, '_') === 0) //name starts with undescore
-            $_name = substr($name, 1);
-        else
-            $_name = FALSE;
-
-        if (is_object($value) && in_array(get_class($value), $this->parents)) {
-            $this->_parents[trim($name, '0')] = $value;
-        } elseif (is_object($value) && in_array(get_class($value), $this->singles)) {
-            $this->_singles[trim($name, '0')] = $value;
-        } elseif (($value instanceof RowCollection) && array_key_exists($name = trim($name, '0'), $this->_children)) {
-            if ($value->isEmpty() || in_array($value->getClass(), static::getChildren()))
-                $this->_children[$name] = $value;
-            else
-                throw new \Exception('The collection of objects (' . $name . ') that have class ' . $value->getClass() . ' not defined in CHILDREN');
-        } elseif (($name==static::getReflection()->primaryKey) || ($name==static::getReflection()->primaryKeyColumn)) {
-            $newId = \intval($value) === 0 ? NULL : \intval($value);
-            if ($this->_id !== $newId && $this->_id !== NULL)
-                array_map(function($item) {
-                            return Entity::VALUE_MODIFIED;
-                        }, $this->_modified);
-
-            $this->_id = $newId;
-        } elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
-            $cn = self::getColumnName($_name);
-            if ($this->_values[$cn] !== $value)
-                $this->_modified[$cn] = self::VALUE_MODIFIED;
-
-            $this->_values[$cn] = $value;
-        } elseif (method_exists($this, ($m_name = Helpers::setter($name)))) {//set{Name}
-            return $this->{$m_name}($value);
-        } elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
-            $cn = self::getColumnName($name);
-            if ($this->_values[$cn] !== $value)
-                $this->_modified[$cn] = self::VALUE_MODIFIED;
-
-            $this->_values[$cn] = $value;
-        } elseif (array_key_exists(self::PARENT, $this->_parents)) {
-            $this->{self::PARENT}->$name = $value;
-        } else {
-            //throw new \Exception('Undefined property '.$name.' (class '.get_class($this).')');
-            $this->_aux[$name] = $value;
-        }
-    }
-
-
-
-    public function __isset($name)
-    {
-        if (
-                $name == 'id' || $name == static::getReflection()->primaryKey ||
-                method_exists($this, Helpers::getter($name)) ||
-                static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) ||
-                array_key_exists($name, $this->_children) ||
-                (array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
-                (array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL) ||
-                array_key_exists($name, $this->_aux)
-        ) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-
-
-    public function __clone()
-    {
-        if (is_array($this->_parents))
-            foreach ($this->_parents as $parentName => $parentEntity) {
-                if ($parentEntity !== NULL)
-                    $this->_parents[$parentName] = clone $this->_parents[$parentName];
-            }
-        if (is_array($this->_children))
-            foreach ($this->_children as $childName => $childEntities) {
-                $this->_children[$childName] = clone $this->_children[$childName];
-                foreach ($this->_children[$childName] as $i => $childEntity) {
-                    $this->_children[$childName][$i] = clone $this->_children[$childName][$i];
-                }
-            }
-        if (is_array($this->_singles))
-            foreach ($this->_singles as $singleName => $singleEntity) {
-                if ($singleEntity !== NULL)
-                    $this->_singles[$singleName] = clone $this->_singles[$singleName];
-            }
-    }
-
-
-
-    public function __call($name, $arguments)
-    {
-        if (strpos($name, 'load') === 0) {//load{Parent} or load{Single} or load{Children}
-            $varName = strtolower(substr($name, 4, 1)) . substr($name, 5);
-            $VarName = ucfirst($varName);
-            if (($a = array_key_exists($varName, $this->parents)) || array_key_exists($VarName, $this->parents)) {
-                $parentName = $a ? $varName : $VarName;
-                $withChildren = isset($arguments[0]) && $arguments[0];
-                return $this->loadParents(array($parentName), $withChildren);
-            } elseif (($a = array_key_exists($varName, $this->singles)) || array_key_exists($VarName, $this->singles)) {
-                $singleName = $a ? $varName : $VarName;
-                $withChildren = isset($arguments[0]) && $arguments[0];
-                return $this->loadSingles(array($singleName), $withChildren);
-            } elseif (($a = array_key_exists($varName, static::getChildren())) || array_key_exists($VarName, static::getChildren())) {
-                $childName = $a ? $varName : $VarName;
-                $where = isset($arguments[0]) ? array($childName => $arguments[0]) : array();
-                $sort = isset($arguments[1]) ? array($childName => $arguments[1]) : array();
-                $limit = isset($arguments[2]) ? array($childName => $arguments[2]) : array();
-                $withParents = isset($arguments[3]) && $arguments[3];
-                return $this->loadChildren(array($childName), $where, $sort, $limit, $withParents);
-            }
-        } else {
-            return static::__callStatic($name, $arguments);
-        }
-    }
-
-
-
-    public static function __callStatic($name, $arguments)
-    {
-        array_unshift($arguments, new Table(get_called_class()));
-        return call_user_func_array(array(__NAMESPACE__ . '\Table\Helpers', $name), $arguments);
-    }
-
-
-
     private static function isCallable($method)
     {
         return method_exists(get_called_class(), $method);
@@ -699,6 +724,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         return NULL;
     }
+
+
+
+    /****************** IMPLEMENTATION OF INTERFACES *******************/
 
 
 
