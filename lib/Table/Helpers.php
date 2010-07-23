@@ -28,7 +28,7 @@ class Helpers
      * Finds entities by condition
      * @param Table $table
      * @param array $cond
-     * @return DibiResult
+     * @return \DibiResult
      */
     public static function findAll(Table $table, $cond)
     {

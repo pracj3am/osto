@@ -2,7 +2,6 @@
 
 namespace osto;
 
-use osto\Table\Helpers;
 use dibi;
 
 
@@ -38,7 +37,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     public function __construct($id = NULL)
     {
         $this->initialize();
-        if (is_array($id)) {
+        if (\is_array($id)) {
             $this->setColumnValues($id);
         } else {
             $this->id = $id;
@@ -67,7 +66,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             $this->_loaded[$parentName] = FALSE;
         }
         foreach ($r->children as $childName => $childClass) {
-            $this->_children[$childName] = new DataSource;
+            $this->_children[$childName] = NULL;
             $this->_loaded[$childName] = FALSE;
         }
         foreach ($r->singles as $singleName => $singleClass) {
@@ -84,7 +83,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     private function isStandalone()
     {
-        return !isset($this[self::ENTITY_COLUMN]) || $this[self::ENTITY_COLUMN] === get_class($this);
+        return !isset($this[self::ENTITY_COLUMN]) || $this[self::ENTITY_COLUMN] === \get_class($this);
     }
 
 
@@ -95,7 +94,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     private function getEntityClass()
     {
-        return $this->isStandalone() ? get_class($this) : $this[self::ENTITY_COLUMN];
+        return $this->isStandalone() ? \get_class($this) : $this[self::ENTITY_COLUMN];
     }
 
 
@@ -107,65 +106,88 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     public function __get($name)
     {
         //name starts with underscore -> no magic functionality
-        if (strpos($name, '_') === 0) { 
-            $_name = substr($name, 1);
+        if (\strpos($name, '_') === 0) {
+            $_name = \substr($name, 1);
         } else {
             $_name = FALSE;
         }
 
-        if ($name==static::getReflection()->primaryKey) {
-            if (array_key_exists(self::PARENT, $this->_parents)) {
-                return $this->{self::PARENT}->id;
+        /***** primary key *****/
+
+        if ($name == 'id' || $name == static::getReflection()->primaryKey) {
+            if (\array_key_exists(self::PARENT, $this->_parents)) {
+                return $this->parents[self::PARENT]->id;
             }
             return $this->_id;
-        } elseif ($_name == 'id' || ($name==static::getReflection()->primaryKeyColumn)) {
+        } 
+        
+        if ($name == static::getReflection()->primaryKeyColumn) {
             return $this->_id;
-        } elseif (array_key_exists($name = trim($name, '0'), $this->_parents)) {
-            if ((!$this->_parents[$name] instanceof self /* || !$this->_parents[$name]->_self_loaded */) &&
-                    (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
-                $this->{'load' . ucfirst($name)} ();
-            if (!$this->_parents[$name] instanceof self) {
-                $parentClass = $this->parents[$name];
-                $this->_parents[$name] = new $parentClass;
+        }
+
+        /***** parents *****/
+
+        if ($_name && \array_key_exists($_name, $this->_parents)) {
+            return $this->_parents[$_name];
+        }
+
+        // lazy loading
+        if (\array_key_exists($name, $this->_parents)) {
+            if (!($this->_parents[$name] instanceof self)) {
+                $this->loadParents($name);
             }
             return $this->_parents[$name];
-        } elseif ($_name && array_key_exists($_name, $this->_parents)) {
-            return $this->_parents[$_name];
-        } elseif (array_key_exists($name = trim($name, '0'), $this->_children)) {
-            if ($this->_children[$name]->isEmpty() && (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
-                $this->{'load' . ucfirst($name)} ();
-            return $this->_children[$name];
-        } elseif ($_name && array_key_exists($_name, $this->_children)) {
-            return $this->_children[$_name];
-        } elseif (array_key_exists($name = trim($name, '0'), $this->_singles)) {
-            if ((!$this->_singles[$name] instanceof self /* || !$this->_parents[$name]->_self_loaded */) &&
-                    (!isset($this->_loaded[$name]) || !$this->_loaded[$name])) //lazy loading
-                $this->{'load' . ucfirst($name)} ();
-            if (!$this->_singles[$name] instanceof self) {
-                $singleClass = $this->singles[$name];
-                $this->_singles[$name] = new $singleClass;
+        }
+
+        /***** singles *****/
+
+        if ($_name && \array_key_exists($_name, $this->_singles)) {
+            return $this->_singles[$_name];
+        }
+
+        //lazy loading
+        if (\array_key_exists($name, $this->_singles)) {
+            if (!($this->_singles[$name] instanceof self)) {
+                $this->loadSingles($name);
             }
             return $this->_singles[$name];
-        } elseif ($_name && array_key_exists($_name, $this->_singles)) {
-            return $this->_singles[$_name];
-        } elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
-            return $this->_values[self::getColumnName($_name)];
-        } elseif (method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
-            return $this->{$m_name}();
-        } elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
-            return $this->_values[self::getColumnName($name)];
-        } elseif (array_key_exists($name, $this->_aux)) {
-            return $this->_aux[$name];
-        } elseif (preg_match('/^(.*)_datetime$/', $name, $matches) && isset($this->{$matches[1]})) {
-            return new \DateTime($this->{$matches[1]});
-        } elseif (static::isCallable($method = Helpers::getter($name))) {//static get{Name}
-            //Debug::dump($method);
-            return static::$method();
-            /* } else {
-              return $this->$name; */
-        } elseif (array_key_exists(self::PARENT, $this->_parents)) {
-            return $this->{self::PARENT}->$name;
         }
+        
+        /***** children *****/
+
+        if ($_name && \array_key_exists($_name, $this->_children)) {
+            return $this->_children[$_name];
+        }
+
+        // lazy loading
+        if (\array_key_exists($name, $this->_children)) {
+            if (!($this->_children[$name] instanceof Table)) {
+                $this->loadChildren($name);
+            }
+            return $this->_children[$name];
+        }
+
+        /***** values *****/
+
+        if ($_name && \array_key_exists($_name, $this->_values)) {
+            return $this->_values[$_name];
+        }
+
+        if (method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
+            return $this->{$m_name}();
+        }
+
+        if (\array_key_exists($name, $this->_values)) {
+            return $this->_values[$name];
+        }
+
+        /***** inheritance *****/
+
+        if (\array_key_exists(self::PARENT, $this->_parents)) {
+            return $this->_parents[self::PARENT]->$name;
+        }
+
+        throw new Exception("Undeclared property $name.");
     }
 
 
@@ -173,18 +195,18 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     public function __isset($name)
     {
         if (
-                $name == 'id' || $name == static::getReflection()->primaryKey ||
-                method_exists($this, Helpers::getter($name)) ||
-                static::getColumnName($name) && array_key_exists(static::getColumnName($name), $this->_values) ||
-                array_key_exists($name, $this->_children) ||
-                (array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL) ||
-                (array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL) ||
-                array_key_exists($name, $this->_aux)
+                $name == 'id' || $name == static::getReflection()->primaryKey || $name == static::getReflection()->primaryKeyColumn ||
+                \method_exists($this, Helpers::getter($name)) ||
+                \array_key_exists($name, $this->_values) ||
+                \array_key_exists($name, $this->_children) && $this->_children[$name] !== NULL ||
+                \array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL ||
+                \array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL ||
+                \array_key_exists(self::PARENT, $this->_parents) && isset($this->_parents[self::PARENT]->$name)
         ) {
-            return true;
-        } else {
-            return false;
+            return TRUE;
         }
+
+        return FALSE;
     }
 
 
@@ -398,7 +420,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                     $parentEntity = new $parentClass($this[static::getColumnName($parentName)]);
                     $parentEntity->load($depth);
                 } else {
-                    $parentEntity = $parentClass::find($this[static::getColumnName($parentName)]);
+                    $parentEntity = $parentClass::find($this[static::getColumnName($parentName)]) or
+                            $parentEntity = new $parentClass;
                 }
 
                 $this->_parents[$parentName] = $parentEntity;
@@ -426,7 +449,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             foreach (static::getReflection()->singles as $singleName => $singleClass) {
                 if (in_array($singleName, $singleNames)) {
                     $fkColumn = $singleClass::getTable()->{static::getForeignKeyName($singleName)};
-                    $entity = $singleClass::findOne($fkColumn->eq($this->id));
+                    $entity = $singleClass::findOne($fkColumn->eq($this->id)) or
+                            $entity = new $singleClass;
                     $entity->load($depth);
                     $this->_singles[$singleName] = $entity;
                     $this->_loaded[$singleName] = $entity->isLoaded();
@@ -438,7 +462,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
     /**
-     * Loads children as a DataSource
+     * Loads children as an instance of Table
      * @param array|string $childrenNames array of children names or self::ALL
      */
     final public function loadChildren($childrenNames = self::ALL)
