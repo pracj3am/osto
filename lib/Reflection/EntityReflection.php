@@ -19,10 +19,10 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
  * @property-read array $singles
  * @property-read array $columns
  * @property-read array $types
- * @property-read array $foreign_keys
- * @property-read string $primary_key
- * @property-read string $primary_key_column
- * @property-read string $table_name
+ * @property-read array $foreignKeys
+ * @property-read string $primaryKey
+ * @property-read string $primaryKeyColumn
+ * @property-read string $tableName
  * @property-read string $prefix
  * @method bool isNullColumn() isNullColumn(string $name)
  * @method string getColumnName() getColumnName(string $name, string|bool $alias)
