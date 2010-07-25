@@ -231,6 +231,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             $newId = $value === 0 ? NULL : $value;
             if ($this->_id !== $newId && $this->_id !== NULL) {
                 $this->_modified = array_fill_keys(array_keys($this->_values), self::VALUE_MODIFIED);
+                \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
             }
             $this->_id = $newId;
             return;
@@ -307,17 +308,17 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             $varName = lcfirst($VarName);
             $depth = isset($arguments[0]) && $arguments[0];
 
-            if (($a = array_key_exists($varName, $this->_parents)) || array_key_exists($VarName, $this->_parents)) {
+            if (($a = \array_key_exists($varName, $this->_parents)) || \array_key_exists($VarName, $this->_parents)) {
                 $parentName = $a ? $varName : $VarName;
                 return $this->loadParents(array($parentName), $depth);
             }
 
-            if (($a = array_key_exists($varName, $this->_singles)) || array_key_exists($VarName, $this->_singles)) {
+            if (($a = \array_key_exists($varName, $this->_singles)) || \array_key_exists($VarName, $this->_singles)) {
                 $singleName = $a ? $varName : $VarName;
                 return $this->loadSingles(array($singleName), $depth);
             }
 
-            if (($a = array_key_exists($varName, $this->_children)) || array_key_exists($VarName, $this->_children)) {
+            if (($a = \array_key_exists($varName, $this->_children)) || \array_key_exists($VarName, $this->_children)) {
                 $childName = $a ? $varName : $VarName;
                 return $this->loadChildren(array($childName), $depth);
             }
@@ -542,86 +543,110 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
-    public function getValuesForSave()
+    /**
+     * Saves the entity to database
+     * @param bool $in_transaction Is method called in outer db transaction?
+     * @return bool FALSE on failure, TRUE otherwise
+     * @throws SavingException
+     */
+    final public function save($in_transaction = FALSE)
     {
-        $values = $this->values;
-        foreach ($values as $key => $value) {
-            if ($key == $this->_reflection->primaryKey)
-                continue; // primární klíč vždy potřebujeme
 
-                if (!is_scalar($value) && $value !== NULL)
-                unset($values[$key]);
-            // ukládáme jen hodnoty, které se změnily
-            elseif ($this->_id && $this->_modified[static::getColumnName($key)] !== self::VALUE_MODIFIED)
-                $values[$key] = '`' . static::getColumnName($key) . '`';
-            elseif ($value === NULL && !static::isNullColumn($key))
-                unset($values[$key]);
-        }
-        return $values;
-    }
+        $in_transaction === TRUE or
+        dibi::begin(\get_class($this));
 
-
-
-    final public function save()
-    {
-        //uložíme rodiče
-        foreach ($this->_parents as $parentName => $parentEntity) {
-            if ($parentEntity instanceof self) {
-                if ($parentName === self::PARENT) {
-                    $parentEntity[self::ENTITY_COLUMN] = get_class($this);
+        try {
+            //saving parents
+            foreach ($this->_parents as $parentName => $parentEntity) {
+                if ($parentEntity instanceof self) {
+                    if ($parentName === self::PARENT) {
+                        $parentEntity[self::ENTITY_COLUMN] = get_class($this);
+                    }
+                    $parentEntity->save(TRUE);
+                    $this[static::getColumnName($parentName)] = $parentEntity->_id;
                 }
-                $parentEntity->save();
-                $this[static::getColumnName($parentName)] = $parentEntity->_id;
             }
-        }
 
-        $values = $v = $this->getValuesForSave();
-        static::replaceKeys($values);
-        foreach ($values as $key => $value) {
-            if (strpos($value, '`') === 0) {
-                unset($values[$key]);
-                $values[$key . '%n'] = str_replace('`', '', $value); //%n modifier for dibi
+            //values
+            $values = $values_update = $this->_values;
+            foreach ($values as $column => $value) {
+                // only modified values are updated
+                if ($this->_modified[$column] !== self::VALUE_MODIFIED) {
+                    unset($values_update[$column]);
+                }
+                // DB default value will be used
+                if ($value === NULL && !$this->_reflection->isNullColumn($column)) {
+                    unset($values[$column]);
+                    unset($values_update[$column]);
+                }
+                // make a reference
+                if (isset($values_update[$column])) {
+                    $values_update[$column] = &$values[$column];
+                }
             }
-        }
-        if ($values) {
-            $valuesWithoutPK = $values;
-            unset($valuesWithoutPK[$this->_reflection->primaryKeyColumn]);
+
+            $this->beforeSave($values);
 
             dibi::query(
-                'INSERT INTO `' . static::getTableName() . '`', $values,
-                'ON DUPLICATE KEY UPDATE ' . static::getReflection()->primaryKeyColumn . '=LAST_INSERT_ID(' . static::getReflection()->primaryKeyColumn . ')
-                 %if', $valuesWithoutPK, ', %a', $valuesWithoutPK, '%end'
+                'INSERT INTO `' . $this->_reflection->tableName . '`', $values+array($this->_reflection->primaryKeyColumn=>$this->_id),
+                'ON DUPLICATE KEY UPDATE ' . $this->_reflection->primaryKeyColumn . '=LAST_INSERT_ID(' . $this->_reflection->primaryKeyColumn . ')
+                 %if', $values_update, ', %a', $values_update, '%end'
             );
-            $this->afterSave($v);
-            //dibi::dump();//die();
-            if (!$this->_id) {
-                $id = dibi::insertId();
-                if ($this->_id && $this->_id != $id)
-                    throw new Exception('ID changed!');
-                $this->_id = (int) $id;
+
+            $this->afterSave($values);
+
+            if ($this->_id === NULL) {
+                $this->id = dibi::insertId();
             }
+
+            //save singles
+            foreach ($this->_singles as $singleName => $single) {
+                if ($single instanceof self) {
+                    $single[$this->_reflection->getForeignKeyName($singleName)] = $this->_id;
+                    $single->save();
+                }
+            }
+
+            //save children
+            foreach ($this->_children as $childName => $children) {
+                foreach ($children as $i => $childEntity) {
+                    $childEntity[$this->_reflection->getForeignKeyName($childName)] = $this->_id;
+                    $childEntity->save();
+                }
+            }
+
+        } catch (\DibiException $e) {
+            $in_transaction === TRUE or
+            dibi::rollback(\get_class($this));
+
+            throw new SavingException('Error when saving entity "' . \get_class($this) . '."', 0, $e);
+            
+            return FALSE;
         }
 
-        //save singles
-        foreach ($this->_singles as $singleName => $single) {
-            if ($single instanceof self) {
-                $single[static::getForeignKeyName($singleName)] = $this->_id;
-                $single->save();
-            }
-        }
+        $in_transaction === TRUE or
+        dibi::commit(\get_class($this));
 
-        //save children
-        foreach ($this->_children as $childName => $children) {
-            foreach ($children as $i => $childEntity) {
-                $childEntity[static::getForeignKeyName($childName)] = $this->_id;
-                $childEntity->save();
-            }
-        }
         return TRUE;
     }
 
 
 
+    /**
+     * Called immediatelly before entity saving. Intetionally for oveloading.
+     * @param array $values The values, which will be saved to database
+     */
+    protected function beforeSave(&$values)
+    {
+        
+    }
+
+
+
+    /**
+     * Called immediatelly after entity saving. Intetionally for oveloading.
+     * @param array $values The values, which were saved to database
+     */
     protected function afterSave(&$values)
     {
 
@@ -629,26 +654,24 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Deletes entity from database
+     * (deleting of its chidren and singles must be ensured in database itself via foreign keys)
+     * @throws \DibiException
+     */
     final public function delete()
     {
-        if ($this->_id) {
+        if ($this->_id !== NULL) {
             dibi::query(
-                'DELETE FROM ' . static::getTableName() . ' WHERE %and',
-                array(static::getReflection()->primaryKey => $this->_id), 'LIMIT 1'
+                'DELETE FROM ' . $this->_reflection->tableName . ' WHERE %and',
+                array($this->_reflection->primaryKey => $this->_id), 'LIMIT 1'
             );
         }
-        // mazání children zajištěno na úrovni databáze
     }
+
 
 
     /****************** VALUES *******************/
-
-
-
-    final public function setColumnValues($values)
-    {
-        $this->setValues($values, TRUE);
-    }
 
 
 
@@ -740,19 +763,19 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
-    /****************** STATIC METHODS *******************/
-
-
-
-    private static function replaceKeys(&$array, $alias = FALSE)
+    final public function setColumnValues($values)
     {
-        return Table\Select::replaceKeys(get_called_class(), $array, $alias);
+        $this->setValues($values, TRUE);
     }
 
 
 
+    /****************** STATIC METHODS *******************/
+
+
+
     /**
-     *
+     * Returns entity reflection instance
      * @return Reflection\EntityReflection
      */
     public static function getReflection()
@@ -765,7 +788,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
     /**
-     *
+     * Returns new instance of Table for the given Entity
      * @return Table
      */
     public static function getTable()
@@ -774,12 +797,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     }
 
 
-    private static function isCallable($method)
-    {
-        return method_exists(get_called_class(), $method);
-    }
-
-
+    
     public function getParent($root = false)
     {
         if (static::isSelfReferencing() && $this->parent_id) {
