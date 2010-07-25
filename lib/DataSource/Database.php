@@ -3,7 +3,7 @@ namespace osto\DataSource;
 
 
 /**
- * Datasource for further data definition and fetching
+ * Datasource for database data definition and fetching
  *
  */
 class Database extends \DibiDataSource
