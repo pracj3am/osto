@@ -13,21 +13,25 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     const ENTITY_COLUMN = 'entity';
 
     const VALUE_NOT_SET = 0;
-    const VALUE_NOT_MODIFIED = 1;
+    const VALUE_SET = 1;
     const VALUE_MODIFIED = 2;
 
     protected static $_REFLECTIONS = array();
     
     private $_id;
     private $_values = array();
+    private $_properties = array();
     private $_modified = array();
     private $_parents = array();
     private $_children = array();
     private $_singles = array();
     private $_loaded;
     private $_self_loaded;
-    private $_aux = array();
-
+    /**
+     *
+     * @var Reflection\EntityReflection
+     */
+    private $_reflection;
 
 
     /**
@@ -54,22 +58,23 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         $this->_self_loaded = FALSE;
 
-        $r = static::getReflection();
-        foreach ($r->columns as $prop=>$column) {
+        $this->_reflection = static::getReflection();
+        foreach ($this->_reflection->columns as $prop=>$column) {
             if ($prop != $r->primaryKey) {
                 $this->_modified[$column] = self::VALUE_NOT_SET;
+                $this->_properties[$prop] = $column;
                 $this->_values[$column] = NULL;
             }
         }
-        foreach ($r->parents as $parentName => $parentClass) {
+        foreach ($this->_reflection->parents as $parentName => $parentClass) {
             $this->_parents[$parentName] = NULL;
             $this->_loaded[$parentName] = FALSE;
         }
-        foreach ($r->children as $childName => $childClass) {
+        foreach ($this->_reflection->children as $childName => $childClass) {
             $this->_children[$childName] = NULL;
             $this->_loaded[$childName] = FALSE;
         }
-        foreach ($r->singles as $singleName => $singleClass) {
+        foreach ($this->_reflection->singles as $singleName => $singleClass) {
             $this->_singles[$singleName] = NULL;
             $this->_loaded[$singleName] = FALSE;
         }
@@ -114,14 +119,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         /***** primary key *****/
 
-        if ($name == 'id' || $name == static::getReflection()->primaryKey) {
+        if ($name == 'id' || $name == $this->_reflection->primaryKey) {
             if (\array_key_exists(self::PARENT, $this->_parents)) {
                 return $this->parents[self::PARENT]->id;
             }
             return $this->_id;
         } 
         
-        if ($name == static::getReflection()->primaryKeyColumn) {
+        if ($name == $this->_reflection->primaryKeyColumn) {
             return $this->_id;
         }
 
@@ -169,15 +174,15 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         /***** values *****/
 
-        if ($_name && \array_key_exists($_name, $this->_values)) {
+        if ($_name && \array_key_exists($_name, $this->_properties)) {
             return $this->_values[$_name];
         }
 
-        if (method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
+        if (\method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
             return $this->{$m_name}();
         }
 
-        if (\array_key_exists($name, $this->_values)) {
+        if (\array_key_exists($name, $this->_properties)) {
             return $this->_values[$name];
         }
 
@@ -195,13 +200,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     public function __isset($name)
     {
         if (
-                $name == 'id' || $name == static::getReflection()->primaryKey || $name == static::getReflection()->primaryKeyColumn ||
+                $name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->primaryKeyColumn ||
                 \method_exists($this, Helpers::getter($name)) ||
-                \array_key_exists($name, $this->_values) ||
+                \array_key_exists($name, $this->_properties) ||
                 \array_key_exists($name, $this->_children) && $this->_children[$name] !== NULL ||
                 \array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL ||
                 \array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL ||
-                \array_key_exists(self::PARENT, $this->_parents) && isset($this->_parents[self::PARENT]->$name)
+                \array_key_exists(self::PARENT,$this->_parents) && isset($this->_parents[self::PARENT]->$name)
         ) {
             return TRUE;
         }
@@ -213,48 +218,83 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     public function __set($name, $value)
     {
-        if (strpos($name, '_') === 0) //name starts with undescore
-            $_name = substr($name, 1);
-        else
-            $_name = FALSE;
-
-        if (is_object($value) && in_array(get_class($value), $this->parents)) {
-            $this->_parents[trim($name, '0')] = $value;
-        } elseif (is_object($value) && in_array(get_class($value), $this->singles)) {
-            $this->_singles[trim($name, '0')] = $value;
-        } elseif (($value instanceof RowCollection) && array_key_exists($name = trim($name, '0'), $this->_children)) {
-            if ($value->isEmpty() || in_array($value->getClass(), static::getChildren()))
-                $this->_children[$name] = $value;
-            else
-                throw new \Exception('The collection of objects (' . $name . ') that have class ' . $value->getClass() . ' not defined in CHILDREN');
-        } elseif (($name==static::getReflection()->primaryKey) || ($name==static::getReflection()->primaryKeyColumn)) {
-            $newId = \intval($value) === 0 ? NULL : \intval($value);
-            if ($this->_id !== $newId && $this->_id !== NULL)
-                array_map(function($item) {
-                            return Entity::VALUE_MODIFIED;
-                        }, $this->_modified);
-
-            $this->_id = $newId;
-        } elseif ($_name && self::getColumnName($_name) && array_key_exists(self::getColumnName($_name), $this->_values)) {
-            $cn = self::getColumnName($_name);
-            if ($this->_values[$cn] !== $value)
-                $this->_modified[$cn] = self::VALUE_MODIFIED;
-
-            $this->_values[$cn] = $value;
-        } elseif (method_exists($this, ($m_name = Helpers::setter($name)))) {//set{Name}
-            return $this->{$m_name}($value);
-        } elseif (self::getColumnName($name) && array_key_exists(self::getColumnName($name), $this->_values)) {
-            $cn = self::getColumnName($name);
-            if ($this->_values[$cn] !== $value)
-                $this->_modified[$cn] = self::VALUE_MODIFIED;
-
-            $this->_values[$cn] = $value;
-        } elseif (array_key_exists(self::PARENT, $this->_parents)) {
-            $this->{self::PARENT}->$name = $value;
+        //name starts with underscore -> no magic functionality
+        if (\strpos($name, '_') === 0) {
+            $_name = \substr($name, 1);
         } else {
-            //throw new \Exception('Undefined property '.$name.' (class '.get_class($this).')');
-            $this->_aux[$name] = $value;
+            $_name = FALSE;
         }
+
+        //primary key
+        if ($name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->primaryKeyColumn) {
+            \settype($value, $this->_reflection->types[$this->_reflection->primaryKey]);
+            $newId = $value === 0 ? NULL : $value;
+            if ($this->_id !== $newId && $this->_id !== NULL) {
+                $this->_modified = array_fill_keys(array_keys($this->_values), self::VALUE_MODIFIED);
+            }
+            $this->_id = $newId;
+            return;
+        }
+
+        //parents
+        if (\array_key_exists($name, $this->_parents) && is_object($value) && get_class($value) == $this->_reflection->parents[$name]) {
+            $this->_parents[$name] = $value;
+            return;
+        }
+
+        //singles
+        if (\array_key_exists($name, $this->_singles) && is_object($value) && get_class($value) == $this->_reflection->singles[$name]) {
+            $this->_parents[$name] = $value;
+            return;
+        }
+
+        //children
+        if (\array_key_exists($name, $this->_children) && is_object($value) && $value instanceof \IDataSource) {
+            $this->_children[$name] = $value;
+            return;
+        }
+
+        /***** values *****/
+
+        if ($_name && \array_key_exists($_name, $this->_properties)) {
+            return $this->_setValue($name, $value);
+        }
+
+        if (\method_exists($this, ($m_name = Helpers::setter($name)))) {//set{Name}
+            return $this->{$m_name}($value);
+        }
+
+        if (\array_key_exists($_name, $this->_properties)) {
+            return $this->_setValue($name, $value);
+        }
+
+        //inheritance
+        if (\array_key_exists(self::PARENT, $this->_parents)) {
+            $this->_parents[self::PARENT]->$name = $value;
+            return;
+        }
+
+        throw new Exception("Undeclared property $name.");
+    }
+
+
+
+    /**
+     * Internal method to set atributte value incl. type-casting and modification state flag
+     * @param string $name
+     * @param mixed $value
+     */
+    private function _setValue($name, $value)
+    {
+        $cn = $this->_properties[$name];
+        \settype($value, $this->_reflection->types[$name]);
+        if ($this->_modified[$cn] == self::VALUE_NOT_SET) {
+            $this->_modified[$cn] = self::VALUE_SET;
+        } elseif ($this->_modified[$cn] == self::VALUE_SET && ($value != $this->_values[$cn])) {
+            $this->_modified[$cn] = self::VALUE_MODIFIED;
+        }
+
+        $this->_values[$cn] = $value;
     }
 
 
@@ -413,14 +453,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             $parentNames = (array)$parentNames;
         }
 
-        foreach (static::getReflection()->parents as $parentName => $parentClass) {
-            if (in_array($parentName, $parentNames) && isset($this[static::getColumnName($parentName)])) {
+        foreach ($this->_reflection->parents as $parentName => $parentClass) {
+            if (in_array($parentName, $parentNames) && isset($this[$this->_reflection->getColumnName($parentName)])) {
 
                 if ($parentName === self::PARENT) {
-                    $parentEntity = new $parentClass($this[static::getColumnName($parentName)]);
+                    $parentEntity = new $parentClass($this[$this->_reflection->getColumnName($parentName)]);
                     $parentEntity->load($depth);
                 } else {
-                    $parentEntity = $parentClass::find($this[static::getColumnName($parentName)]) or
+                    $parentEntity = $parentClass::find($this[$this->_reflection->getColumnName($parentName)]) or
                             $parentEntity = new $parentClass;
                 }
 
@@ -446,9 +486,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 $singleNames = (array)$singleNames;
             }
 
-            foreach (static::getReflection()->singles as $singleName => $singleClass) {
+            foreach ($this->_reflection->singles as $singleName => $singleClass) {
                 if (in_array($singleName, $singleNames)) {
-                    $fkColumn = $singleClass::getTable()->{static::getForeignKeyName($singleName)};
+                    $fkColumn = $singleClass::getTable()->{$this->_reflection->getForeignKeyName($singleName)};
                     $entity = $singleClass::findOne($fkColumn->eq($this->id)) or
                             $entity = new $singleClass;
                     $entity->load($depth);
@@ -474,12 +514,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 $childrenNames = (array) $childrenNames;
             }
 
-            foreach (static::getReflection()->children as $childName => $childClass) {
+            foreach ($this->_reflection->children as $childName => $childClass) {
                 if (in_array($childName, $childrenNames)) {
                     if (get_class($this) == $childClass) {//load children of the same class
                         $fk = 'parent_id';
                     } else {
-                        $fk = static::getForeignKeyName($childName);
+                        $fk = $this->_reflection->getForeignKeyName($childName);
                     }
                     $fkColumn = $childClass::getTable()->$fk;
                     $this->$childName = $childClass::getTable()->where($fkColumn->eq($this->id));
@@ -499,7 +539,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         $values = $this->values;
         foreach ($values as $key => $value) {
-            if ($key == static::getReflection()->primaryKey)
+            if ($key == $this->_reflection->primaryKey)
                 continue; // primární klíč vždy potřebujeme
 
                 if (!is_scalar($value) && $value !== NULL)
@@ -538,7 +578,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
         if ($values) {
             $valuesWithoutPK = $values;
-            unset($valuesWithoutPK[static::getReflection()->primaryKeyColumn]);
+            unset($valuesWithoutPK[$this->_reflection->primaryKeyColumn]);
 
             dibi::query(
                 'INSERT INTO `' . static::getTableName() . '`', $values,
