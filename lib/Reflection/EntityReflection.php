@@ -24,7 +24,9 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
  * @property-read string $primary_key_column
  * @property-read string $table_name
  * @property-read string $prefix
- *
+ * @method bool isNullColumn() isNullColumn(string $name)
+ * @method string getColumnName() getColumnName(string $name, string|bool $alias)
+ * @method string getForeignKeyName() getForeignKeyName(string $name)
  */
 class EntityReflection extends \ReflectionClass
 {
