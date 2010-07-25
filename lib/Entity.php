@@ -675,30 +675,35 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Returns data in associative array form
+     * @return array
+     */
     public function getValues()
     {
         $values = array();
-        foreach ($this->columns as $prop => $name) {
-            if ($prop == static::getReflection()->primaryKey) {
-                if ($this->_id)
-                    $values[static::getReflection()->primaryKey] = $this->_id;
-            } else {
-                $values[$prop] = $this->_values[$name];
-            }
+        $values[$this->_reflection->primaryKey] = $this->_id;
+        foreach ($this->_properties as $prop => $column) {
+            $values[$prop] = $this->_values[$column];
         }
 
         foreach ($this->_parents as $parentName => $parentEntity) {
             unset($values[$parentName]);
-            $values[static::getColumnName($parentName)] = $this->_values[static::getColumnName($parentName)];
+            //foreign key
+            $values[$this->_reflection->getColumnName($parentName)] = $this->_values[$this->_reflection->getColumnName($parentName)];
             if ($parentName === self::PARENT && !$parentEntity instanceof self) {
                 $parentEntity = $this->{self::PARENT};
             }
-            if ($parentEntity instanceof self)
+            if ($parentEntity instanceof self) {
                 $values[$parentName] = $parentEntity->values;
+            }
         }
         foreach ($this->_children as $childName => $children) {
-            foreach ($children as $i => $childEntity)
-                $values[$childName][$i] = $childEntity->values;
+            foreach ($children as $i => $childEntity) {
+                if ($childEntity instanceof self) {
+                    $values[$childName][$i] = $childEntity->values;
+                }
+            }
         }
         foreach ($this->_singles as $singleName => $single) {
             if ($single instanceof self)
@@ -709,6 +714,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * @todo refactor
+     */
     public function setValues($value, $isColumns = FALSE)
     {
         if (is_array($value) || is_object($value)) {
@@ -720,11 +728,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                     else
                         $this->$key = $val;
             }
-            if (is_array($value) && isset($value[static::getReflection()->primaryKeyColumn])) {
-                $this->_id = (int) $value[static::getReflection()->primaryKeyColumn];
+            if (is_array($value) && isset($value[$this->_reflection->primaryKeyColumn])) {
+                $this->_id = (int) $value[$this->_reflection->primaryKeyColumn];
             }
-            if (is_object($value) && isset($value->{static::getReflection()->primaryKeyColumn})) {
-                $this->_id = (int) $value->{static::getReflection()->primaryKeyColumn};
+            if (is_object($value) && isset($value->{$this->_reflection->primaryKeyColumn})) {
+                $this->_id = (int) $value->{$this->_reflection->primaryKeyColumn};
             }
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) {
@@ -739,8 +747,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 if (is_array($value) && isset($value[$childName]) && is_array($childArray = $value[$childName]) || isset($value->$childName) && is_array($childArray = $value->$childName)) {
                     foreach ($childArray as $i => $childValues) {
                         if (!isset($childEntities[$i])) {
-                            $children = static::getChildren();
-                            $childClass = $children[$childName];
+                            $childClass = $this->_reflection->children[$childName];
                             $childEntities[$i] = new $childClass();
                         }
                         $childEntities[$i]->values = $childValues;
@@ -763,6 +770,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * @todo is it neccessary?
+     */
     final public function setColumnValues($values)
     {
         $this->setValues($values, TRUE);
@@ -797,7 +807,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     }
 
 
-    
+
+    /**
+     * @todo is it neccessary?
+     */
     public function getParent($root = false)
     {
         if (static::isSelfReferencing() && $this->parent_id) {
