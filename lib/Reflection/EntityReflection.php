@@ -13,7 +13,19 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
 }
 
 
-
+/**
+ * @property-read array $children
+ * @property-read array $parents
+ * @property-read array $singles
+ * @property-read array $columns
+ * @property-read array $types
+ * @property-read array $foreign_keys
+ * @property-read string $primary_key
+ * @property-read string $primary_key_column
+ * @property-read string $table_name
+ * @property-read string $prefix
+ *
+ */
 class EntityReflection extends \ReflectionClass
 {
 
