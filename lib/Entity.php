@@ -301,28 +301,29 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     public function __call($name, $arguments)
     {
-        if (strpos($name, 'load') === 0) {//load{Parent} or load{Single} or load{Children}
-            $varName = strtolower(substr($name, 4, 1)) . substr($name, 5);
-            $VarName = ucfirst($varName);
-            if (($a = array_key_exists($varName, $this->parents)) || array_key_exists($VarName, $this->parents)) {
+        //load{Parent} or load{Single} or load{Children}
+        if (strpos($name, 'load') === 0) {
+            $VarName = substr($name, 4);
+            $varName = lcfirst($VarName);
+            $depth = isset($arguments[0]) && $arguments[0];
+
+            if (($a = array_key_exists($varName, $this->_parents)) || array_key_exists($VarName, $this->_parents)) {
                 $parentName = $a ? $varName : $VarName;
-                $withChildren = isset($arguments[0]) && $arguments[0];
-                return $this->loadParents(array($parentName), $withChildren);
-            } elseif (($a = array_key_exists($varName, $this->singles)) || array_key_exists($VarName, $this->singles)) {
-                $singleName = $a ? $varName : $VarName;
-                $withChildren = isset($arguments[0]) && $arguments[0];
-                return $this->loadSingles(array($singleName), $withChildren);
-            } elseif (($a = array_key_exists($varName, static::getChildren())) || array_key_exists($VarName, static::getChildren())) {
-                $childName = $a ? $varName : $VarName;
-                $where = isset($arguments[0]) ? array($childName => $arguments[0]) : array();
-                $sort = isset($arguments[1]) ? array($childName => $arguments[1]) : array();
-                $limit = isset($arguments[2]) ? array($childName => $arguments[2]) : array();
-                $withParents = isset($arguments[3]) && $arguments[3];
-                return $this->loadChildren(array($childName), $where, $sort, $limit, $withParents);
+                return $this->loadParents(array($parentName), $depth);
             }
-        } else {
-            return static::__callStatic($name, $arguments);
+
+            if (($a = array_key_exists($varName, $this->_singles)) || array_key_exists($VarName, $this->_singles)) {
+                $singleName = $a ? $varName : $VarName;
+                return $this->loadSingles(array($singleName), $depth);
+            }
+
+            if (($a = array_key_exists($varName, $this->_children)) || array_key_exists($VarName, $this->_children)) {
+                $childName = $a ? $varName : $VarName;
+                return $this->loadChildren(array($childName), $depth);
+            }
         }
+
+        return static::__callStatic($name, $arguments);
     }
 
 
@@ -505,7 +506,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      * Loads children as an instance of Table
      * @param array|string $childrenNames array of children names or self::ALL
      */
-    final public function loadChildren($childrenNames = self::ALL)
+    final public function loadChildren($childrenNames = self::ALL, $depth = 0)
     {
         if ($this->_id !== NULL) {
             if ($childrenNames === self::ALL) {
