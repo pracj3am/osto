@@ -51,7 +51,7 @@ class Table implements \IDataSource
             throw new Exception("Can't create reflection for entity '$entity'", 0, $e);
         }
 
-        $this->_dataSource = new DataSource($this->_reflection->getTableName());
+        $this->_dataSource = new DataSource\Database($this->_reflection->getTableName());
     }
 
 

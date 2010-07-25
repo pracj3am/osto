@@ -1,12 +1,12 @@
 <?php
-namespace osto;
+namespace osto\DataSource;
 
 
 /**
  * Datasource for further data definition and fetching
  *
  */
-class DataSource extends \DibiDataSource
+class Database extends \DibiDataSource
 {
 
 
