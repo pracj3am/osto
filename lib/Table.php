@@ -7,7 +7,7 @@ namespace osto;
  * Table query API
  * @author Jan Prachař <jan.prachar@gmail.com>
  */
-class Table
+class Table implements \IDataSource
 {
 
     /**
@@ -137,5 +137,27 @@ class Table
 		$this->_dataSource->applyLimit($limit, $offset);
 		return $this;
 	}
+
+
+
+    /**
+     * Gets iterator
+     * @return Traversable
+     */
+    public function getIterator()
+    {
+        return $this->_dataSource->getIterator();
+    }
+
+
+
+    /**
+     * Gets number of items
+     * @return int
+     */
+    public function count()
+    {
+        return $this->_dataSource->count();
+    }
 
 }
