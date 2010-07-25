@@ -227,7 +227,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         //primary key
         if ($name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->primaryKeyColumn) {
-            \settype($value, $this->_reflection->types[$this->_reflection->primaryKey]);
+            $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->primaryKey]);
             $newId = $value === 0 ? NULL : $value;
             if ($this->_id !== $newId && $this->_id !== NULL) {
                 $this->_modified = array_fill_keys(array_keys($this->_values), self::VALUE_MODIFIED);
@@ -287,7 +287,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     private function _setValue($name, $value)
     {
         $cn = $this->_properties[$name];
-        \settype($value, $this->_reflection->types[$name]);
+        $value === NULL or \settype($value, $this->_reflection->types[$name]);
         if ($this->_modified[$cn] == self::VALUE_NOT_SET) {
             $this->_modified[$cn] = self::VALUE_SET;
         } elseif ($this->_modified[$cn] == self::VALUE_SET && ($value != $this->_values[$cn])) {
@@ -363,25 +363,31 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Copies entity to new instance
+     * @return Entity new instance
+     */
     public function copy()
     {
         $copy = clone $this;
         $copy->_id = NULL;
-        if (is_array($copy->_parents))
-            foreach ($copy->_parents as $parentName => $parentEntity) {
-                if ($parentEntity !== NULL)
-                    $copy->_parents[$parentName] = $this->_parents[$parentName]->copy();
+        foreach ($copy->_parents as $parentName => $parentEntity) {
+            if ($parentEntity instanceof self) {
+                $copy->_parents[$parentName] = $this->_parents[$parentName]->copy();
             }
-        if (is_array($copy->_children))
-            foreach ($copy->_children as $childName => $childEntities)
+        }
+        foreach ($copy->_singles as $singleName => $singleEntity) {
+            if ($singleEntity instanceof self) {
+                $copy->_singles[$singleName] = $this->_singles[$singleName]->copy();
+            }
+        }
+        foreach ($copy->_children as $childName => $childEntities) {
+            if ($childEntities instanceof \IDataSource) {
                 foreach ($copy->_children[$childName] as $i => $childEntity) {
                     $copy->_children[$childName][$i] = $this->_children[$childName][$i]->copy();
                 }
-        if (is_array($copy->_singles))
-            foreach ($copy->_singles as $singleName => $singleEntity) {
-                if ($singleEntity !== NULL)
-                    $copy->_singles[$singleName] = $this->_singles[$singleName]->copy();
             }
+        }
 
         return $copy;
     }
