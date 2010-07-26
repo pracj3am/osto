@@ -10,9 +10,10 @@ class Database extends \DibiDataSource
 {
 
 
-    public function __construct($args)
+    public function __construct()
     {
-		$translator = new \DibiTranslator($this->driver);
+        $args = func_get_args();
+		$translator = new \DibiTranslator(\dibi::getConnection()->driver);
         parent::__construct($translator->translate($args), \dibi::getConnection());
     }
 

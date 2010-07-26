@@ -47,35 +47,35 @@ class subTest extends Entity
 
 }
 
-Assert::same(TestA::getAnnotation('table'), 'model_test');
-Assert::same(TestA::getAnnotation('prefix'), 't');
-Assert::same(subTest::getAnnotation('prefix'), 'st');
+Assert::same(TestA::getReflection()->getAnnotation('table'), 'model_test');
+Assert::same(TestA::getReflection()->getAnnotation('prefix'), 't');
+Assert::same(subTest::getReflection()->getAnnotation('prefix'), 'st');
 
-dump(TestA::getAnnotations('property'));
+dump(TestA::getReflection()->getAnnotations('property'));
 
-Assert::same( TestA::getColumnName('one'),  't_one' );
-Assert::same( TestA::getColumnName('one'),  't_one' );
+Assert::same( TestA::getReflection()->getColumnName('one'),  't_one' );
+Assert::same( TestA::getReflection()->getColumnName('one'),  't_one' );
 
-Assert::same( subTest::getColumnName('test.one'),  'test.t_one' );
-Assert::same( subTest::getColumnName('test.one', 'xxx'),  'xxx->test.t_one' );
-Assert::same( subTest::getColumnName('test.x_y', 'xxx'),  'xxx->test.x_y' );
+Assert::same( subTest::getReflection()->getColumnName('test.one'),  'test.t_one' );
+Assert::same( subTest::getReflection()->getColumnName('test.one', 'xxx'),  'xxx->test.t_one' );
+Assert::same( subTest::getReflection()->getColumnName('test.x_y', 'xxx'),  'xxx->test.x_y' );
 
-Assert::same( TestA::getTableName(), 'model_test' );
-Assert::same( subTest::getTableName(), 'sub_test' );
+Assert::same( TestA::getReflection()->getTableName(), 'model_test' );
+Assert::same( subTest::getReflection()->getTableName(), 'sub_test' );
 
-Assert::false( TestA::isColumn('one') );
-Assert::false( TestA::isColumn('one') );
-Assert::true( TestA::isColumn('t_one') );
-Assert::false( TestA::isColumn('st_one') );
-Assert::true( subTest::isColumn('st_one') );
-Assert::true( subTest::isColumn('x_y') );
-Assert::true( TestA::isColumn('x_y') );
+Assert::false( TestA::getReflection()->isColumn('one') );
+Assert::false( TestA::getReflection()->isColumn('one') );
+Assert::true( TestA::getReflection()->isColumn('t_one') );
+Assert::false( TestA::getReflection()->isColumn('st_one') );
+Assert::true( subTest::getReflection()->isColumn('st_one') );
+Assert::true( subTest::getReflection()->isColumn('x_y') );
+Assert::true( TestA::getReflection()->isColumn('x_y') );
 
-dump(TestA::getColumns());
+dump(TestA::getReflection()->getColumns());
 
-dump(TestA::getColumns());
+dump(TestA::getReflection()->getColumns());
 
-dump(subTest::getColumns());
+dump(subTest::getReflection()->getColumns());
 
 __halt_compiler();
 

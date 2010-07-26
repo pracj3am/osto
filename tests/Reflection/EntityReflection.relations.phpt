@@ -61,22 +61,22 @@ class D extends Entity
 }
 
 output('A parents:');
-dump(A::getParents());
+dump(A::getReflection()->getParents());
 
 output('A children:');
-dump(A::getChildren());
+dump(A::getReflection()->getChildren());
 
 output('A singles:');
-dump(A::getSingles());
+dump(A::getReflection()->getSingles());
 
 output('B children:');
-dump(B::getChildren());
+dump(B::getReflection()->getChildren());
 
 output('C children:');
-dump(C::getChildren());
+dump(C::getReflection()->getChildren());
 
 output('D columns:');
-dump(D::getColumns());
+dump(D::getReflection()->getColumns());
 
 
 __halt_compiler();

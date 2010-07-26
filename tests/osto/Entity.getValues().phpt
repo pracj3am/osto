@@ -19,6 +19,9 @@ define('OSTO_TMP_DIR', __DIR__ . '/tmp');
 NetteTestHelpers::purge(OSTO_TMP_DIR);
 
 
+db_connect();
+
+
 
 /**
  * @table model_test
@@ -65,11 +68,16 @@ $t = new Test;
 $t->main = 1;
 $t->alt = 2;
 $t->a_alt = 3;
-$t->a_a_alt = 4;
+$t['a_a_alt'] = 4;
+try {
+	$t->a_a_alt = 4.5;
+} catch (\osto\Exception $e) {
+	dump($e->getMessage());
+}
 $t->b = 5;
 $t->A->a = 6;
 $t->B[] = new B;
-$t->B->getFirst()->b = 7;
+$t->B[0]->b = 7;
 $t->C->a = 8;
 $t->C->b = 9;
 
@@ -79,13 +87,15 @@ dump($t->values);
 __halt_compiler();
 
 ------EXPECT------
+string(28) "Undeclared property a_a_alt."
+
 Table Test values:
 
 array(8) {
-	"main" => int(1)
-	"alt" => int(2)
+	"main" => string(1) "1"
+	"alt" => string(1) "2"
 	"a_alt" => int(4)
-	"b" => int(5)
+	"b" => string(1) "5"
 	"c_id" => NULL
 	"C" => array(3) {
 		"a" => int(8)

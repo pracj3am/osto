@@ -57,7 +57,7 @@ function output($message = NULL)
 
 function db_connect()
 {
-	dibi::connect('driver=mysqli&host=localhost&username=root&charset=utf8');
+	dibi::connect('driver=mysqli&host=localhost&username=test&charset=utf8');
 	dibi::query('CREATE DATABASE IF NOT EXISTS test');
 	dibi::query('USE test');
 }

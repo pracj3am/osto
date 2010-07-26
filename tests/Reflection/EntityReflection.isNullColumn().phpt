@@ -42,10 +42,10 @@ class C extends Entity
 	
 }
 
-Assert::true(A::isNullColumn('n'));
-Assert::true(A::isNullColumn('k'));
-Assert::false(A::isNullColumn('l'));
-Assert::false(A::isNullColumn('m'));
-Assert::false(A::isNullColumn('foo'));
-Assert::true(A::isNullColumn('b_id'));
-Assert::false(A::isNullColumn('c_id'));
+Assert::true(A::getReflection()->isNullColumn('n'));
+Assert::true(A::getReflection()->isNullColumn('k'));
+Assert::false(A::getReflection()->isNullColumn('l'));
+Assert::false(A::getReflection()->isNullColumn('m'));
+Assert::false(A::getReflection()->isNullColumn('foo'));
+Assert::true(A::getReflection()->isNullColumn('b_id'));
+Assert::false(A::getReflection()->isNullColumn('c_id'));

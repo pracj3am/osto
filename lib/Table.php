@@ -56,6 +56,12 @@ class Table implements \IDataSource
 
 
 
+    public function getName()
+    {
+        return $this->_reflection->tableName;
+    }
+
+
     /**
      * Getter for table properties
      * @param string $name

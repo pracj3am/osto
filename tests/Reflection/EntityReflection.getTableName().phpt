@@ -44,8 +44,8 @@ class BarFoo extends Entity {
 class aAaAaAaAAA extends Entity {
 }
 
-Assert::same( FooBar::getTableName(), 'foo_bar' );
-Assert::same( FooBar2::getTableName(), 'fooo_bar' );
-Assert::same( FooBar3::getTableName(), 'foo_bar3' );
-Assert::same( BarFoo::getTableName(), 'BarFoo' );
-Assert::same( aAaAaAaAAA::getTableName(), 'a_aa_aa_aa_a_a_a' );
+Assert::same( FooBar::getReflection()->getTableName(), 'foo_bar' );
+Assert::same( FooBar2::getReflection()->getTableName(), 'fooo_bar' );
+Assert::same( FooBar3::getReflection()->getTableName(), 'foo_bar3' );
+Assert::same( BarFoo::getReflection()->getTableName(), 'BarFoo' );
+Assert::same( aAaAaAaAAA::getReflection()->getTableName(), 'a_aa_aa_aa_a_a_a' );

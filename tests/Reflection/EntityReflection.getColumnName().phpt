@@ -41,13 +41,13 @@ class B extends Entity
 }
 
 
-Assert::same(Test::getColumnName('main'), 'x_main');
-Assert::same(Test::getColumnName('alt'), 'a_alt');
-Assert::same(Test::getColumnName('a_alt'), 'a_a_alt');
-Assert::same(Test::getColumnName('a_a_alt'), 'a_a_alt');
-Assert::same(Test::getColumnName('a_b'), 'a_b');
-Assert::same(Test::getColumnName('b'), 'a_b');
-Assert::same(Test::getColumnName('b_id'), 'b_id');
-Assert::false(Test::getColumnName('a_main'));
-Assert::false(B::getColumnName('a_id'));
-Assert::false(Test::getColumnName('a'));
+Assert::same(Test::getReflection()->getColumnName('main'), 'x_main');
+Assert::same(Test::getReflection()->getColumnName('alt'), 'a_alt');
+Assert::same(Test::getReflection()->getColumnName('a_alt'), 'a_a_alt');
+Assert::same(Test::getReflection()->getColumnName('a_a_alt'), 'a_a_alt');
+Assert::same(Test::getReflection()->getColumnName('a_b'), 'a_b');
+Assert::same(Test::getReflection()->getColumnName('b'), 'a_b');
+Assert::same(Test::getReflection()->getColumnName('b_id'), 'b_id');
+Assert::false(Test::getReflection()->getColumnName('a_main'));
+Assert::false(B::getReflection()->getColumnName('a_id'));
+Assert::false(Test::getReflection()->getColumnName('a'));

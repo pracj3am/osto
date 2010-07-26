@@ -40,7 +40,7 @@ class B extends Entity {
 $t = new Test;
 
 output('Table Test columns:');
-dump($t->columns);
+dump($t::getReflection()->columns);
 
 __halt_compiler();
 

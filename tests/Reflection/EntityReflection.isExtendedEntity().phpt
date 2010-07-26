@@ -42,12 +42,12 @@ class D extends A
 	
 }
 
-Assert::false(Entity::isEntity());
-Assert::true(A::isEntity());
-Assert::false(B::isEntity());
-Assert::true(C::isEntity());
+Assert::false(Entity::getReflection()->isEntity());
+Assert::true(A::getReflection()->isEntity());
+Assert::false(B::getReflection()->isEntity());
+Assert::true(C::getReflection()->isEntity());
 
-Assert::false(A::isExtendedEntity());
-Assert::false(B::isExtendedEntity());
-Assert::false(C::isExtendedEntity());
-Assert::true(D::isExtendedEntity());
+Assert::false(A::getReflection()->isExtendedEntity());
+Assert::false(B::getReflection()->isExtendedEntity());
+Assert::false(C::getReflection()->isExtendedEntity());
+Assert::true(D::getReflection()->isExtendedEntity());

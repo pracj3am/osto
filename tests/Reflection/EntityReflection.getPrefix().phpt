@@ -44,8 +44,8 @@ class BarFoo extends Entity {
 class aAaAaAaAAA extends Entity {
 }
 
-Assert::same( FooBar::getPrefix(), 'fb' );
-Assert::same( FooBar2::getPrefix(), 'zd' );
-Assert::same( FooBar3::getPrefix(), 'fb3' );
-Assert::same( BarFoo::getPrefix(), 'bf' );
-Assert::same( aAaAaAaAAA::getPrefix(), 'aaaaaa' );
+Assert::same( FooBar::getReflection()->getPrefix(), 'fb' );
+Assert::same( FooBar2::getReflection()->getPrefix(), 'zd' );
+Assert::same( FooBar3::getReflection()->getPrefix(), 'fb3' );
+Assert::same( BarFoo::getReflection()->getPrefix(), 'bf' );
+Assert::same( aAaAaAaAAA::getReflection()->getPrefix(), 'aaaaaa' );

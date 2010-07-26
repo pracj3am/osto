@@ -68,7 +68,7 @@ final class NetteTestHelpers
 	{
 		@mkdir($dir); // intentionally @
 		foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir), RecursiveIteratorIterator::CHILD_FIRST) as $entry) {
-			if ($entry->getBasename() === '.gitignore') {
+			if ($entry->getBasename() === '.gitignore' || $entry->getBasename() === '.' || $entry->getBasename() === '..') {
 				// ignore
 			} elseif ($entry->isDir()) {
 				rmdir($entry);

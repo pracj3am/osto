@@ -3,7 +3,7 @@
 namespace osto\Reflection;
 
 use osto\Entity;
-use osto\Table\Helpers;
+use osto\Helpers;
 use osto\Table\Select;
 use osto\Nette\AnnotationsParser;
 use osto\Nette\Caching;
@@ -213,7 +213,7 @@ class EntityReflection extends \ReflectionClass
             if (($a = isset($parents[$entityName])) || isset($singles[$entityName])) {
                 $class = $a ? $parents[$entityName] : $singles[$entityName];
                 $name = substr($name, $pos + 1);
-                $r = $class::getColumnName($name, $entityName);
+                $r = $class::getReflection()->getColumnName($name, $entityName);
                 return $r === FALSE ? $r : ($alias ? $alias . Select::ALIAS_DELIM : '') . $r;
             }
 
@@ -245,7 +245,7 @@ class EntityReflection extends \ReflectionClass
     private function isExtendedEntity()
     {
         $parentEntity = $this->_getParentEntity();
-        return $parentEntity && $this->_isEntity() && $parentEntity::isEntity();
+        return $parentEntity && $this->_isEntity() && $parentEntity::getReflection()->isEntity();
     }
 
 

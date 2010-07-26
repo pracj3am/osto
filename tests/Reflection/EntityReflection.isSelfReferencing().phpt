@@ -64,7 +64,7 @@ class Test4 extends Entity
 
 }
 
-Assert::true( Test::isSelfReferencing() );
-Assert::false( Test2::isSelfReferencing() );
-Assert::true( Test3::isSelfReferencing() );
-Assert::false( Test4::isSelfReferencing() );
+Assert::true( Test::getReflection()->isSelfReferencing() );
+Assert::false( Test2::getReflection()->isSelfReferencing() );
+Assert::true( Test3::getReflection()->isSelfReferencing() );
+Assert::false( Test4::getReflection()->isSelfReferencing() );
