@@ -57,9 +57,9 @@ dibi::query('
  * @property int $a
  * @property string $p_koo
  * @property string $koo
- * @property Datetime $zzz, column=zzz, null
- * @property Lkjh $L, has_many, column=p_id
- * @property Mnbv $M, has_one
+ * @property Datetime $zzz , column=zzz, null
+ * @property Lkjh $L , has_many, column=p_id
+ * @property Mnbv $M , has_one
  */
 class Poiu extends Entity 
 {
@@ -68,7 +68,7 @@ class Poiu extends Entity
 
 /**
  * @property string $content, null
- * @property Poiu $p, belongs_to, column=p_id
+ * @property Poiu $p , belongs_to, column=p_id
  */
 class Lkjh extends Entity 
 {
@@ -76,9 +76,9 @@ class Lkjh extends Entity
 }
 
 /**
- * @property int $myid, primary_key
+ * @property int $myid , primary_key
  * @property string $boo
- * @property Poiu $p, belongs_to
+ * @property Poiu $p , belongs_to
  */
 class Mnbv extends Entity 
 {
@@ -98,8 +98,8 @@ $p->save();
 unset($p);
 $p = new Poiu;
 
-$p->p_a = 3;
-$p->p_p_koo = 'sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg';
+$p['p_a'] = 3;
+$p->p_koo = 'sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg';
 $p->koo = 'wer';
 $p->zzz = '2009-01-01 12:00:01';
 
@@ -118,10 +118,10 @@ $p->save();
 unset($p);
 
 output('All P\'s:');
-foreach (Poiu::getAll() as $row)
+foreach (Poiu::findAll() as $row)
 	dump($row->values);
 
-$p = Poiu::getOne(array('a'=>3));
+$p = Poiu::findOne(array('p_a=',3));
 
 output('Children of P with a=3:');
 foreach ($p->L as $row)
@@ -131,14 +131,14 @@ output('... and the P itself');
 dump($p->values);
 
 output('Parent of the first L:');
-$ls = Lkjh::getAll();
+$ls = Lkjh::findAll();
 
-$l = $ls->getFirst();
+$l = $ls->fetch();
 $l->loadP();
 dump($l->values);
 
 output('All M\'s:');
-foreach (Mnbv::getAll() as $row)
+foreach (Mnbv::findAll() as $row)
 	dump($row->values);
 
 __halt_compiler();
@@ -148,18 +148,26 @@ All P%c%s:
 
 array(5) {
 	"id" => int(1)
-	"a" => string(1) "1"
+	"a" => int(1)
 	"p_koo" => string(1) "2"
 	"koo" => string(3) "jut"
-	"zzz" => string(19) "%d%-%d%-%d% %d%:%d%:%d%"
+	"zzz" => object(DateTime) (3) {
+		"date" => string(19) "%d%-%d%-%d% %d%:%d%:%d%"
+		"timezone_type" => int(3)
+		"timezone" => string(13) "Europe/Prague"
+	}
 }
 
 array(5) {
 	"id" => int(2)
-	"a" => string(1) "3"
+	"a" => int(3)
 	"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 	"koo" => string(3) "wer"
-	"zzz" => string(19) "2009-01-01 12:00:01"
+	"zzz" => object(DateTime) (3) {
+		"date" => string(19) "2009-01-01 12:00:01"
+		"timezone_type" => int(3)
+		"timezone" => string(13) "Europe/Prague"
+	}
 }
 
 Children of P with a=3:
@@ -167,33 +175,37 @@ Children of P with a=3:
 array(3) {
 	"id" => int(1)
 	"content" => string(9) "bla1 bla1"
-	"p_id" => string(1) "2"
+	"p_id" => int(2)
 }
 
 array(3) {
 	"id" => int(2)
 	"content" => NULL
-	"p_id" => string(1) "2"
+	"p_id" => int(2)
 }
 
 ... and the P itself
 
 array(6) {
 	"id" => int(2)
-	"a" => string(1) "3"
+	"a" => int(3)
 	"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 	"koo" => string(3) "wer"
-	"zzz" => string(19) "2009-01-01 12:00:01"
+	"zzz" => object(DateTime) (3) {
+		"date" => string(19) "2009-01-01 12:00:01"
+		"timezone_type" => int(3)
+		"timezone" => string(13) "Europe/Prague"
+	}
 	"L" => array(2) {
-		1 => array(3) {
+		0 => array(3) {
 			"id" => int(1)
 			"content" => string(9) "bla1 bla1"
-			"p_id" => string(1) "2"
+			"p_id" => int(2)
 		}
-		2 => array(3) {
+		1 => array(3) {
 			"id" => int(2)
 			"content" => NULL
-			"p_id" => string(1) "2"
+			"p_id" => int(2)
 		}
 	}
 }
@@ -203,26 +215,30 @@ Parent of the first L:
 array(4) {
 	"id" => int(1)
 	"content" => string(9) "bla1 bla1"
-	"p_id" => string(1) "2"
+	"p_id" => int(2)
 	"p" => array(5) {
 		"id" => int(2)
-		"a" => string(1) "3"
+		"a" => int(3)
 		"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 		"koo" => string(3) "wer"
-		"zzz" => string(19) "2009-01-01 12:00:01"
+		"zzz" => object(DateTime) (3) {
+			"date" => string(19) "2009-01-01 12:00:01"
+			"timezone_type" => int(3)
+			"timezone" => string(13) "Europe/Prague"
+		}
 	}
-} 
+}
 
 All M%c%s:
 
 array(3) {
 	"myid" => int(1)
 	"boo" => string(1) "-"
-	"id" => string(1) "1"
+	"id" => int(1)
 }
 
 array(3) {
 	"myid" => int(2)
 	"boo" => string(5) "Howgh"
-	"id" => string(1) "2"
+	"id" => int(2)
 }

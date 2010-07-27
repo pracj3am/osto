@@ -69,14 +69,14 @@ class EntityReflection extends \ReflectionClass
                 $this->columns[$pa->name] = is_string($pa->column) ?
                         $pa->column :
                         $default_primary_key;
-                $this->types[$pa->name] = $pa->type;
+                $this->types[$this->columns[$pa->name]] = $pa->type;
             }
         }
 
         if ($this->primary_key === NULL) {
             $this->primary_key = self::ID;
             $this->columns[self::ID] = $default_primary_key;
-            $this->types[self::ID] = 'int';
+            $this->types[$this->columns[self::ID]] = 'int';
         }
 
         foreach ($this->_properties as &$pa) {
@@ -89,6 +89,7 @@ class EntityReflection extends \ReflectionClass
 
                 $this->parents[$pa->name] = $parentClass;
                 $this->columns[$pa->name] = $pa->column;
+                $this->types[$this->columns[$pa->name]] = $parentClass::getReflection()->types[$parentClass::getReflection()->getPrimaryKeyColumn()];
             } elseif ($pa->relation === 'has_many') {
                 $this->children[$pa->name] = $pa->type;
                 $this->foreign_keys[$pa->name] = is_string($pa->column) ?
@@ -103,8 +104,8 @@ class EntityReflection extends \ReflectionClass
                 $this->columns[$pa->name] = is_string($pa->column) ?
                         $pa->column :
                         ($pa->column = $this->prefix . '_' . $pa->name);
+                $this->types[$this->columns[$pa->name]] = $pa->type;
             }
-            $this->types[$pa->name] = $pa->type;
         }
 
         if ($this->_isExtendedEntity()) {

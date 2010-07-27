@@ -95,7 +95,7 @@ array(9) {
 	"id" => NULL
 	"main" => string(1) "1"
 	"alt" => string(1) "2"
-	"a_alt" => int(4)
+	"a_alt" => string(1) "4"
 	"b" => string(1) "5"
 	"c_id" => NULL
 	"C" => array(4) {

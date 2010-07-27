@@ -80,7 +80,15 @@ class Table implements \IDataSource
             return new Table\Column($this, $this->_reflection->getColumnName($name));
         }
 
-        throw new Exception("Undeclared property $name.");
+        if ($this->_reflection->isColumn($name)) {
+            return new Table\Column($this, $name);
+        }
+
+        if ($name === 'id') {
+            return new Table\Column($this, $this->_reflection->primaryKeyColumn);
+        }
+
+	throw new Exception("Undeclared property $name.");
     }
 
 

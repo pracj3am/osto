@@ -48,13 +48,13 @@ class Column
      */
     private function _op($operator, $operand)
     {
-        $cond  = '[:' . $this->table->getName().'.'.$this->name . ':]';
+        $cond  = '[' . $this->table->getName().'.'.$this->name . ']';
         $cond .= " $operator ";
         if ($operand instanceof self) {
             $cond .= '%n';
         }
 
-        return array($cond=>$operand);
+        return array($cond, $operand);
     }
 
 

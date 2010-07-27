@@ -51,6 +51,27 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
     /**
+     * Factory for standalone entity
+     *  - it looks for standalone entity in descendant entity classes until it finds one
+     * @param array $values
+     * @return Entity
+     */
+    public static function createStandalone(array $values)
+    {
+	$class = \get_called_class();
+	if (!isset($values[self::ENTITY_COLUMN]) || $class === $values[self::ENTITY_COLUMN]) {
+	    return new $class($values);
+	}
+
+	$sClass = $values[self::ENTITY_COLUMN];
+	$fk = static::getReflection()->primaryKey;
+	$fkColumn = $sClass::getTable()->$fk;
+	return $sClass::getTable()->where($fkColumn->eq($values[static::getReflection()->primaryKeyColumn]))->fetch();
+    }
+
+
+
+    /**
      * Initializes entity internal properties. Called by the constructor
      * @return void
      */
@@ -240,7 +261,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         //primary key
         if ($name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->primaryKeyColumn) {
-            $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->primaryKey]);
+            $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->primaryKeyColumn]);
             $newId = $value === 0 ? NULL : $value;
             if ($this->_id !== $newId && $this->_id !== NULL) {
                 $this->_modified = array_fill_keys(array_keys($this->_values), self::VALUE_MODIFIED);
@@ -258,7 +279,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         //singles
         if (\array_key_exists($name, $this->_singles) && \is_object($value) && \get_class($value) == $this->_reflection->singles[$name]) {
-            $this->_parents[$name] = $value;
+            $this->_singles[$name] = $value;
             return;
         }
 
@@ -271,7 +292,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         /***** values *****/
 
         if ($_name && \array_key_exists($_name, $this->_properties)) {
-            return $this->_setValue($name, $value);
+            return $this->_setValue($this->_properties[$_name], $value);
         }
 
         if (\method_exists($this, ($m_name = Helpers::setter($name)))) {//set{Name}
@@ -279,7 +300,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         if (\array_key_exists($name, $this->_properties)) {
-            return $this->_setValue($name, $value);
+            return $this->_setValue($this->_properties[$name], $value);
         }
 
         //inheritance
@@ -295,20 +316,27 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     /**
      * Internal method to set atributte value incl. type-casting and modification state flag
-     * @param string $name
-     * @param mixed $value
+     * @param string $name Column name
+     * @param mixed $value Value
      */
     private function _setValue($name, $value)
     {
-        $cn = $this->_properties[$name];
-        $value === NULL or \settype($value, $this->_reflection->types[$name]);
-        if ($this->_modified[$cn] == self::VALUE_NOT_SET) {
-            $this->_modified[$cn] = self::VALUE_SET;
-        } elseif ($this->_modified[$cn] == self::VALUE_SET && ($value != $this->_values[$cn])) {
-            $this->_modified[$cn] = self::VALUE_MODIFIED;
+        if ($value !== NULL) {
+	    $type = $this->_reflection->types[$name];if(!$type) throw new \Exception();
+	    if (\class_exists($type)) {
+		$value = new $type($value);
+	    } else {
+		\settype($value, $type);
+	    }
+	}
+
+        if ($this->_modified[$name] == self::VALUE_NOT_SET) {
+            $this->_modified[$name] = self::VALUE_SET;
+	} elseif ($this->_modified[$name] == self::VALUE_SET && ($value != $this->_values[$name])) {
+            $this->_modified[$name] = self::VALUE_MODIFIED;
         }
 
-        $this->_values[$cn] = $value;
+        $this->_values[$name] = $value;
     }
 
 
@@ -442,7 +470,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 if ($row) {
                     $this->_id = $row->id;
                     foreach ($row as $name => $value) {
-                        $this->_values[$name] = $value;
+                        $this->_setValue($name, $value);
                         $this->_modified[$name] = self::VALUE_SET;
                     }
                     $this->_self_loaded = TRUE;
@@ -542,7 +570,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         foreach ($this->_reflection->children as $childName => $childClass) {
-            if (in_array($childName, $childrenNames)) {
+	    if (in_array($childName, $childrenNames)) {
                 if ($this->_id !== NULL) {
                     if (get_class($this) == $childClass) {//load children of the same class
                         $fk = 'parent_id';
@@ -632,10 +660,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
             //save children
             foreach ($this->_children as $childName => $children) {
-                foreach ($children as $i => $childEntity) {
-                    $childEntity[$this->_reflection->getForeignKeyName($childName)] = $this->_id;
-                    $childEntity->save(TRUE);
-                }
+		if ($children) {
+		    foreach ($children as $i => $childEntity) {
+			$childEntity[$this->_reflection->getForeignKeyName($childName)] = $this->_id;
+			$childEntity->save(TRUE);
+		    }
+		}
             }
 
         } catch (\DibiException $e) {
@@ -722,11 +752,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             }
         }
         foreach ($this->_children as $childName => $children) {
-            foreach ($children as $i => $childEntity) {
-                if ($childEntity instanceof self) {
-                    $values[$childName][$i] = $childEntity->values;
-                }
-            }
+	    if ($children) {
+		foreach ($children as $i => $childEntity) {
+		    if ($childEntity instanceof self) {
+			$values[$childName][$i] = $childEntity->values;
+		    }
+		}
+	    }
         }
         foreach ($this->_singles as $singleName => $single) {
             if ($single instanceof self)
@@ -862,11 +894,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     final public function offsetSet($name, $value)
     {
-        if (\array_key_exists($name, $this->_values) || $name === self::ENTITY_COLUMN) {
+        if ($name && \array_key_exists($name, $this->_values)) {
+	    $this->_setValue($name, $value);
+	} elseif ($name === self::ENTITY_COLUMN) {
             $this->_values[$name] = $value;
-            if ($name === self::ENTITY_COLUMN) {
-                $this->_modified[self::ENTITY_COLUMN] = self::VALUE_MODIFIED;
-            }
+            $this->_modified[self::ENTITY_COLUMN] = self::VALUE_MODIFIED;
         } else {
             throw new Exception("Cannot set new property '$name'.");
         }

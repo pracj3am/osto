@@ -15,7 +15,7 @@ class Database extends \DibiDataSource
     public function __construct()
     {
         $args = func_get_args();
-		$translator = new \DibiTranslator(\dibi::getConnection()->driver);
+	$translator = new \DibiTranslator(\dibi::getConnection()->driver);
         parent::__construct($translator->translate($args), \dibi::getConnection());
     }
 
@@ -27,15 +27,16 @@ class Database extends \DibiDataSource
     }
 
 
-	/**
-	 * Returns (and queries) DibiResult.
-	 * @return \DibiResult
-	 */
-	public function getResult()
-	{
-		$result = parent::getResult();
-        $result->setRowClass($this->rowClass);
-		return $result;
-	}
+
+    /**
+     * Returns (and queries) DibiResult.
+     * @return \DibiResult
+     */
+    public function getResult()
+    {
+	$result = parent::getResult();
+	$result->setRowClass(array($this->rowClass,'createStandalone'));
+	return $result;
+    }
 
 }
