@@ -88,7 +88,7 @@ class Table implements \IDataSource
             return new Table\Column($this, $this->_reflection->primaryKeyColumn);
         }
 
-	throw new Exception("Undeclared property $name.");
+        throw new Exception("Undeclared property $name.");
     }
 
 
@@ -104,58 +104,58 @@ class Table implements \IDataSource
 
 
 
-	/**
-	 * Selects columns to query.
-	 * @param  string|array  column name or array of column names
-	 * @param  string  		 column alias
-	 * @return Table         provides a fluent interface
-	 */
-	public function select($col, $as = NULL)
-	{
-		$this->_dataSource->select($col, $as);
-		return $this;
-	}
+    /**
+     * Selects columns to query.
+     * @param  string|array  column name or array of column names
+     * @param  string                   column alias
+     * @return Table         provides a fluent interface
+     */
+    public function select($col, $as = NULL)
+    {
+        $this->_dataSource->select($col, $as);
+        return $this;
+    }
 
 
 
-	/**
-	 * Adds conditions to query.
-	 * @param  mixed  conditions
-	 * @return Table  provides a fluent interface
-	 */
-	public function where($cond)
-	{
+    /**
+     * Adds conditions to query.
+     * @param  mixed  conditions
+     * @return Table  provides a fluent interface
+     */
+    public function where($cond)
+    {
         \call_user_func_array(array($this->_dataSource, 'where'), \func_get_args());
-		return $this;
-	}
+        return $this;
+    }
 
 
 
-	/**
-	 * Selects columns to order by.
-	 * @param  string|array  column name or array of column names
-	 * @param  string  		 sorting direction
-	 * @return Table         provides a fluent interface
-	 */
-	public function orderBy($row, $sorting = 'ASC')
-	{
-		$this->_dataSource->orderBy($row, $sorting);
-		return $this;
-	}
+    /**
+     * Selects columns to order by.
+     * @param  string|array  column name or array of column names
+     * @param  string                   sorting direction
+     * @return Table         provides a fluent interface
+     */
+    public function orderBy($row, $sorting = 'ASC')
+    {
+        $this->_dataSource->orderBy($row, $sorting);
+        return $this;
+    }
 
 
 
-	/**
-	 * Limits number of rows.
-	 * @param  int limit
-	 * @param  int offset
-	 * @return Table provides a fluent interface
-	 */
-	public function applyLimit($limit, $offset = NULL)
-	{
-		$this->_dataSource->applyLimit($limit, $offset);
-		return $this;
-	}
+    /**
+     * Limits number of rows.
+     * @param  int limit
+     * @param  int offset
+     * @return Table provides a fluent interface
+     */
+    public function applyLimit($limit, $offset = NULL)
+    {
+        $this->_dataSource->applyLimit($limit, $offset);
+        return $this;
+    }
 
 
 
