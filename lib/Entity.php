@@ -322,17 +322,17 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     private function _setValue($name, $value)
     {
         if ($value !== NULL) {
-	    $type = $this->_reflection->types[$name];if(!$type) throw new \Exception();
-	    if (\class_exists($type)) {
-		$value = new $type($value);
-	    } else {
-		\settype($value, $type);
+            $type = $this->_reflection->types[$name];
+	        if (\class_exists($type)) {
+                $value = new $type($value);
+	        } else {
+               \settype($value, $type);
+	        }
 	    }
-	}
 
         if ($this->_modified[$name] == self::VALUE_NOT_SET) {
             $this->_modified[$name] = self::VALUE_SET;
-	} elseif ($this->_modified[$name] == self::VALUE_SET && ($value != $this->_values[$name])) {
+        } elseif ($this->_modified[$name] == self::VALUE_SET && ($value != $this->_values[$name])) {
             $this->_modified[$name] = self::VALUE_MODIFIED;
         }
 
