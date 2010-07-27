@@ -52,10 +52,15 @@ class Table implements \IDataSource
         }
 
         $this->_dataSource = new DataSource\Database($this->_reflection->getTableName());
+        $this->_dataSource->setRowClass($this->_entity);
     }
 
 
 
+    /**
+     * Returns table name
+     * @return string
+     */
     public function getName()
     {
         return $this->_reflection->tableName;

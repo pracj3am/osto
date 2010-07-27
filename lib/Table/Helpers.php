@@ -28,11 +28,11 @@ class Helpers
      * Finds entities by condition
      * @param Table $table
      * @param array $cond
-     * @return \DibiResult
+     * @return osto\Table
      */
-    public static function findAll(Table $table, $cond)
+    public static function findAll(Table $table, $cond = NULL)
     {
-        return $table->where($cond)->fetchAll();
+        return $cond === NULL ? $table : $table->where($cond);
     }
 
 
@@ -43,7 +43,7 @@ class Helpers
      * @param array $cond
      * @return osto\Entity
      */
-    public static function findOne(Table $table, $cond)
+    public static function findOne(Table $table, $cond = NULL)
     {
         return $table->where($cond)->fetch();
     }

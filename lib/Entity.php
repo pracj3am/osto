@@ -202,7 +202,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         /***** inheritance *****/
 
         if (\array_key_exists(self::PARENT, $this->_parents)) {
-            return $this->_parents[self::PARENT]->$name;
+            return $this->{self::PARENT}->$name;
         }
 
         throw new Exception("Undeclared property $name.");
@@ -251,19 +251,19 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         //parents
-        if (\array_key_exists($name, $this->_parents) && is_object($value) && get_class($value) == $this->_reflection->parents[$name]) {
+        if (\array_key_exists($name, $this->_parents) && \is_object($value) && \get_class($value) == $this->_reflection->parents[$name]) {
             $this->_parents[$name] = $value;
             return;
         }
 
         //singles
-        if (\array_key_exists($name, $this->_singles) && is_object($value) && get_class($value) == $this->_reflection->singles[$name]) {
+        if (\array_key_exists($name, $this->_singles) && \is_object($value) && \get_class($value) == $this->_reflection->singles[$name]) {
             $this->_parents[$name] = $value;
             return;
         }
 
         //children
-        if (\array_key_exists($name, $this->_children) && is_object($value) && $value instanceof \IDataSource) {
+        if (\array_key_exists($name, $this->_children) && \is_object($value) && $value instanceof \IDataSource) {
             $this->_children[$name] = $value;
             return;
         }
@@ -284,7 +284,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         //inheritance
         if (\array_key_exists(self::PARENT, $this->_parents)) {
-            $this->_parents[self::PARENT]->$name = $value;
+            $this->{self::PARENT}->$name = $value;
             return;
         }
 
@@ -344,12 +344,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     public static function __callStatic($name, $arguments)
     {
-    	if (method_exists(__NAMESPACE__ . '\Table\Helpers', $name)) {
-	        array_unshift($arguments, new Table(get_called_class()));
-	        return call_user_func_array(array(__NAMESPACE__ . '\Table\Helpers', $name), $arguments);
+    	if (\method_exists(__NAMESPACE__ . '\Table\Helpers', $name)) {
+	        \array_unshift($arguments, new Table(\get_called_class()));
+	        return \call_user_func_array(array(__NAMESPACE__ . '\Table\Helpers', $name), $arguments);
      	}
      	
-     	$entity = get_called_class();
+     	$entity = \get_called_class();
         throw new Exception("Undeclared method $entity::$name().");
     }
 
@@ -361,19 +361,19 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     public function __clone()
     {
-        if (is_array($this->_parents))
+        if (\is_array($this->_parents))
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if ($parentEntity !== NULL)
                     $this->_parents[$parentName] = clone $this->_parents[$parentName];
             }
-        if (is_array($this->_children))
+        if (\is_array($this->_children))
             foreach ($this->_children as $childName => $childEntities) {
                 $this->_children[$childName] = clone $this->_children[$childName];
                 foreach ($this->_children[$childName] as $i => $childEntity) {
                     $this->_children[$childName][$i] = clone $this->_children[$childName][$i];
                 }
             }
-        if (is_array($this->_singles))
+        if (\is_array($this->_singles))
             foreach ($this->_singles as $singleName => $singleEntity) {
                 if ($singleEntity !== NULL)
                     $this->_singles[$singleName] = clone $this->_singles[$singleName];
@@ -443,7 +443,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                     $this->_id = $row->id;
                     foreach ($row as $name => $value) {
                         $this->_values[$name] = $value;
-                        $this->_modified[$name] = self::VALUE_NOT_MODIFIED;
+                        $this->_modified[$name] = self::VALUE_SET;
                     }
                     $this->_self_loaded = TRUE;
                 } else {
@@ -576,17 +576,17 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
 
         $in_transaction === TRUE or
-        dibi::begin(\get_class($this));
+        dibi::begin();
 
         try {
             //saving parents
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if ($parentEntity instanceof self) {
                     if ($parentName === self::PARENT) {
-                        $parentEntity[self::ENTITY_COLUMN] = get_class($this);
+                        $parentEntity[self::ENTITY_COLUMN] = \get_class($this);
                     }
                     $parentEntity->save(TRUE);
-                    $this[static::getColumnName($parentName)] = $parentEntity->_id;
+                    $this[$this->_reflection->getColumnName($parentName)] = $parentEntity->_id;
                 }
             }
 
@@ -626,7 +626,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             foreach ($this->_singles as $singleName => $single) {
                 if ($single instanceof self) {
                     $single[$this->_reflection->getForeignKeyName($singleName)] = $this->_id;
-                    $single->save();
+                    $single->save(TRUE);
                 }
             }
 
@@ -634,13 +634,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             foreach ($this->_children as $childName => $children) {
                 foreach ($children as $i => $childEntity) {
                     $childEntity[$this->_reflection->getForeignKeyName($childName)] = $this->_id;
-                    $childEntity->save();
+                    $childEntity->save(TRUE);
                 }
             }
 
         } catch (\DibiException $e) {
             $in_transaction === TRUE or
-            dibi::rollback(\get_class($this));
+            dibi::rollback();
 
             throw new SavingException('Error when saving entity "' . \get_class($this) . '."', 0, $e);
             
@@ -648,7 +648,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         $in_transaction === TRUE or
-        dibi::commit(\get_class($this));
+        dibi::commit();
 
         return TRUE;
     }
@@ -705,6 +705,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     public function getValues()
     {
         $values = array();
+        $values[$this->_reflection->primaryKey] = $this->_id;
         foreach ($this->_properties as $prop => $column) {
             $values[$prop] = $this->_values[$column];
         }
@@ -737,17 +738,20 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
     /**
-     * @todo refactor
+     * @todo refactor!!!
      */
     public function setValues($value, $isColumns = FALSE)
     {
         if (is_array($value) || is_object($value)) {
             $this->_self_loaded = TRUE;
             foreach ($value as $key => $val) {
-                if ($this->__isset($key))
-                    if ($isColumns)
-                        $this[$key] = $val;
-                    else
+                if ($this->__isset($key) || \array_key_exists($key, $this->_values))
+                    if ($isColumns) {
+                        if ($key != $this->_reflection->primaryKeyColumn)
+                            $this[$key] = $val;
+                        else
+                            $this->id = $val;
+                    } else
                         $this->$key = $val;
             }
             if (is_array($value) && isset($value[$this->_reflection->primaryKeyColumn])) {
@@ -858,10 +862,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     final public function offsetSet($name, $value)
     {
-        if ($name === FALSE)
-            throw new \Exception;
-        if (array_key_exists($name, $this->_values) || $name === self::ENTITY_COLUMN)
+        if (\array_key_exists($name, $this->_values) || $name === self::ENTITY_COLUMN) {
             $this->_values[$name] = $value;
+            if ($name === self::ENTITY_COLUMN) {
+                $this->_modified[self::ENTITY_COLUMN] = self::VALUE_MODIFIED;
+            }
+        } else {
+            throw new Exception("Cannot set new property '$name'.");
+        }
     }
 
 
@@ -875,15 +883,16 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     final public function offsetExists($name)
     {
-        return array_key_exists($name, $this->_values);
+        return \array_key_exists($name, $this->_values);
     }
 
 
 
     final public function offsetUnset($name)
     {
-        if (array_key_exists($name, $this->_values))
+        if (\array_key_exists($name, $this->_values)) {
             unset($this->_values[$name]);
+        }
     }
 
 

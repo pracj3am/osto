@@ -91,23 +91,27 @@ string(28) "Undeclared property a_a_alt."
 
 Table Test values:
 
-array(8) {
+array(9) {
+	"id" => NULL
 	"main" => string(1) "1"
 	"alt" => string(1) "2"
 	"a_alt" => int(4)
 	"b" => string(1) "5"
 	"c_id" => NULL
-	"C" => array(3) {
+	"C" => array(4) {
+		"id" => NULL
 		"a" => int(8)
 		"b" => int(9)
 		"c" => NULL
 	}
 	"B" => array(1) {
-		0 => array(1) {
+		0 => array(2) {
+			"id" => NULL
 			"b" => int(7)
 		}
 	}
-	"A" => array(1) {
+	"A" => array(2) {
+		"id" => NULL
 		"a" => int(6)
 	}
 }

@@ -102,15 +102,15 @@ $c->save();
 unset($c);
 
 output('A =====');
-foreach (A::getAll() as $row)
+foreach (A::findAll() as $row)
 	dump($row->values);
 
 output('B =====');
-foreach (B::getAll() as $row)
+foreach (B::findAll() as $row)
 	dump($row->values);
 
 output('C =====');
-foreach (C::getAll() as $row)
+foreach (C::findAll() as $row)
 	dump($row->values);
 
 

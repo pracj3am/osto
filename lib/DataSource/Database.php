@@ -9,6 +9,8 @@ namespace osto\DataSource;
 class Database extends \DibiDataSource
 {
 
+    private $rowClass = 'DibiRow';
+
 
     public function __construct()
     {
@@ -19,6 +21,12 @@ class Database extends \DibiDataSource
 
 
 
+    public function setRowClass($rowClass)
+    {
+        $this->rowClass = $rowClass;
+    }
+
+
 	/**
 	 * Returns (and queries) DibiResult.
 	 * @return \DibiResult
@@ -26,7 +34,7 @@ class Database extends \DibiDataSource
 	public function getResult()
 	{
 		$result = parent::getResult();
-        $result->setRowClass($class);
+        $result->setRowClass($this->rowClass);
 		return $result;
 	}
 
