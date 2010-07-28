@@ -765,15 +765,31 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     /**
      * Deletes entity from database
      * (deleting of its chidren and singles must be ensured in database itself via foreign keys)
-     * @throws \DibiException
+     * @throws Exception
      */
-    final public function delete()
+    final public function delete($in_transaction = FALSE)
     {
         if ($this->_id !== NULL) {
-            dibi::query(
-                'DELETE FROM ' . $this->_reflection->tableName . ' WHERE %and',
-                array($this->_reflection->primaryKey => $this->_id), 'LIMIT 1'
-            );
+            try {
+                $in_transaction === TRUE or
+                dibi::begin();
+                dibi::query(
+                    'DELETE FROM [' . $this->_reflection->tableName . '] WHERE %and',
+                    array($this->_reflection->primaryKeyColumn => $this->_id), 'LIMIT 1'
+                );
+
+                if (\array_key_exists(self::PARENT, $this->_parents)) {
+                    $this->{self::PARENT}->delete(TRUE);
+                }
+
+            } catch (\DibiException $e) {
+                $in_transaction === TRUE or
+                dibi::rollback();
+                throw new Exception("Error while deleting entity '" .  \get_class($this) . "' with id {$this->_id}", 0, $e);
+            }
+
+            $in_transaction === TRUE or
+            dibi::commit();
         }
     }
 
