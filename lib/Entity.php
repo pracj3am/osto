@@ -64,8 +64,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         $sClass = $values[self::ENTITY_COLUMN];
-        $fk = static::getReflection()->primaryKey;
-        $fkColumn = $sClass::getTable()->$fk;
+        $fkColumn = $sClass::getTable()->{self::PARENT};
         return $sClass::getTable()->where($fkColumn->eq($values[static::getReflection()->primaryKeyColumn]))->fetch();
     }
 
@@ -240,7 +239,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 \array_key_exists($name, $this->_children) && $this->_children[$name] !== NULL ||
                 \array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL ||
                 \array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL ||
-                \array_key_exists(self::PARENT,$this->_parents) && isset($this->_parents[self::PARENT]->$name)
+                \array_key_exists(self::PARENT,$this->_parents) && isset($this->{self::PARENT}->$name)
         ) {
             return TRUE;
         }
@@ -466,12 +465,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         if ($this->_id !== NULL) {
             if (!($this->_self_loaded)) {
                 $table = static::getTable();
-                $row = $table->where($table->id->eq($this->_id))->fetch();
+                $row = dibi::fetch("SELECT * FROM [{$table->getName()}] WHERE %and", array($table->id->eq($this->_id)));
                 if ($row) {
-                    $this->_id = $row->id;
+                    $this->id = $row->{$this->_reflection->primaryKeyColumn};
                     foreach ($row as $name => $value) {
-                        $this->_setValue($name, $value);
-                        $this->_modified[$name] = self::VALUE_SET;
+                        if (\array_key_exists($name, $this->_values)) {
+                            $this->_setValue($name, $value);
+                            $this->_modified[$name] = self::VALUE_SET;
+                        }
                     }
                     $this->_self_loaded = TRUE;
                 } else {
@@ -744,13 +745,20 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             unset($values[$parentName]);
             //foreign key
             $values[$this->_reflection->getColumnName($parentName)] = $this->_values[$this->_reflection->getColumnName($parentName)];
-            if ($parentName === self::PARENT && !$parentEntity instanceof self) {
-                $parentEntity = $this->{self::PARENT};
-            }
-            if ($parentEntity instanceof self) {
+            if ($parentName === self::PARENT) {
+                $values = $this->{self::PARENT}->values + $values;
+            } elseif ($parentEntity instanceof self) {
                 $values[$parentName] = $parentEntity->values;
             }
         }
+
+
+        foreach ($this->_singles as $singleName => $single) {
+            if ($single instanceof self) {
+                $values[$singleName] = $single->values;
+            }
+        }
+
         foreach ($this->_children as $childName => $children) {
             if ($children) {
                 foreach ($children as $i => $childEntity) {
@@ -760,70 +768,64 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 }
             }
         }
-        foreach ($this->_singles as $singleName => $single) {
-            if ($single instanceof self)
-                $values[$singleName] = $single->values;
-        }
+
         return $values;
     }
 
 
 
     /**
-     * @todo refactor!!!
+     * Sets entity data from array, or any iterable object
+     * @param array|object $values Values
+     * @param bool $isColumns Is keys in table column format? (Default FALSE)
      */
-    public function setValues($value, $isColumns = FALSE)
+    public function setValues($values, $isColumns = FALSE)
     {
-        if (is_array($value) || is_object($value)) {
-            $this->_self_loaded = TRUE;
-            foreach ($value as $key => $val) {
-                if ($this->__isset($key) || \array_key_exists($key, $this->_values))
-                    if ($isColumns) {
-                        if ($key != $this->_reflection->primaryKeyColumn)
-                            $this[$key] = $val;
-                        else
-                            $this->id = $val;
-                    } else
-                        $this->$key = $val;
+        foreach ($values as $key=>$value) {
+            if ($key === $this->_reflection->primaryKeyColumn && $isColumns) {
+                $this->id = $value;
+                continue;
             }
-            if (is_array($value) && isset($value[$this->_reflection->primaryKeyColumn])) {
-                $this->_id = (int) $value[$this->_reflection->primaryKeyColumn];
+
+            if (\array_key_exists($key, $this->_values) && $isColumns) {
+                $this->_setValue($key, $value);
+                continue;
             }
-            if (is_object($value) && isset($value->{$this->_reflection->primaryKeyColumn})) {
-                $this->_id = (int) $value->{$this->_reflection->primaryKeyColumn};
+
+            if ($key === $this->_reflection->primaryKey && !$isColumns) {
+                $this->id = $value;
+                continue;
             }
-            foreach ($this->_parents as $parentName => $parentEntity) {
-                if (is_array($value) && isset($value[$parentName]) || isset($value->$parentName)) {
-                    if (!isset($this->_parents[$parentName])) {
-                        $parentClass = $this->parents[$parentName];
-                        $this->_parents[$parentName] = new $parentClass();
-                    }
-                    $this->_parents[$parentName]->values = is_array($value) ? $value[$parentName] : $value->$parentName;
-                }
-            }
-            foreach ($this->_children as $childName => $childEntities) {
-                if (is_array($value) && isset($value[$childName]) && is_array($childArray = $value[$childName]) || isset($value->$childName) && is_array($childArray = $value->$childName)) {
-                    foreach ($childArray as $i => $childValues) {
-                        if (!isset($childEntities[$i])) {
-                            $childClass = $this->_reflection->children[$childName];
-                            $childEntities[$i] = new $childClass();
-                        }
-                        $childEntities[$i]->values = $childValues;
-                    }
-                    if ($childEntities)
-                        $this->_children[$childName] = $childEntities;
-                }
-            }
-            foreach ($this->_singles as $singleName => $singleEntity) {
-                if (is_array($value) && isset($value[$singleName]) || isset($value->$singleName)) {
-                    if (!isset($this->_singles[$singleName])) {
-                        $singleClass = $this->singles[$singleName];
-                        $this->_singles[$singleName] = new $singleClass();
-                    }
-                    $this->_singles[$singleName]->values = is_array($value) ? $value[$singleName] : $value->$singleName;
-                }
+
+            if (\array_key_exists($key, $this->_properties) && !$isColumns) {
+                $this->_setValue($this->_properties[$key], $value);
+                continue;
             }
         }
+/*
+        foreach ($values as $key=>$value) {
+            if (\array_key_exists($key, $this->_parents)) {
+                $this->$key->setValues($value, $isColumns);
+                continue;
+            }
+
+            if (\array_key_exists($key, $this->_singles)) {
+                $this->$key->setValues($value, $isColumns);
+                continue;
+            }
+
+            if (\array_key_exists($key, $this->_children)) {
+                foreach ($value as $i=>$childValues) {
+                    $this->$key[$i]->setValues($childValues, $isColumns);
+                }
+                continue;
+            }
+
+        }
+
+        if (\array_key_exists(self::PARENT, $this->_parents)) {
+            $this->{self::PARENT}->setValues($values, $isColumns);
+        }*/
     }
 
 

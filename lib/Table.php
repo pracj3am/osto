@@ -107,7 +107,7 @@ class Table implements \IDataSource
     /**
      * Selects columns to query.
      * @param  string|array  column name or array of column names
-     * @param  string                   column alias
+     * @param  string        column alias
      * @return Table         provides a fluent interface
      */
     public function select($col, $as = NULL)
@@ -134,7 +134,7 @@ class Table implements \IDataSource
     /**
      * Selects columns to order by.
      * @param  string|array  column name or array of column names
-     * @param  string                   sorting direction
+     * @param  string        sorting direction
      * @return Table         provides a fluent interface
      */
     public function orderBy($row, $sorting = 'ASC')

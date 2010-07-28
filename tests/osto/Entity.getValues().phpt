@@ -104,14 +104,14 @@ array(9) {
 		"b" => int(9)
 		"c" => NULL
 	}
+	"A" => array(2) {
+		"id" => NULL
+		"a" => int(6)
+	}
 	"B" => array(1) {
 		0 => array(2) {
 			"id" => NULL
 			"b" => int(7)
 		}
-	}
-	"A" => array(2) {
-		"id" => NULL
-		"a" => int(6)
 	}
 }

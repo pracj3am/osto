@@ -119,96 +119,57 @@ __halt_compiler();
 ------EXPECT------
 A =====
 
-array(3) {
+array(2) {
 	"id" => int(1)
-	"a" => string(1) "1"
-	"entity" => NULL
+	"a" => int(1)
 }
 
-array(5) {
-	"id" => int(1)
-	"b" => string(1) "3"
-	"entity" => string(1) "B"
-	"a_id" => string(1) "2"
-	"ParentEntity" => array(3) {
-		"id" => int(2)
-		"a" => string(1) "2"
-		"entity" => string(1) "B"
-	}
+array(4) {
+	"id" => int(2)
+	"a" => int(2)
+	"b" => int(3)
+	"a_id" => int(2)
 }
 
-array(3) {
+array(2) {
 	"id" => int(3)
-	"a" => string(1) "7"
-	"entity" => NULL
+	"a" => int(7)
 }
 
-array(5) {
-	"id" => int(1)
-	"c" => string(1) "6"
-	"a_id" => string(1) "4"
-	"b_id" => string(1) "2"
-	"ParentEntity" => array(5) {
-		"id" => int(2)
-		"b" => string(1) "5"
-		"entity" => string(1) "C"
-		"a_id" => string(1) "4"
-		"ParentEntity" => array(3) {
-			"id" => int(4)
-			"a" => string(1) "4"
-			"entity" => string(1) "B"
-		}
-	}
+array(6) {
+	"id" => int(4)
+	"a" => int(4)
+	"b" => int(5)
+	"a_id" => int(4)
+	"c" => int(6)
+	"b_id" => int(2)
 }
 
 B =====
 
-array(5) {
-	"id" => int(1)
-	"b" => string(1) "3"
-	"entity" => NULL
-	"a_id" => string(1) "2"
-	"ParentEntity" => array(3) {
-		"id" => int(2)
-		"a" => string(1) "2"
-		"entity" => string(1) "B"
-	}
+array(4) {
+	"id" => int(2)
+	"a" => int(2)
+	"b" => int(3)
+	"a_id" => int(2)
 }
 
-array(5) {
-	"id" => int(1)
-	"c" => string(1) "6"
-	"a_id" => string(1) "4"
-	"b_id" => string(1) "2"
-	"ParentEntity" => array(5) {
-		"id" => int(2)
-		"b" => string(1) "5"
-		"entity" => string(1) "C"
-		"a_id" => string(1) "4"
-		"ParentEntity" => array(3) {
-			"id" => int(4)
-			"a" => string(1) "4"
-			"entity" => string(1) "B"
-		}
-	}
+array(6) {
+	"id" => int(4)
+	"a" => int(4)
+	"b" => int(5)
+	"a_id" => int(4)
+	"c" => int(6)
+	"b_id" => int(2)
 }
 
 C =====
 
-array(5) {
-	"id" => int(1)
-	"c" => string(1) "6"
-	"a_id" => string(1) "3"
-	"b_id" => string(1) "2"
-	"ParentEntity" => array(5) {
-		"id" => int(2)
-		"b" => string(1) "5"
-		"entity" => string(1) "C"
-		"a_id" => string(1) "4"
-		"ParentEntity" => array(3) {
-			"id" => int(4)
-			"a" => string(1) "4"
-			"entity" => string(1) "B"
-		}
-	}
+array(6) {
+	"id" => int(4)
+	"a" => int(4)
+	"b" => int(5)
+	"a_id" => int(4)
+	"c" => int(6)
+	"b_id" => int(2)
 }
