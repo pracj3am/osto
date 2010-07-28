@@ -43,7 +43,7 @@ class Helpers
      * @param array $cond
      * @return osto\Entity
      */
-    public static function findOne(Table $table, $cond = NULL)
+    public static function findOne(Table $table, $cond)
     {
         return $table->where($cond)->fetch();
     }
