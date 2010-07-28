@@ -271,21 +271,30 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         //parents
-        if (\array_key_exists($name, $this->_parents) && \is_object($value) && \get_class($value) == $this->_reflection->parents[$name]) {
-            $this->_parents[$name] = $value;
-            return;
+        if (\array_key_exists($name, $this->_parents)) {
+            if (\is_object($value) && \get_class($value) == $this->_reflection->parents[$name]) {
+                $this->_parents[$name] = $value;
+                return;
+            }
+            throw new Exception("Property $name must be entity of class ".$this->_reflection->parents[$name]);
         }
 
         //singles
-        if (\array_key_exists($name, $this->_singles) && \is_object($value) && \get_class($value) == $this->_reflection->singles[$name]) {
-            $this->_singles[$name] = $value;
-            return;
+        if (\array_key_exists($name, $this->_singles)) {
+            if (\is_object($value) && \get_class($value) == $this->_reflection->singles[$name]) {
+                $this->_singles[$name] = $value;
+                return;
+            }
+            throw new Exception("Property $name must be entity of class ".$this->_reflection->singles[$name]);
         }
 
         //children
-        if (\array_key_exists($name, $this->_children) && \is_object($value) && $value instanceof \IDataSource) {
-            $this->_children[$name] = $value;
-            return;
+        if (\array_key_exists($name, $this->_children)) {
+            if (\is_object($value) && $value instanceof \IDataSource) {
+                $this->_children[$name] = $value;
+                return;
+            }
+            throw new Exception("Property $name must implement interface IDataSource.");
         }
 
         /***** values *****/
