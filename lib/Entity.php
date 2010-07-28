@@ -208,7 +208,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         /***** values *****/
 
         if ($_name && \array_key_exists($_name, $this->_properties)) {
-            return $this->_values[$_name];
+            return $this->_values[$this->_properties[$_name]];
         }
 
         if (\method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
@@ -216,7 +216,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         if (\array_key_exists($name, $this->_properties)) {
-            return $this->_values[$name];
+            return $this->_values[$this->_properties[$name]];
         }
 
         /***** inheritance *****/
