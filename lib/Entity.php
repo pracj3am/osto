@@ -8,14 +8,23 @@ use dibi;
 
 abstract class Entity implements \ArrayAccess, \IteratorAggregate
 {
+
     const ALL = 'all';
     const PARENT = 'ParentEntity';
     const ENTITY_COLUMN = 'entity';
 
+    /**#@+
+     * Value states
+     */
     const VALUE_NOT_SET = 0;
     const VALUE_SET = 1;
     const VALUE_MODIFIED = 2;
+    /**#@- */
 
+    /**
+     * Array of entity references
+     * @var array
+     */
     protected static $_REFLECTIONS = array();
 
     private $_id;
@@ -27,8 +36,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     private $_singles = array();
     private $_loaded;
     private $_self_loaded;
+
     /**
-     *
+     * Reference of entity reflection
      * @var Reflection\EntityReflection
      */
     private $_reflection;
@@ -129,6 +139,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Should not by called directly
+     * @param string $name
+     * @return mixed
+     */
     public function __get($name)
     {
         //name starts with underscore -> no magic functionality
@@ -231,6 +246,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Should not by called directly
+     * @param string $name
+     * @return bool
+     */
     public function __isset($name)
     {
         if (
@@ -250,6 +270,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Should not by called directly
+     * @param string $name
+     * @param mixed $value
+     * @return void
+     */
     public function __set($name, $value)
     {
         //name starts with underscore -> no magic functionality
@@ -350,6 +376,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Should not by called directly
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     */
     public function __call($name, $arguments)
     {
         //load{Parent} or load{Single} or load{Children}
@@ -379,6 +411,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Should not by called directly
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     */
     public static function __callStatic($name, $arguments)
     {
         if (\method_exists(__NAMESPACE__ . '\Table\Helpers', $name)) {
@@ -396,6 +434,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Should not by called directly
+     */
     public function __clone()
     {
         if (\is_array($this->_parents))
@@ -851,7 +892,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
     /**
-     * @todo is it neccessary?
+     * Sets entity data from array, or any iterable object
+     * @param array|object $values Values, keys corresponds to column names
      */
     final public function setColumnValues($values)
     {
