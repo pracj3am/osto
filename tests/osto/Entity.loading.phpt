@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: osto\Entity::copy().
+ * Test: osto\Entity loading methods
  *
  * @author     Jan Prachař
  * @category   osto
@@ -48,7 +48,6 @@ dibi::query('
 	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 ');
 
-
 /**
  * @property int $rid , column=id, primary_key
  * @property int $a
@@ -85,14 +84,103 @@ $a->a = 1;
 $a->B[] = new B;
 $a->C->c = 3;
 $a->save();
+$id = $a->id;
+unset($a);
 
-$a1 = $a->copy();
+$a = new A($id);
+$a->load(3);
 
-dump(array_diff_assoc($a->values, $a1->values));
+dump($a->values);
+unset($a);
+
+$a = new A($id);
+$a->loadChildren('B', 2);
+dump($a->values);
+unset($a);
+
+$a = new A($id);
+$a->loadSingles();
+dump($a->values);
+$a->C->loadParents('A', 1);
+dump($a->values);
 
 __halt_compiler();
 
 ------EXPECT------
-array(1) {
+array(4) {
 	"rid" => int(1)
+	"a" => int(1)
+	"C" => array(4) {
+		"myid" => int(1)
+		"c" => string(1) "3"
+		"ac" => int(1)
+		"A" => array(4) {
+			"rid" => int(1)
+			"a" => int(1)
+			"C" => array(3) {
+				"myid" => int(1)
+				"c" => string(1) "3"
+				"ac" => int(1)
+			}
+			"B" => array(1) {
+				0 => array(2) {
+					"id" => int(1)
+					"b" => float(3.14)
+				}
+			}
+		}
+	}
+	"B" => array(1) {
+		0 => array(2) {
+			"id" => int(1)
+			"b" => float(3.14)
+		}
+	}
 }
+
+array(3) {
+	"rid" => int(1)
+	"a" => NULL
+	"B" => array(1) {
+		0 => array(2) {
+			"id" => int(1)
+			"b" => float(3.14)
+		}
+	}
+}
+
+array(3) {
+	"rid" => int(1)
+	"a" => NULL
+	"C" => array(3) {
+		"myid" => int(1)
+		"c" => string(1) "3"
+		"ac" => int(1)
+	}
+}
+
+array(3) {
+	"rid" => int(1)
+	"a" => NULL
+	"C" => array(4) {
+		"myid" => int(1)
+		"c" => string(1) "3"
+		"ac" => int(1)
+		"A" => array(4) {
+			"rid" => int(1)
+			"a" => int(1)
+			"C" => array(3) {
+				"myid" => int(1)
+				"c" => string(1) "3"
+				"ac" => int(1)
+			}
+			"B" => array(1) {
+				0 => array(2) {
+					"id" => int(1)
+					"b" => float(3.14)
+				}
+			}
+		}
+	}
+}
+ 

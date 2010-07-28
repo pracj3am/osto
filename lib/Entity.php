@@ -527,6 +527,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 } else {
                     $parentEntity = $parentClass::find($this[$this->_reflection->getColumnName($parentName)]) or
                         $parentEntity = new $parentClass;
+                    if ($depth > 0) {
+                        $parentEntity->load($depth);
+                    }
                 }
 
                 $this->_parents[$parentName] = $parentEntity;
@@ -552,14 +555,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         foreach ($this->_reflection->singles as $singleName => $singleClass) {
             if (in_array($singleName, $singleNames)) {
-                        if ($this->_id !== NULL) {
+                if ($this->_id !== NULL) {
                     $fkColumn = $singleClass::getTable()->{$this->_reflection->getForeignKeyName($singleName)};
                     $entity = $singleClass::findOne($fkColumn->eq($this->id)) or
-                            $entity = new $singleClass;
-                    $entity->load($depth);
-                          } else {
                               $entity = new $singleClass;
-                          }
+                    $entity->load($depth);
+                } else {
+                    $entity = new $singleClass;
+                }
                 $this->_singles[$singleName] = $entity;
                 $this->_loaded[$singleName] = $entity->isLoaded();
             }
