@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Test: osto\Entity inserting data.
+ * Test: osto\Entity::save().
  *
  * @author     Jan Prachař
  * @category   osto
@@ -63,7 +63,12 @@ dibi::query('
  */
 class Poiu extends Entity 
 {
-
+    protected function beforeSave(&$values) {
+        $values['p_a']++;
+    }
+    protected function afterSave(&$values) {
+        output('Saved sucessfully');
+    }
 }
 
 /**
@@ -117,13 +122,20 @@ $p->save();
 
 unset($p);
 
+$m = new Mnbv();
+$m->boo = 'last';
+$m->p->a = 8;
+$m->save();
+
+unset($m);
+
 output('All P\'s:');
 foreach (Poiu::findAll() as $row)
 	dump($row->values);
 
-$p = Poiu::findOne(array('p_a=',3));
+$p = Poiu::findOne(array('p_a=',4));
 
-output('Children of P with a=3:');
+output('Children of P with a=4:');
 foreach ($p->L as $row)
 	dump($row->values);
 
@@ -144,11 +156,17 @@ foreach (Mnbv::findAll() as $row)
 __halt_compiler();
 
 ------EXPECT------
+Saved sucessfully
+
+Saved sucessfully
+
+Saved sucessfully
+
 All P%c%s:
 
 array(5) {
 	"id" => int(1)
-	"a" => int(1)
+	"a" => int(2)
 	"p_koo" => string(1) "2"
 	"koo" => string(3) "jut"
 	"zzz" => object(DateTime) (3) {
@@ -160,7 +178,7 @@ array(5) {
 
 array(5) {
 	"id" => int(2)
-	"a" => int(3)
+	"a" => int(4)
 	"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 	"koo" => string(3) "wer"
 	"zzz" => object(DateTime) (3) {
@@ -170,7 +188,19 @@ array(5) {
 	}
 }
 
-Children of P with a=3:
+array(5) {
+	"id" => int(3)
+	"a" => int(9)
+	"p_koo" => string(0) ""
+	"koo" => string(0) ""
+	"zzz" => object(DateTime) (3) {
+		"date" => string(19) "%d%-%d%-%d% %d%:%d%:%d%"
+		"timezone_type" => int(3)
+		"timezone" => string(13) "Europe/Prague"
+	}
+}
+
+Children of P with a=4:
 
 array(3) {
 	"id" => int(1)
@@ -188,7 +218,7 @@ array(3) {
 
 array(6) {
 	"id" => int(2)
-	"a" => int(3)
+	"a" => int(4)
 	"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 	"koo" => string(3) "wer"
 	"zzz" => object(DateTime) (3) {
@@ -218,7 +248,7 @@ array(4) {
 	"p_id" => int(2)
 	"p" => array(5) {
 		"id" => int(2)
-		"a" => int(3)
+		"a" => int(4)
 		"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 		"koo" => string(3) "wer"
 		"zzz" => object(DateTime) (3) {
@@ -241,4 +271,10 @@ array(3) {
 	"myid" => int(2)
 	"boo" => string(5) "Howgh"
 	"id" => int(2)
+}
+
+array(3) {
+	"myid" => int(3)
+	"boo" => string(4) "last"
+	"id" => int(3)
 }
