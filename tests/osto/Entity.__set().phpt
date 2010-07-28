@@ -52,6 +52,10 @@ class C extends Entity
         $this->_c = $value.'1';
     }
 
+    public function getMaslo()
+    {
+        
+    }
 }
 
 $a = new A;
@@ -82,6 +86,15 @@ try {
 }
 
 dump($a->values);
+
+Assert::true(isset($a->id));
+Assert::true(isset($a->rid));
+Assert::true(isset($a->B));
+Assert::true(isset($a->C));
+Assert::true(isset($a->C->c));
+Assert::true(isset($a->C->maslo));
+Assert::false(isset($a->C->A));
+Assert::false(isset($a->x));
 
 __halt_compiler();
 

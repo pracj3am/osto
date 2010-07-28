@@ -89,6 +89,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         foreach ($this->_reflection->parents as $parentName => $parentClass) {
             $this->_parents[$parentName] = NULL;
             $this->_loaded[$parentName] = FALSE;
+            unset($this->_properties[$parentName]);
         }
         foreach ($this->_reflection->children as $childName => $childClass) {
             $this->_children[$childName] = NULL;
