@@ -133,7 +133,7 @@ output('All P\'s:');
 foreach (Poiu::findAll() as $row)
 	dump($row->values);
 
-$p = Poiu::findOne(array('p_a=',4));
+$p = Poiu::findOne('p_a=',4);
 
 output('Children of P with a=4:');
 foreach ($p->L as $row)

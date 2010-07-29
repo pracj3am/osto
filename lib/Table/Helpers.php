@@ -32,7 +32,10 @@ class Helpers
      */
     public static function findAll(Table $table, $cond = NULL)
     {
-        return $cond === NULL ? $table : $table->where($cond);
+        $args = \func_get_args();
+        unset($args[0]);
+        $cond = \is_array($cond) ? $cond : $args;
+        return $cond === array() ? $table : $table->where($cond);
     }
 
 
@@ -45,6 +48,9 @@ class Helpers
      */
     public static function findOne(Table $table, $cond)
     {
+        $args = \func_get_args();
+        unset($args[0]);
+        $cond = \is_array($cond) ? $cond : $args;
         return $table->where($cond)->fetch();
     }
 
