@@ -26,7 +26,7 @@ dibi::query('
 	CREATE TEMPORARY TABLE `test`.`a` (
 	`a_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 	`a_a` INT NOT NULL ,
-	`entity` VARCHAR(255)
+	`a_entity` VARCHAR(255)
 	) ENGINE = InnoDB;
 ');
 
@@ -35,9 +35,9 @@ dibi::query('
 	CREATE TEMPORARY TABLE `test`.`b` (
 	`b_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 	`b_b` INT NOT NULL ,
-	`entity` VARCHAR(255) ,
-	`a_id` INT NOT NULL ,
-	KEY(a_id)
+	`b_entity` VARCHAR(255) ,
+	`extended_a_id` INT NOT NULL ,
+	KEY(extended_a_id)
 	) ENGINE = InnoDB;
 ');
 
@@ -45,11 +45,11 @@ dibi::query('
 	CREATE TEMPORARY TABLE `test`.`c` (
 	`c_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 	`c_c` INT NULL ,
-	`entity` VARCHAR(255) ,
+	`c_entity` VARCHAR(255) ,
 	`a_id` INT NOT NULL ,
-	`b_id` INT NOT NULL ,
+	`extended_b_id` INT NOT NULL ,
 	KEY(a_id) ,
-	KEY(b_id)
+	KEY(extended_b_id)
 	) ENGINE = InnoDB;
 ');
 
@@ -128,7 +128,7 @@ array(4) {
 	"id" => int(2)
 	"a" => int(2)
 	"b" => int(3)
-	"a_id" => int(2)
+	"extended_a_id" => int(2)
 }
 
 array(2) {
@@ -136,13 +136,14 @@ array(2) {
 	"a" => int(7)
 }
 
-array(6) {
+array(7) {
 	"id" => int(4)
 	"a" => int(4)
 	"b" => int(5)
-	"a_id" => int(4)
+	"extended_a_id" => int(4)
 	"c" => int(6)
-	"b_id" => int(2)
+	"a_id" => int(3)
+	"extended_b_id" => int(2)
 }
 
 B =====
@@ -151,25 +152,27 @@ array(4) {
 	"id" => int(2)
 	"a" => int(2)
 	"b" => int(3)
-	"a_id" => int(2)
+	"extended_a_id" => int(2)
 }
 
-array(6) {
+array(7) {
 	"id" => int(4)
 	"a" => int(4)
 	"b" => int(5)
-	"a_id" => int(4)
+	"extended_a_id" => int(4)
 	"c" => int(6)
-	"b_id" => int(2)
+	"a_id" => int(3)
+	"extended_b_id" => int(2)
 }
 
 C =====
 
-array(6) {
+array(7) {
 	"id" => int(4)
 	"a" => int(4)
 	"b" => int(5)
-	"a_id" => int(4)
+	"extended_a_id" => int(4)
 	"c" => int(6)
-	"b_id" => int(2)
+	"a_id" => int(4)
+	"extended_b_id" => int(2)
 }

@@ -10,8 +10,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 {
 
     const ALL = 'all';
-    const EXTENDED = 'ExtendedEntity';
-    const ENTITY_COLUMN = 'entity';
+    const EXTENDED = 'extendedEntity';
 
     /**#@+
      * Value states
@@ -36,6 +35,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     private $_singles = array();
     private $_loaded;
     private $_self_loaded;
+    private $_entityClass;
 
     /**
      * Reference of entity reflection
@@ -43,7 +43,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     private $_reflection;
 
+    
 
+    
     /**
      * Constructor
      * @param int|array $id primary key value or array of values
@@ -69,11 +71,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     public static function createStandalone(array $values)
     {
         $class = \get_called_class();
-        if (!isset($values[self::ENTITY_COLUMN]) || $class === $values[self::ENTITY_COLUMN]) {
+        $entityColumn = static::getReflection()->entityColumn;
+        if (!isset($values[$entityColumn]) || $class === $values[$entityColumn]) {
             return new $class($values);
         }
 
-        $sClass = $values[self::ENTITY_COLUMN];
+        $sClass = $values[$entityColumn];
         $fkColumn = $sClass::getTable()->{self::EXTENDED};
         return $sClass::getTable()->where($fkColumn->eq($values[static::getReflection()->primaryKeyColumn]))->fetch();
     }
@@ -89,6 +92,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         $this->_self_loaded = FALSE;
 
         $this->_reflection = static::getReflection();
+
         foreach ($this->_reflection->columns as $prop=>$column) {
             if ($prop != $this->_reflection->primaryKey) {
                 $this->_modified[$column] = self::VALUE_NOT_SET;
@@ -96,6 +100,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 $this->_values[$column] = NULL;
             }
         }
+
         foreach ($this->_reflection->parents as $parentName => $parentClass) {
             $this->_parents[$parentName] = NULL;
             $this->_loaded[$parentName] = FALSE;
@@ -109,6 +114,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             $this->_singles[$singleName] = NULL;
             $this->_loaded[$singleName] = FALSE;
         }
+
+        if ($this->_reflection->isExtendingEntity()) {
+            $this->_parents[self::EXTENDED] = new $this->_reflection->parentEntity;
+            $this->_parents[self::EXTENDED]->setEntityClass(\get_class($this));
+        }
     }
 
 
@@ -119,7 +129,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     private function isStandalone()
     {
-        return !isset($this[self::ENTITY_COLUMN]) || $this[self::ENTITY_COLUMN] === \get_class($this);
+        return !isset($this->_entityClass) || $this->_entityClass === \get_class($this);
     }
 
 
@@ -130,7 +140,18 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     public function getEntityClass()
     {
-        return $this->isStandalone() ? \get_class($this) : $this[self::ENTITY_COLUMN];
+        return $this->isStandalone() ? \get_class($this) : $this->_entityClass;
+    }
+
+
+
+    /**
+     * Sets entity class name
+     * @param string $entityClass
+     */
+    public function setEntityClass($entityClass)
+    {
+        $this->_entityClass = $entityClass;
     }
 
 
@@ -665,9 +686,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             //saving parents
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if ($parentEntity instanceof self) {
-                    if ($parentName === self::EXTENDED) {
-                        $parentEntity[self::ENTITY_COLUMN] = \get_class($this);
-                    }
                     $parentEntity->save(TRUE);
                     $this[$this->_reflection->getColumnName($parentName)] = $parentEntity->_id;
                 }
@@ -689,6 +707,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 if (isset($values_update[$column])) {
                     $values_update[$column] = &$values[$column];
                 }
+            }
+            
+            //entity column
+            if (isset($this->_entityClass)) {
+                $values[$this->_reflection->entityColumn] = $values_update[$this->_reflection->entityColumn] = $this->_entityClass;
             }
 
             $this->beforeSave($values);
@@ -900,6 +923,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         }
 
+        //entity class name
+        if (isset($values[$this->_reflection->entityColumn])) {
+            $this->setEntityClass($value);
+        }
+
+
         if (\array_key_exists(self::EXTENDED, $this->_parents)) {
             $this->{self::EXTENDED}->setValues($values, $isColumns);
         }
@@ -976,9 +1005,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         if ($name && \array_key_exists($name, $this->_values)) {
             $this->_setValue($name, $value);
-        } elseif ($name === self::ENTITY_COLUMN) {
-            $this->_values[$name] = $value;
-            $this->_modified[self::ENTITY_COLUMN] = self::VALUE_MODIFIED;
+        } elseif ($name == $this->_reflection->entityColumn) {
+            $this->setEntityClass($value);
         } else {
             throw new Exception("Cannot set new property '$name'.");
         }

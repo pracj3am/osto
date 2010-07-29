@@ -25,6 +25,7 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
  * @property-read string $tableName
  * @property-read string $prefix
  * @property-read string $parentEntity
+ * @property-read string $entityColumn
  * @method bool isNullColumn() isNullColumn(string $name)
  * @method string getColumnName() getColumnName(string $name, string|bool $alias)
  * @method string getForeignKeyName() getForeignKeyName(string $name)
@@ -34,6 +35,7 @@ class EntityReflection extends \ReflectionClass
 {
 
     const ID = 'id';
+    const ENTITY_COLUMN = 'entity';
 
 
     protected $children = array();
@@ -113,9 +115,8 @@ class EntityReflection extends \ReflectionClass
         if ($this->_isExtendingEntity()) {
             $parentEntity = $this->_getParentEntity();
             $this->parents[Entity::EXTENDED] = $parentEntity;
-            $this->columns[Entity::EXTENDED] = $parentEntity::getReflection()->getPrimaryKeyColumn();
+            $this->columns[Entity::EXTENDED] = 'extended_' . $parentEntity::getReflection()->getPrimaryKeyColumn();
             $this->types[$this->columns[Entity::EXTENDED]] = $parentEntity::getReflection()->types[$parentEntity::getReflection()->getPrimaryKeyColumn()];
-            $parentEntity::getReflection()->columns[Entity::ENTITY_COLUMN] = Entity::ENTITY_COLUMN;
         }
     }
 
@@ -261,6 +262,13 @@ class EntityReflection extends \ReflectionClass
 
 
 
+    public function getEntityColumn()
+    {
+        return $this->_prefix . '_' . self::ENTITY_COLUMN;
+    }
+
+
+    
     public function getTableName()
     {
         if (!isset($this->_tableName)) {
@@ -340,7 +348,7 @@ class EntityReflection extends \ReflectionClass
 
     private function isNullColumn($name)
     {
-        if ($name === Entity::ENTITY_COLUMN)
+        if ($name === self::ENTITY_COLUMN)
             return TRUE;
 
         foreach ($this->_properties as $pa)
