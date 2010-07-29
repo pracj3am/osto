@@ -128,7 +128,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      * Returns entity class name with respect to inheritance issue
      * @return string
      */
-    private function getEntityClass()
+    public function getEntityClass()
     {
         return $this->isStandalone() ? \get_class($this) : $this[self::ENTITY_COLUMN];
     }

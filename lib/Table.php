@@ -28,6 +28,12 @@ class Table implements \IDataSource
      */
     private $_dataSource;
 
+    /**
+     * Table which corresponds to extended entity
+     * @var Table
+     */
+    private $_extends;
+
 
 
     /**
@@ -36,7 +42,7 @@ class Table implements \IDataSource
      */
     public function __construct($entity)
     {
-        if (is_string($entity)) {
+        if (is_string($entity) && \class_exists($entity)) {
             $this->_entity = $entity;
         } elseif ($entity instanceof Entity) {
             $this->_entity = $entity->getEntityClass();
@@ -53,6 +59,10 @@ class Table implements \IDataSource
 
         $this->_dataSource = new DataSource\Database($this->_reflection->getTableName());
         $this->_dataSource->setRowClass($this->_entity);
+
+        if ($this->_reflection->isExtendingEntity()) {
+            $this->_extends = new self($this->_reflection->parentEntity);
+        }
     }
 
 
@@ -88,7 +98,21 @@ class Table implements \IDataSource
             return new Table\Column($this, $this->_reflection->primaryKeyColumn);
         }
 
-        throw new Exception("Undeclared property $name.");
+        if (isset($this->_extends) && isset($this->_extends->$name)) {
+            return $this->_extends->$name;
+        }
+
+        throw new Exception("Undeclared column or property $name.");
+    }
+
+
+    public function __isset($name)
+    {
+        if ($this->_reflection->isProperty($name) || $this->_reflection->isColumn($name) || $name === 'id') {
+            return TRUE;
+        }
+
+        return FALSE;
     }
 
 
