@@ -10,7 +10,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 {
 
     const ALL = 'all';
-    const PARENT = 'ParentEntity';
+    const EXTENDED = 'ExtendedEntity';
     const ENTITY_COLUMN = 'entity';
 
     /**#@+
@@ -74,7 +74,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         $sClass = $values[self::ENTITY_COLUMN];
-        $fkColumn = $sClass::getTable()->{self::PARENT};
+        $fkColumn = $sClass::getTable()->{self::EXTENDED};
         return $sClass::getTable()->where($fkColumn->eq($values[static::getReflection()->primaryKeyColumn]))->fetch();
     }
 
@@ -156,8 +156,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         /***** primary key *****/
 
         if ($name == 'id' || $name == $this->_reflection->primaryKey) {
-            if (\array_key_exists(self::PARENT, $this->_parents)) {
-                return $this->parents[self::PARENT]->id;
+            if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+                return $this->parents[self::EXTENDED]->id;
             }
             return $this->_id;
         }
@@ -237,8 +237,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         /***** inheritance *****/
 
-        if (\array_key_exists(self::PARENT, $this->_parents)) {
-            return $this->{self::PARENT}->$name;
+        if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            return $this->{self::EXTENDED}->$name;
         }
 
         throw new Exception("Undeclared property $name.");
@@ -260,7 +260,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 \array_key_exists($name, $this->_children) && $this->_children[$name] !== NULL ||
                 \array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL ||
                 \array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL ||
-                \array_key_exists(self::PARENT,$this->_parents) && isset($this->{self::PARENT}->$name)
+                \array_key_exists(self::EXTENDED,$this->_parents) && isset($this->{self::EXTENDED}->$name)
         ) {
             return TRUE;
         }
@@ -339,8 +339,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         //inheritance
-        if (\array_key_exists(self::PARENT, $this->_parents)) {
-            $this->{self::PARENT}->$name = $value;
+        if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            $this->{self::EXTENDED}->$name = $value;
             return;
         }
 
@@ -531,7 +531,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 }
             }
 
-            $this->loadParents(self::PARENT);
+            $this->loadParents(self::EXTENDED);
             if ($depth > 0) {
                 $this->loadParents(self::ALL, $depth-1);
                 $this->loadSingles(self::ALL, $depth-1);
@@ -562,7 +562,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         foreach ($this->_reflection->parents as $parentName => $parentClass) {
             if (in_array($parentName, $parentNames) && isset($this[$this->_reflection->getColumnName($parentName)])) {
 
-                if ($parentName === self::PARENT) {
+                if ($parentName === self::EXTENDED) {
                     $parentEntity = new $parentClass($this[$this->_reflection->getColumnName($parentName)]);
                     $parentEntity->load($depth);
                 } else {
@@ -665,7 +665,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             //saving parents
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if ($parentEntity instanceof self) {
-                    if ($parentName === self::PARENT) {
+                    if ($parentName === self::EXTENDED) {
                         $parentEntity[self::ENTITY_COLUMN] = \get_class($this);
                     }
                     $parentEntity->save(TRUE);
@@ -778,8 +778,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                     array($this->_reflection->primaryKeyColumn => $this->_id), 'LIMIT 1'
                 );
 
-                if (\array_key_exists(self::PARENT, $this->_parents)) {
-                    $this->{self::PARENT}->delete(TRUE);
+                if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+                    $this->{self::EXTENDED}->delete(TRUE);
                 }
 
             } catch (\DibiException $e) {
@@ -815,8 +815,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             unset($values[$parentName]);
             //foreign key
             $values[$this->_reflection->getColumnName($parentName)] = $this->_values[$this->_reflection->getColumnName($parentName)];
-            if ($parentName === self::PARENT) {
-                $values = $this->{self::PARENT}->values + $values;
+            if ($parentName === self::EXTENDED) {
+                $values = $this->{self::EXTENDED}->values + $values;
             } elseif ($parentEntity instanceof self) {
                 $values[$parentName] = $parentEntity->values;
             }
@@ -900,8 +900,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
         }
 
-        if (\array_key_exists(self::PARENT, $this->_parents)) {
-            $this->{self::PARENT}->setValues($values, $isColumns);
+        if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            $this->{self::EXTENDED}->setValues($values, $isColumns);
         }
     }
 

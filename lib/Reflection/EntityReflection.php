@@ -108,11 +108,11 @@ class EntityReflection extends \ReflectionClass
             }
         }
 
-        if ($this->_isExtendedEntity()) {
+        if ($this->_isExtendingEntity()) {
             $parentEntity = $this->_getParentEntity();
-            $this->parents[Entity::PARENT] = $parentEntity;
-            $this->columns[Entity::PARENT] = $parentEntity::getReflection()->getPrimaryKeyColumn();
-            $this->types[$this->columns[Entity::PARENT]] = $parentEntity::getReflection()->types[$parentEntity::getReflection()->getPrimaryKeyColumn()];
+            $this->parents[Entity::EXTENDED] = $parentEntity;
+            $this->columns[Entity::EXTENDED] = $parentEntity::getReflection()->getPrimaryKeyColumn();
+            $this->types[$this->columns[Entity::EXTENDED]] = $parentEntity::getReflection()->types[$parentEntity::getReflection()->getPrimaryKeyColumn()];
             $parentEntity::getReflection()->columns[Entity::ENTITY_COLUMN] = Entity::ENTITY_COLUMN;
         }
     }
@@ -244,7 +244,7 @@ class EntityReflection extends \ReflectionClass
 
 
 
-    private function isExtendedEntity()
+    private function isExtendingEntity()
     {
         $parentEntity = $this->_getParentEntity();
         return $parentEntity && $this->_isEntity() && $parentEntity::getReflection()->isEntity();
