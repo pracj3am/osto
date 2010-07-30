@@ -23,7 +23,7 @@ require __DIR__ . '/../../dibi/dibi/dibi.php';
 
 
 
-require __DIR__ . '/../../lib/loader.php';
+require __DIR__ . '/../../osto/loader.php';
 
 
 /**
