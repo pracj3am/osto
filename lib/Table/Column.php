@@ -48,10 +48,10 @@ class Column
      */
     private function _op($operator, $operand)
     {
-        $cond  = '[' . /*$this->table->getName().'.'.*/$this->name . ']';
-        $cond .= " $operator ";
+        $cond = $this . " $operator ";
         if ($operand instanceof self) {
             $cond .= '%n';
+            $operand = (string)$operand;
         }
 
         return array($cond, $operand);
@@ -95,7 +95,6 @@ class Column
 
 
 
-
     /**
      * Defines lower than or equal condition
      * @param mixed $operand
@@ -105,7 +104,6 @@ class Column
     {
         return $this->_op('<=', $operand);
     }
-
 
 
 
@@ -121,7 +119,6 @@ class Column
 
 
 
-
     /**
      * Defines greater than or equal condition
      * @param mixed $operand
@@ -133,4 +130,9 @@ class Column
     }
 
 
+
+    public function __toString()
+    {
+        return '[' . /*$this->table->getName().'.'.*/$this->name . ']';
+    }
 }

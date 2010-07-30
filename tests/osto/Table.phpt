@@ -23,24 +23,6 @@ NetteTestHelpers::purge(OSTO_TMP_DIR);
 db_connect();
 
 
-dibi::query('
-	CREATE TEMPORARY TABLE `test`.`a` (
-	`sid` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-	`a_a` INT NOT NULL ,
-    `entity` VARCHAR(255)
-	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
-');
-
-
-dibi::query('
-	CREATE TEMPORARY TABLE `test`.`b` (
-	`b_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-	`extended_sid` INT NOT NULL ,
-	`b_b` FLOAT NOT NULL ,
-	KEY (b_id)
-	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
-');
-
 
 /**
  * @property int $aid , column=sid, primary_key
