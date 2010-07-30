@@ -61,7 +61,7 @@ class EntityReflection extends \ReflectionClass
         parent::__construct($argument);
 
         if (!$this->_isEntity()) {
-           // throw new Exception("Cannot create reflection: {$this->name} is not an entity.");
+            throw new Exception("Cannot create reflection: {$this->name} is not an entity.");
         }
 
         $default_primary_key =  $this->prefix . '_' . self::ID;
@@ -251,7 +251,17 @@ class EntityReflection extends \ReflectionClass
     private function isExtendingEntity()
     {
         $parentEntity = $this->_getParentEntity();
-        return $parentEntity && $this->_isEntity() && $parentEntity::getReflection()->isEntity();
+        if (!$parentEntity || !$this->_isEntity()) {
+            return FALSE;
+        }
+
+        try {
+            $r = $parentEntity::getReflection();
+        } catch (Exception $e) {
+            return FALSE;
+        }
+
+        return $r->isEntity();
     }
 
 

@@ -42,12 +42,25 @@ class D extends A
 	
 }
 
-Assert::false(Entity::getReflection()->isEntity());
-Assert::true(A::getReflection()->isEntity());
-Assert::false(B::getReflection()->isEntity());
+try {
+    Assert::false(Entity::getReflection()->isEntity());
+} catch (Exception $e) {
+    dump($e->getMessage());
+}
+try {
+    Assert::false(B::getReflection()->isEntity());
+} catch (Exception $e) {
+    dump($e->getMessage());
+}
 Assert::true(C::getReflection()->isEntity());
+Assert::true(A::getReflection()->isEntity());
 
 Assert::false(A::getReflection()->isExtendingEntity());
-Assert::false(B::getReflection()->isExtendingEntity());
 Assert::false(C::getReflection()->isExtendingEntity());
 Assert::true(D::getReflection()->isExtendingEntity());
+
+__halt_compiler();
+------EXPECT------
+string(55) "Cannot create reflection: osto\Entity is not an entity."
+
+string(45) "Cannot create reflection: B is not an entity."

@@ -111,6 +111,8 @@ __halt_compiler();
 
 
 
+string(48) "Can't create reflection for entity 'osto\Entity'"
+
 string(50) "XX is neither entity class name nor entity itself."
 
 string(32) "Undeclared column or property x."
