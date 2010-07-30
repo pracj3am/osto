@@ -48,7 +48,7 @@ class Column
      */
     private function _op($operator, $operand)
     {
-        $cond = "[" . $this . "] $operator ";
+        $cond = "[$this] $operator ";
         if ($operand instanceof self) {
             $cond .= '%n';
             $operand = (string)$operand;

@@ -158,7 +158,7 @@ class Table implements \IDataSource
 
     /**
      * Selects columns to query.
-     * @param  string|array  column name or array of column names
+     * @param  string|array|Table\Column  column name or array of column names
      * @param  string        column alias
      * @return Table         provides a fluent interface
      */
