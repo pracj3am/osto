@@ -451,11 +451,25 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    /**
+     * Prints entity values in simple human readable form;
+     * @return string
+     */
     public function  __toString()
     {
         return \print_r($this->getValues(), TRUE);
     }
 
+
+
+    /**
+     * Shorthand for new Table($this)->where($args)
+     */
+    public function __invoke()
+    {
+        $args = \func_get_args();
+        return \call_user_func_array(array(\get_class($this), 'getTable'), $args);
+    }
 
     /****************** COPYING *******************/
 
@@ -958,13 +972,42 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
     /**
+     * Registers entity
+     *  - defines global function with the same name
+     */
+    public static function register()
+    {
+        $ns_function_name = \get_called_class();
+        $pos = \strrpos($ns_function_name, '\\');
+        if ($pos === FALSE) {
+            $function_name = $ns_function_name;
+            $namespace = '';
+        } else {
+            $function_name = substr($ns_function_name, $pos+1);
+            $namespace = substr($ns_function_name, 0, $pos);
+        }
+        if (!\function_exists($ns_function_name)) {
+            eval("
+                namespace $namespace {
+                    function $function_name() {
+                        \$args = \\func_get_args();
+                        return \\call_user_func_array(array('$ns_function_name', 'getTable'), \$args);
+                    }
+                }
+            ");
+        }
+    }
+
+
+    /**
      * Returns entity reflection instance
      * @return Reflection\EntityReflection
      */
     public static function getReflection()
     {
-        if (!isset(self::$_REFLECTIONS[get_called_class()]))
+        if (!isset(self::$_REFLECTIONS[get_called_class()])) {
             self::$_REFLECTIONS[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
+        }
         return self::$_REFLECTIONS[get_called_class()];
     }
 
@@ -976,7 +1019,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     public static function getTable()
     {
-        return new Table(\get_called_class());
+        $t = new Table(\get_called_class());
+        if (\func_num_args () > 0) {
+            $args = \func_get_args();
+            return \call_user_func_array(array($t, 'where'), $args);
+        }
+        return $t;
     }
 
 

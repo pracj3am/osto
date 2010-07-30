@@ -408,10 +408,16 @@ class EntityReflection extends \ReflectionClass
     {
         $cache = self::instantiateCache();
         if (isset($cache[$entityClass])) {
-            return $cache[$entityClass];
+            $r = $cache[$entityClass];
         } else {
-            return new self($entityClass);
+            $r = new self($entityClass);
         }
+
+        //Automatic registering of entity class
+        //Here is the best place, because for every entity is a single reflection created
+        $entityClass::register();
+
+        return $r;
     }
 
 
