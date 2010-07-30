@@ -48,7 +48,7 @@ class Column
      */
     private function _op($operator, $operand)
     {
-        $cond = $this . " $operator ";
+        $cond = "[" . $this . "] $operator ";
         if ($operand instanceof self) {
             $cond .= '%n';
             $operand = (string)$operand;
@@ -133,6 +133,6 @@ class Column
 
     public function __toString()
     {
-        return '[' . /*$this->table->getName().'.'.*/$this->name . ']';
+        return /*$this->table->getName().'.'.*/$this->name;
     }
 }

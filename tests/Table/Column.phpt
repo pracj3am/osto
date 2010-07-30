@@ -112,11 +112,11 @@ array(2) {
 
 array(2) {
 	0 => string(10) "[b_b] = %n"
-	1 => string(5) "[a_a]"
+	1 => string(3) "a_a"
 }
 
 array(2) {
 	0 => string(11) "[a_a] != %n"
-	1 => string(5) "[b_b]"
+	1 => string(3) "b_b"
 }
 

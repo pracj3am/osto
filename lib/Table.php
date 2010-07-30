@@ -164,6 +164,11 @@ class Table implements \IDataSource
      */
     public function select($col, $as = NULL)
     {
+        if (\is_array($col)) {
+            \array_map(function($col) {return (string)$col;}, $col);
+        } else {
+            $col = (string)$col;
+        }
         $this->_dataSource->select($col, $as);
         return $this;
     }
@@ -185,13 +190,18 @@ class Table implements \IDataSource
 
     /**
      * Selects columns to order by.
-     * @param  string|array  column name or array of column names
+     * @param  string|array|Table\Column  column name or array of column names
      * @param  string        sorting direction
      * @return Table         provides a fluent interface
      */
-    public function orderBy($row, $sorting = 'ASC')
+    public function orderBy($col, $sorting = 'ASC')
     {
-        $this->_dataSource->orderBy($row, $sorting);
+        if (\is_array($col)) {
+            \array_map(function($col) {return (string)$col;}, $col);
+        } else {
+            $col = (string)$col;
+        }
+        $this->_dataSource->orderBy($col, $sorting);
         return $this;
     }
 
