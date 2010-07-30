@@ -43,7 +43,7 @@ but can be also specified:
     class User extends Entity  { }
 
 
-Now you can access all properties
+Now you can access all properties. When setting, type-casting is performed.
 
     $user = new User;
     $user->first_name = 'Adam';
@@ -108,13 +108,13 @@ There are also some helpers methods:
     $user = User::find(3);  //return User with primary key 3
 
 Entities than take care of relations between them. So `$user->Class` lazily load data
-of Class entity, `$user->Photos` loads or Photos (as Table object) etc.
+of Class entity, `$user->Photos` loads all photos (as Table object) etc.
 
 
 3. Inheritance model
 --------------------
 
-The most powerful tool of Osto is that it accomplish inheritance of entities.
+The most powerful tool of Osto is that it can accomplish inheritance of entities.
 For example we can extend entity User:
 
     /**
