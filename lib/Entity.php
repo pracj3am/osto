@@ -451,6 +451,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
 
 
+    public function  __toString()
+    {
+        return \print_r($this->getValues(), TRUE);
+    }
+
+
     /****************** COPYING *******************/
 
 
