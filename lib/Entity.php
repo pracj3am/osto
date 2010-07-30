@@ -877,25 +877,25 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         foreach ($values as $key=>$value) {
             if ($key === $this->_reflection->primaryKeyColumn && $isColumns) {
                 $this->id = $value;
-                unset($values[$key]);
+                //unset($values[$key]);
                 continue;
             }
 
             if (\array_key_exists($key, $this->_values) && $isColumns) {
                 $this->_setValue($key, $value);
-                unset($values[$key]);
+                //unset($values[$key]);
                 continue;
             }
 
             if ($key === $this->_reflection->primaryKey && !$isColumns) {
                 $this->id = $value;
-                unset($values[$key]);
+                //unset($values[$key]);
                 continue;
             }
 
             if (\array_key_exists($key, $this->_properties) && !$isColumns) {
                 $this->_setValue($this->_properties[$key], $value);
-                unset($values[$key]);
+                //unset($values[$key]);
                 continue;
             }
         }
@@ -903,13 +903,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         foreach ($values as $key=>$value) {
             if (\array_key_exists($key, $this->_parents)) {
                 $this->$key->setValues($value, $isColumns);
-                unset($values[$key]);
+                //unset($values[$key]);
                 continue;
             }
 
             if (\array_key_exists($key, $this->_singles)) {
                 $this->$key->setValues($value, $isColumns);
-                unset($values[$key]);
+                //unset($values[$key]);
                 continue;
             }
 
@@ -917,7 +917,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                 foreach ($value as $i=>$childValues) {
                     $this->$key[$i]->setValues($childValues, $isColumns);
                 }
-                unset($values[$key]);
+               // unset($values[$key]);
                 continue;
             }
 

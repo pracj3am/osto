@@ -4,7 +4,8 @@ namespace osto\Reflection;
 
 use osto\Entity;
 use osto\Helpers;
-use osto\Table\Select;
+use osto\Table;
+use osto\Exception;
 use osto\Nette\AnnotationsParser;
 use osto\Nette\Caching;
 
@@ -60,7 +61,7 @@ class EntityReflection extends \ReflectionClass
         parent::__construct($argument);
 
         if (!$this->_isEntity()) {
-            //throw new Exception()
+           // throw new Exception("Cannot create reflection: {$this->name} is not an entity.");
         }
 
         $default_primary_key =  $this->prefix . '_' . self::ID;
@@ -115,7 +116,7 @@ class EntityReflection extends \ReflectionClass
         if ($this->_isExtendingEntity()) {
             $parentEntity = $this->_getParentEntity();
             $this->parents[Entity::EXTENDED] = $parentEntity;
-            $this->columns[Entity::EXTENDED] = 'extended_' . $parentEntity::getReflection()->getPrimaryKeyColumn();
+            $this->columns[Entity::EXTENDED] = $parentEntity::getReflection()->getPrimaryKeyColumn();
             $this->types[$this->columns[Entity::EXTENDED]] = $parentEntity::getReflection()->types[$parentEntity::getReflection()->getPrimaryKeyColumn()];
         }
     }
@@ -219,7 +220,7 @@ class EntityReflection extends \ReflectionClass
                 $class = $a ? $parents[$entityName] : $singles[$entityName];
                 $name = substr($name, $pos + 1);
                 $r = $class::getReflection()->getColumnName($name, $entityName);
-                return $r === FALSE ? $r : ($alias ? $alias . Select::ALIAS_DELIM : '') . $r;
+                return $r === FALSE ? $r : ($alias ? $alias . Table::ALIAS_DELIM : '') . $r;
             }
 
             return FALSE;

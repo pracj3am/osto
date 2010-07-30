@@ -10,17 +10,15 @@ namespace osto;
 class Table implements \IDataSource
 {
 
+    const ALIAS = '$this';
+	const ALIAS_DELIM = '->';
+
+    
     /**
      * Entity class name
      * @var string
      */
     private $_entity;
-
-    /**
-     * Reflection of the entity
-     * @var Reflection\EntityReflection
-     */
-    private $_reflection;
 
     /**
      * Instance of DataSource
@@ -29,10 +27,16 @@ class Table implements \IDataSource
     private $_dataSource;
 
     /**
+     * Reflection of the entity
+     * @var Reflection\EntityReflection
+     */
+    protected $_reflection;
+
+    /**
      * Table which corresponds to extended entity
      * @var Table
      */
-    private $_extends;
+    protected $_extends;
 
 
 
@@ -57,12 +61,25 @@ class Table implements \IDataSource
             throw new Exception("Can't create reflection for entity '$entity'", 0, $e);
         }
 
-        $this->_dataSource = new DataSource\Database($this->_reflection->getTableName());
-        $this->_dataSource->setRowClass($this->_entity);
-
         if ($this->_reflection->isExtendingEntity()) {
             $this->_extends = new self($this->_reflection->parentEntity);
         }
+
+        if (isset($this->_extends)) {
+            $table = $this;
+            $sql = "SELECT * FROM [{$this->_reflection->tableName}] ";
+            while (isset($table->_extends)) {
+                $etn = $table->_extends->getName();
+                $sql .= "JOIN [$etn] USING ([{$table->_reflection->columns[Entity::EXTENDED]}]) ";
+
+                $table = $table->_extends;
+            }
+        } else {
+            $sql = $this->_reflection->tableName;
+        }
+
+        $this->_dataSource = new DataSource\Database($sql);
+        $this->_dataSource->setRowClass($this->_entity);
     }
 
 
@@ -124,6 +141,17 @@ class Table implements \IDataSource
     public function __call($name, $args)
     {
         return \call_user_func_array(array($this->_dataSource, $name), $args);
+    }
+
+
+
+	/**
+	 * Returns SQL query.
+	 * @return string
+	 */
+    public function  __toString()
+    {
+        return $this->_dataSource->__toString();
     }
 
 

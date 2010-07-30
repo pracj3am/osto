@@ -36,8 +36,8 @@ dibi::query('
 	`b_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 	`b_b` INT NOT NULL ,
 	`b_entity` VARCHAR(255) ,
-	`extended_a_id` INT NOT NULL ,
-	KEY(extended_a_id)
+	`a_id` INT NOT NULL ,
+	KEY(a_id)
 	) ENGINE = InnoDB;
 ');
 
@@ -46,16 +46,16 @@ dibi::query('
 	`c_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 	`c_c` INT NULL ,
 	`c_entity` VARCHAR(255) ,
-	`a_id` INT NOT NULL ,
-	`extended_b_id` INT NOT NULL ,
-	KEY(a_id) ,
-	KEY(extended_b_id)
+	`a_id2` INT NOT NULL ,
+	`b_id` INT NOT NULL ,
+	KEY(a_id2) ,
+	KEY(b_id)
 	) ENGINE = InnoDB;
 ');
 
 /**
  * @property int $a
- * @property C $C, has_one
+ * @property C $C, has_one, column=a_id2
  */
 class A extends Entity 
 {
@@ -72,7 +72,7 @@ class B extends A
 
 /**
  * @property int $c
- * @property A $A, belongs_to
+ * @property A $A, belongs_to, column=a_id2
  */
 class C extends B 
 {
@@ -128,7 +128,7 @@ array(4) {
 	"id" => int(2)
 	"a" => int(2)
 	"b" => int(3)
-	"extended_a_id" => int(2)
+	"a_id" => int(2)
 }
 
 array(2) {
@@ -140,10 +140,10 @@ array(7) {
 	"id" => int(4)
 	"a" => int(4)
 	"b" => int(5)
-	"extended_a_id" => int(4)
+	"a_id" => int(4)
 	"c" => int(6)
-	"a_id" => int(3)
-	"extended_b_id" => int(2)
+	"a_id2" => int(3)
+	"b_id" => int(2)
 }
 
 B =====
@@ -152,17 +152,17 @@ array(4) {
 	"id" => int(2)
 	"a" => int(2)
 	"b" => int(3)
-	"extended_a_id" => int(2)
+	"a_id" => int(2)
 }
 
 array(7) {
 	"id" => int(4)
 	"a" => int(4)
 	"b" => int(5)
-	"extended_a_id" => int(4)
+	"a_id" => int(4)
 	"c" => int(6)
-	"a_id" => int(3)
-	"extended_b_id" => int(2)
+	"a_id2" => int(3)
+	"b_id" => int(2)
 }
 
 C =====
@@ -171,8 +171,8 @@ array(7) {
 	"id" => int(4)
 	"a" => int(4)
 	"b" => int(5)
-	"extended_a_id" => int(4)
-	"c" => int(6)
 	"a_id" => int(4)
-	"extended_b_id" => int(2)
+	"c" => int(6)
+	"a_id2" => int(3)
+	"b_id" => int(2)
 }
