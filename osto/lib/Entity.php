@@ -24,7 +24,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      * Array of entity references
      * @var array
      */
-    protected static $_REFLECTIONS = array();
+    protected static $reflections = array();
     protected static $registered = array();
 
     private $_id;
@@ -1023,10 +1023,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     public static function getReflection()
     {
-        if (!isset(self::$_REFLECTIONS[get_called_class()])) {
-            self::$_REFLECTIONS[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
+        if (!isset(self::$reflections[get_called_class()])) {
+            self::$reflections[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
         }
-        return self::$_REFLECTIONS[get_called_class()];
+        return self::$reflections[get_called_class()];
     }
 
 
