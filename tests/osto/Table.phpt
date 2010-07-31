@@ -48,6 +48,8 @@ $b = new Table('B');
 
 output($a);
 output($b);
+output($a->where($a->id->eq(1))->select($a->a)->orderBy($a->id));
+output($b->where(':A.aid: = ', 1)->select(':A.a:')->orderBy(':A.aid:'));
 
 try {
     new Table('osto\Entity');
@@ -93,8 +95,23 @@ __halt_compiler();
 
 
 
+
+			SELECT `a_a`
+			FROM `a`
+			 WHERE (`sid` =  1)
+			 ORDER BY `sid` ASC
+
+
+
+			SELECT `a_a`
+			FROM (SELECT * FROM `b` JOIN `a` USING (`sid`) ) t
+			 WHERE ('sid' =  1)
+			 ORDER BY `sid` ASC
+
+
 string(48) "Can't create reflection for entity 'osto\Entity'"
 
 string(50) "XX is neither entity class name nor entity itself."
 
 string(32) "Undeclared column or property x."
+

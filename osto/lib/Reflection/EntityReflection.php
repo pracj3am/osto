@@ -413,10 +413,6 @@ class EntityReflection extends \ReflectionClass
             $r = new self($entityClass);
         }
 
-        //Automatic registering of entity class
-        //Here is the best place, because for every entity is a single reflection created
-        $entityClass::register();
-
         return $r;
     }
 

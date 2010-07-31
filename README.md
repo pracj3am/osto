@@ -94,17 +94,17 @@ For example:
 
 Or simply:
 
-    foreach ($users->where('u_weight > ', 20)->orderBy('u_weight')) {...}
+    foreach ($users->where(':User.weight: > ', 20)->orderBy(':User.weight:')) {...}
 
 The simpliest "magic" way is following:
 
-    foreach (User('u_weight > ', 20)->orderBy('u_weight')) {...}
+    foreach (User(':User.weight: > ', 20)->orderBy(':User.weight:')) {...}
 
 
 There are also some helpers methods:
 
-    User::findAll('u_weight > ', 20); //return Table
-    User::findOne('u_first_name = ', 'Adam'); //return first matching record as User
+    User::findAll(':User.weight: > ', 20); //return Table
+    User::findOne(':User.first_name: = ', 'Adam'); //return first matching record as User
     $user = User::find(3);  //return User with primary key 3
 
 Entities than take care of relations between them. So `$user->Class` lazily load data

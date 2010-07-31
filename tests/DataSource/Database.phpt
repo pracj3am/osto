@@ -73,48 +73,59 @@ $a = new Table('A');
 $b = new Table('B');
 
 foreach ($a as $aa) {
-    dump($aa->values);
+    output($aa);
 }
 
 foreach ($b as $bb) {
-    dump($bb->values);
+    output($bb);
 }
 
 $a->release();
 $b->release();
-dump($b->select(array($b->a, $b->b, $b->id))->fetch()->values);
+output($b->select(array($b->a, $b->b, $b->id))->fetch());
 dump($a->where($a->a->eq(0))->select($a->a)->fetchSingle());
+dump($a->where(':A.a: = ', 0)->select(':A.a:')->fetchSingle());
 
 __halt_compiler();
 ------EXPECT------
-array(2) {
-	"aid" => int(1)
-	"a" => int(1)
-}
+Array
+(
+    [aid] => 1
+    [a] => 1
+)
 
-array(5) {
-	"aid" => int(2)
-	"a" => int(0)
-	"id" => int(1)
-	"b" => float(2)
-	"sid" => int(2)
-}
 
-array(5) {
-	"aid" => int(2)
-	"a" => int(0)
-	"id" => int(1)
-	"b" => float(2)
-	"sid" => int(2)
-}
+Array
+(
+    [aid] => 2
+    [a] => 0
+    [id] => 1
+    [b] => 2
+    [sid] => 2
+)
 
-array(5) {
-	"aid" => NULL
-	"a" => int(0)
-	"id" => int(1)
-	"b" => float(2)
-	"sid" => NULL
-}
+
+Array
+(
+    [aid] => 2
+    [a] => 0
+    [id] => 1
+    [b] => 2
+    [sid] => 2
+)
+
+
+Array
+(
+    [aid] =>
+    [a] => 0
+    [id] => 1
+    [b] => 2
+    [sid] =>
+)
+
+
+string(1) "0"
 
 string(1) "0"
 

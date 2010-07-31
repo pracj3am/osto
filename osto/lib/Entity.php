@@ -25,6 +25,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      * @var array
      */
     protected static $_REFLECTIONS = array();
+    protected static $registered = array();
 
     private $_id;
     private $_values = array();
@@ -52,6 +53,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     public function __construct($id = NULL)
     {
+        //Automatic registering the entity class
+        $this::register();
+
         $this->initialize();
         if (\is_array($id)) {
             $this->setColumnValues($id);
@@ -973,29 +977,43 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
 
     /**
      * Registers entity
+     *  - adds dibi substitutions
      *  - defines global function with the same name
      */
     public static function register()
     {
-        $ns_function_name = \get_called_class();
-        $pos = \strrpos($ns_function_name, '\\');
+        $nsClassName = \get_called_class();
+
+        if (isset(self::$registered[$nsClassName]) && self::$registered[$nsClassName]) {
+            return;
+        }
+
+        $pos = \strrpos($nsClassName, '\\');
         if ($pos === FALSE) {
-            $function_name = $ns_function_name;
+            $className = $nsClassName;
             $namespace = '';
         } else {
-            $function_name = substr($ns_function_name, $pos+1);
-            $namespace = substr($ns_function_name, 0, $pos);
+            $className = substr($nsClassName, $pos+1);
+            $namespace = substr($nsClassName, 0, $pos);
         }
-        if (!\function_exists($ns_function_name)) {
+
+        foreach (static::getReflection()->columns as $prop=>$column) {
+            dibi::addSubst("$className.$prop", $column);
+        }
+
+
+        if (!\function_exists($nsClassName)) {
             eval("
                 namespace $namespace {
-                    function $function_name() {
+                    function $className() {
                         \$args = \\func_get_args();
-                        return \\call_user_func_array(array('$ns_function_name', 'getTable'), \$args);
+                        return \\call_user_func_array(array('$nsClassName', 'getTable'), \$args);
                     }
                 }
             ");
         }
+
+        self::$registered[$nsClassName] = TRUE;
     }
 
 
