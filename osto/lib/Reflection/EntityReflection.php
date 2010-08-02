@@ -408,7 +408,7 @@ class EntityReflection extends \ReflectionClass
     {
         $cache = self::instantiateCache();
         if (isset($cache[$entityClass])) {
-            $r = $cache[$entityClass];
+            $r = @unserialize($cache[$entityClass]);
         } else {
             $r = new self($entityClass);
         }
@@ -420,11 +420,15 @@ class EntityReflection extends \ReflectionClass
 
     public function __destruct()
     {
-        $cache = self::instantiateCache();
-        if (!isset($cache[$this->name])) {
-            $cache->save($this->name, $this, array(
-                Caching\Cache::FILES => array($this->getFileName())
-            ));
+        try {
+            $cache = self::instantiateCache();
+            if (!isset($cache[$this->name])) {
+                $cache->save($this->name, serialize($this), array(
+                    Caching\Cache::FILES => array($this->getFileName())
+                ));
+            }
+        } catch (\Exception $e) {
+            \error_log($e->getMessage());
         }
     }
 

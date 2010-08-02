@@ -75,14 +75,15 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     public static function createStandalone(array $values)
     {
         $class = \get_called_class();
-        $entityColumn = static::getReflection()->entityColumn;
+        $r = &static::getReflection();
+        $entityColumn = $r->entityColumn;
         if (!isset($values[$entityColumn]) || $class === $values[$entityColumn]) {
             return new $class($values);
         }
 
         $sClass = $values[$entityColumn];
         $fkColumn = $sClass::getTable()->{self::EXTENDED};
-        return $sClass::getTable()->where($fkColumn->eq($values[static::getReflection()->primaryKeyColumn]))->fetch();
+        return $sClass::getTable()->where($fkColumn->eq($values[$r->primaryKeyColumn]))->fetch();
     }
 
 
@@ -95,7 +96,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         $this->_self_loaded = FALSE;
 
-        $this->_reflection = static::getReflection();
+        $this->_reflection = &static::getReflection();
 
         foreach ($this->_reflection->columns as $prop=>$column) {
             if ($prop != $this->_reflection->primaryKey) {
@@ -997,7 +998,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
             $namespace = substr($nsClassName, 0, $pos);
         }
 
-        foreach (static::getReflection()->columns as $prop=>$column) {
+        $r = &static::getReflection();
+        foreach ($r->columns as $prop=>$column) {
             dibi::addSubst("$className.$prop", "$column%n");
         }
 
@@ -1021,7 +1023,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      * Returns entity reflection instance
      * @return Reflection\EntityReflection
      */
-    public static function getReflection()
+    public static function &getReflection()
     {
         if (!isset(self::$reflections[get_called_class()])) {
             self::$reflections[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
@@ -1035,10 +1037,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      * Returns new instance of Table for the given Entity
      * @return Table
      */
-    public static function getTable()
+    public static function getTable($where = NULL)
     {
         $t = new Table(\get_called_class());
-        if (\func_num_args () > 0) {
+        if ($where) {
             $args = \func_get_args();
             return \call_user_func_array(array($t, 'where'), $args);
         }
