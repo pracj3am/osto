@@ -41,6 +41,19 @@ class Helpers
 
 
     /**
+     * Get total count of entities
+     * @param Table $table
+     * @param array $cond
+     * @return integer
+     */
+    public static function count(Table $table, $cond = NULL)
+    {
+        return self::findAll($table, $cond)->count();
+    }
+
+
+
+    /**
      * Finds a entity by condition
      * @param Table $table
      * @param array $cond
