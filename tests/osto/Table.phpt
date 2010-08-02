@@ -105,7 +105,7 @@ __halt_compiler();
 
 			SELECT `a_a`
 			FROM (SELECT * FROM `b` JOIN `a` USING (`sid`) ) t
-			 WHERE ('sid' =  1)
+			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
 
 

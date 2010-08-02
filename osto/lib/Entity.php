@@ -998,7 +998,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         }
 
         foreach (static::getReflection()->columns as $prop=>$column) {
-            dibi::addSubst("$className.$prop", $column);
+            dibi::addSubst("$className.$prop", "$column%n");
         }
 
 
