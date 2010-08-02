@@ -69,10 +69,37 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     /**
      * Factory for standalone entity
      *  - it looks for standalone entity in descendant entity classes until it finds one
+     * @param mixed $id Primary key
+     * @return Entity
+     */
+    public static function create($id)
+    {
+        $class = \get_called_class();
+        $entity = new $class($id);
+        $entity->load();
+        if ($entity->isStandalone()) {
+            return $entity;
+        }
+
+        $r = &static::getReflection();
+        $entityColumn = $r->entityColumn;
+
+        $values = $entity->values;
+        $values[$r->entityColumn] = $entity->getEntityClass();
+
+        return static::createFromValues($values);
+
+    }
+
+
+
+    /**
+     * Factory for standalone entity
+     *  - it looks for standalone entity in descendant entity classes until it finds one
      * @param array $values
      * @return Entity
      */
-    public static function createStandalone(array $values)
+    public static function createFromValues(array $values)
     {
         $class = \get_called_class();
         $r = &static::getReflection();

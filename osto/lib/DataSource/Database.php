@@ -35,7 +35,7 @@ class Database extends \DibiDataSource
     public function getResult()
     {
         $result = parent::getResult();
-        $result->setRowClass(array($this->rowClass,'createStandalone'));
+        $result->setRowClass(array($this->rowClass,'createFromValues'));
         return $result;
     }
 
