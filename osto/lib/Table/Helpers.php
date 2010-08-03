@@ -30,7 +30,7 @@ class Helpers
      * @param array $cond
      * @return osto\Table
      */
-    public static function findAll(Table $table, $cond = NULL)
+    public static function findAll(Table $table, $cond = array())
     {
         $args = \func_get_args();
         unset($args[0]);
@@ -46,7 +46,7 @@ class Helpers
      * @param array $cond
      * @return integer
      */
-    public static function count(Table $table, $cond = NULL)
+    public static function count(Table $table, $cond = array())
     {
         return self::findAll($table, $cond)->count();
     }
