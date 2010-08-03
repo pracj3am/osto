@@ -32,7 +32,7 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
  * @method string getForeignKeyName() getForeignKeyName(string $name)
  * @method bool isExtendingEntity() isExtendingEntity()
  */
-class EntityReflection extends \ReflectionClass
+final class EntityReflection
 {
 
     const ID = 'id';
@@ -51,6 +51,12 @@ class EntityReflection extends \ReflectionClass
     private $_prefix;
     private $_tableName;
 
+    /**
+     * @var \ReflectionClass
+     */
+    private $_reflection;
+    private $_class;
+
 
 
     /**
@@ -58,7 +64,7 @@ class EntityReflection extends \ReflectionClass
      */
     public function __construct($argument)
     {
-        parent::__construct($argument);
+        $this->_class = $argument;
 
         if (!$this->_isEntity()) {
             throw new Exception("Cannot create reflection: {$this->name} is not an entity.");
@@ -89,12 +95,13 @@ class EntityReflection extends \ReflectionClass
                 continue;
             } elseif ($pa->relation === 'belongs_to') {
                 $parentClass = $pa->type;
+                $pr = &$parentClass::getReflection();
                 is_string($pa->column) or
-                        $pa->column = $parentClass::getReflection()->getPrimaryKeyColumn();
+                        $pa->column = $pr->getPrimaryKeyColumn();
 
                 $this->parents[$pa->name] = $parentClass;
                 $this->columns[$pa->name] = $pa->column;
-                $this->types[$this->columns[$pa->name]] = $parentClass::getReflection()->types[$parentClass::getReflection()->getPrimaryKeyColumn()];
+                $this->types[$this->columns[$pa->name]] = $pr->types[$pr->getPrimaryKeyColumn()];
             } elseif ($pa->relation === 'has_many') {
                 $this->children[$pa->name] = $pa->type;
                 $this->foreign_keys[$pa->name] = is_string($pa->column) ?
@@ -115,9 +122,10 @@ class EntityReflection extends \ReflectionClass
 
         if ($this->_isExtendingEntity()) {
             $parentEntity = $this->_getParentEntity();
+            $pr = &$parentEntity::getReflection();
             $this->parents[Entity::EXTENDED] = $parentEntity;
-            $this->columns[Entity::EXTENDED] = $parentEntity::getReflection()->getPrimaryKeyColumn();
-            $this->types[$this->columns[Entity::EXTENDED]] = $parentEntity::getReflection()->types[$parentEntity::getReflection()->getPrimaryKeyColumn()];
+            $this->columns[Entity::EXTENDED] = $pr->getPrimaryKeyColumn();
+            $this->types[$this->columns[Entity::EXTENDED]] = $pr->types[$pr->getPrimaryKeyColumn()];
         }
     }
 
@@ -167,9 +175,25 @@ class EntityReflection extends \ReflectionClass
 
 
 
+    public function getReflection()
+    {
+        if (!isset($this->_reflection)) {
+            $this->_reflection = new \ReflectionClass($this->_class);
+        }
+        return $this->_reflection;
+    }
+
+
+    private function getName()
+    {
+        return $this->getReflection()->name;
+    }
+
+    
+
     private function getAllAnnotations()
     {
-        return AnnotationsParser::getAll($this);
+        return AnnotationsParser::getAll($this->getReflection());
     }
 
 
@@ -243,7 +267,7 @@ class EntityReflection extends \ReflectionClass
 
     private function isEntity()
     {
-        return $this->isSubClassOf('osto\Entity') && !$this->isAbstract();
+        return $this->getReflection()->isSubClassOf('osto\Entity') && !$this->getReflection()->isAbstract();
     }
 
 
@@ -268,7 +292,7 @@ class EntityReflection extends \ReflectionClass
 
     private function getParentEntity()
     {
-        return ($pc = $this->getParentClass()) ? $this->getParentClass()->name : FALSE;
+        return ($pc = $this->getReflection()->getParentClass()) ? $pc->name : FALSE;
     }
 
 
@@ -414,6 +438,14 @@ class EntityReflection extends \ReflectionClass
         }
 
         return $r;
+    }
+
+
+
+    public function __sleep()
+    {
+        unset($this->_reflection);
+        return \array_keys(\get_object_vars($this));
     }
 
 

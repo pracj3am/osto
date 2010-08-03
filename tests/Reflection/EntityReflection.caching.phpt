@@ -44,5 +44,6 @@ ob_start(); dump($ar); $x = ob_get_clean();
 unset($ar);
 
 $ar = EntityReflection::create('Test\A');
+$foo = $ar->getReflection(); //because of loading reflection
 ob_start(); dump($ar); $y = ob_get_clean();
 \Assert::same($x, $y);
