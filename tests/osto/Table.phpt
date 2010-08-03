@@ -50,6 +50,7 @@ output($a);
 output($b);
 output($a->where($a->id->eq(1))->select($a->a)->orderBy($a->id));
 output($b->where(':A.aid: = ', 1)->select(':A.a:')->orderBy(':A.aid:'));
+output($a1->where(':aid: = ', 1)->select(':a:')->orderBy(':aid:'));
 
 try {
     new Table('osto\Entity');
@@ -105,6 +106,13 @@ __halt_compiler();
 
 			SELECT `a_a`
 			FROM (SELECT * FROM `b` JOIN `a` USING (`sid`) ) t
+			 WHERE (`sid` =  1)
+			 ORDER BY `sid` ASC
+
+
+
+			SELECT `a_a`
+			FROM `a`
 			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
 

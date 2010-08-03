@@ -11,9 +11,9 @@ class Table implements \IDataSource
 {
 
     const ALIAS = '$this';
-	const ALIAS_DELIM = '->';
+    const ALIAS_DELIM = '->';
 
-    
+
     /**
      * Entity class name
      * @var string
@@ -145,15 +145,37 @@ class Table implements \IDataSource
 
 
 
-	/**
-	 * Returns SQL query.
-	 * @return string
-	 */
+    /**
+     * Returns SQL query.
+     * @return string
+     */
     public function  __toString()
     {
-        return $this->_dataSource->__toString();
+        try {
+            $s = $this->_dataSource->__toString();
+        } catch (\Exception $e) {
+            \trigger_error($e->getMessage(), \E_USER_ERROR);
+            return '';
+        }
+        return $s;
     }
 
+
+
+    /**
+     * Insert table name before column name in substitution string
+     * @param string|array $string
+     * @return string|array
+     */
+    private function _translateColumns($string) {
+        if (\is_array($string)) {
+            foreach ($string as &$s) {
+                $s = $this->_translateColumns($s);
+            }
+            return $string;
+        }
+        return \is_string($string) ? \preg_replace('/:([^\s\.]*?):/', ":{$this->_reflection->name}.\\1:", $string) : $string;
+    }
 
 
     /**
@@ -165,9 +187,14 @@ class Table implements \IDataSource
     public function select($col, $as = NULL)
     {
         if (\is_array($col)) {
-            \array_map(function($col) {return (string)$col;}, $col);
+            $col2 = array();
+            foreach ($col as $k=>$c) {
+                $col2[$this->_translateColumns($k)] = $this->_translateColumns((string)$c);
+            }
+            unset($col);
+            $col = $col2;
         } else {
-            $col = (string)$col;
+            $col = $this->_translateColumns((string)$col);
         }
         $this->_dataSource->select($col, $as);
         return $this;
@@ -182,7 +209,8 @@ class Table implements \IDataSource
      */
     public function where($cond)
     {
-        \call_user_func_array(array($this->_dataSource, 'where'), \func_get_args());
+        $args = $this->_translateColumns(\func_get_args());
+        \call_user_func_array(array($this->_dataSource, 'where'), $args);
         return $this;
     }
 
@@ -197,11 +225,16 @@ class Table implements \IDataSource
     public function orderBy($col, $sorting = 'ASC')
     {
         if (\is_array($col)) {
-            \array_map(function($col) {return (string)$col;}, $col);
+            $col2 = array();
+            foreach ($col as $k=>$c) {
+                $col2[$this->_translateColumns($k)] = $this->_translateColumns((string)$c);
+            }
+            unset($col);
+            $col = $col2;
         } else {
-            $col = (string)$col;
+            $col = $this->_translateColumns((string)$col);
         }
-        $this->_dataSource->orderBy($col, $sorting);
+        $this->_dataSource->orderBy($this->_translateColumns($col), $sorting);
         return $this;
     }
 
