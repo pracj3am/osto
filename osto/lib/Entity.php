@@ -44,9 +44,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
      */
     private $_reflection;
 
-    
 
-    
+
+
     /**
      * Constructor
      * @param int|array $id primary key value or array of values
@@ -503,6 +503,23 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         return \call_user_func_array(array(\get_class($this), 'getTable'), $args);
     }
 
+
+
+    public function __sleep()
+    {
+        unset($this->_reflection);
+        return \array_keys(\get_object_vars($this));
+    }
+
+
+
+    public function __wakeup()
+    {
+        $this->_reflection = &static::getReflection();
+    }
+
+
+
     /****************** COPYING *******************/
 
 
@@ -760,7 +777,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
                     $values_update[$column] = &$values[$column];
                 }
             }
-            
+
             //entity column
             if (isset($this->_entityClass)) {
                 $values[$this->_reflection->entityColumn] = $values_update[$this->_reflection->entityColumn] = $this->_entityClass;
@@ -1028,6 +1045,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
         $r = &static::getReflection();
         foreach ($r->columns as $prop=>$column) {
             dibi::addSubst("$className.$prop", "$column%n");
+            dibi::addSubst("$nsClassName.$prop", "$column%n");
         }
 
 
