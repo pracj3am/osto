@@ -6,7 +6,7 @@ use dibi;
 
 
 
-abstract class Entity implements \ArrayAccess, \IteratorAggregate
+abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 {
 
     const ALL = 'all';
@@ -501,21 +501,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         $args = \func_get_args();
         return \call_user_func_array(array(\get_class($this), 'getTable'), $args);
-    }
-
-
-
-    public function __sleep()
-    {
-        unset($this->_reflection);
-        return \array_keys(\get_object_vars($this));
-    }
-
-
-
-    public function __wakeup()
-    {
-        $this->_reflection = &static::getReflection();
     }
 
 
@@ -1160,6 +1145,27 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate
     {
         return new \ArrayIterator($this->_values);
     }
+
+
+
+    public function serialize()
+    {
+        $this->_reflection = NULL;
+        return \serialize(\get_object_vars($this));
+    }
+
+
+
+    public function unserialize($serialized)
+    {
+        $this->_reflection = &static::getReflection();
+        foreach (\unserialize($serialized) as $p=>$v) {
+            $this->$p = $v;
+        }
+    }
+
+
+
 
 }
 ?>
