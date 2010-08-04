@@ -1158,10 +1158,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     public function unserialize($serialized)
     {
-        $this->_reflection = &static::getReflection();
         foreach (\unserialize($serialized) as $p=>$v) {
             $this->$p = $v;
         }
+        $this->_reflection = &static::getReflection();
     }
 
 
