@@ -61,7 +61,7 @@ class Database extends \DibiDataSource
     public function setSql($sql)
     {
         $this->sql = $this->translator->translate((array)$sql);
-   		$this->result = $this->count = $this->totalCount = NULL;
+        $this->result = $this->count = $this->totalCount = NULL;
     }
 
 
