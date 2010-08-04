@@ -183,10 +183,15 @@ class Table implements \IDataSource
      * Translate column names callback
      * @param array $matches
      * @return string
+     * @throws Exception
      */
     private function _translateCb($matches)
     {
-        return $this->_reflection->getColumnName($matches[1]);
+        $c = $this->_reflection->getColumnName($matches[1]);
+        if ($c === FALSE) {
+            throw new Exception("Undefined column '$matches[1]' for entity {$this->_entity}");
+        }
+        return $c;
     }
 
 
