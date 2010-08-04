@@ -86,6 +86,7 @@ foreach (A::findAll() as $a) {
 output(A::find(4));
 output(A::findOne('a_a = ', 1));
 output(B::findOne('a_a = ', 1));
+Assert::same(A::count(), 3);
 
 __halt_compiler();
 ------EXPECT------
