@@ -235,7 +235,7 @@ final class EntityReflection
 
 
     private function getColumnName($name, $alias = FALSE)
-    {
+    {//dump($name);dump($this);
         if (($pos = \strpos($name, '.')) !== FALSE) {
             $entityName = \substr($name, 0, $pos);
             $parents = $this->parents;

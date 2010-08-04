@@ -84,7 +84,7 @@ $a->release();
 $b->release();
 output($b->select(array($b->a, $b->b, $b->id))->fetch());
 dump($a->where($a->a->eq(0))->select($a->a)->fetchSingle());
-dump($a->where(':A.a: = ', 0)->select(':A.a:')->fetchSingle());
+dump($a->where(':a: = ', 0)->select(':a:')->fetchSingle());
 
 __halt_compiler();
 ------EXPECT------

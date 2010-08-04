@@ -174,7 +174,19 @@ class Table implements \IDataSource
             }
             return $string;
         }
-        return \is_string($string) ? \preg_replace('/:([^\s\.]*?):/', ":{$this->_reflection->name}.\\1:", $string) : $string;
+        return \is_string($string) ? \preg_replace_callback('/:(\S*?):/', array($this, '_translateCb'), $string) : $string;
+    }
+
+
+
+    /**
+     * Translate column names callback
+     * @param array $matches
+     * @return string
+     */
+    private function _translateCb($matches)
+    {
+        return $this->_reflection->getColumnName($matches[1]);
     }
 
 

@@ -27,6 +27,7 @@ db_connect();
 /**
  * @property int $aid , column=sid, primary_key
  * @property int $a
+ * @property C $C , belongs_to
  */
 class A extends Entity
 {
@@ -39,6 +40,13 @@ class A extends Entity
 class B extends A
 {
 
+}
+
+/**
+ * @property string $c
+ */
+class C extends Entity
+{
 
 }
 
@@ -49,8 +57,8 @@ $b = new Table('B');
 output($a);
 output($b);
 output($a->where($a->id->eq(1))->select($a->a)->orderBy($a->id));
-output($b->where(':A.aid: = ', 1)->select(':A.a:')->orderBy(':A.aid:'));
-output($a1->where(':aid: = ', 1)->select(':a:')->orderBy(':aid:'));
+output($b->where('[:aid:] = ', 1)->select(':a:')->orderBy(':aid:'));
+output($a1->where('[:aid:] = ', 1)->select(':a:')->select(':C.c:')->orderBy(':aid:'));
 
 try {
     new Table('osto\Entity');
@@ -111,7 +119,7 @@ __halt_compiler();
 
 
 
-			SELECT `a_a`
+			SELECT `a_a`, `C`.`c_c` 
 			FROM `a`
 			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
