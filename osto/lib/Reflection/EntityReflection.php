@@ -29,10 +29,11 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
  * @property-read string $prefix
  * @property-read string $parentEntity
  * @property-read string $entityColumn
- * @method bool isNullColumn() isNullColumn(string $name)
- * @method string getColumnName() getColumnName(string $name, string|bool $alias)
- * @method string getForeignKeyName() getForeignKeyName(string $name)
- * @method bool isExtendingEntity() isExtendingEntity()
+ * @method bool isNullColumn(string $name)
+ * @method string getColumnName(string $name, string|bool $alias)
+ * @method string getForeignKeyName(string $name)
+ * @method bool isExtendingEntity()
+ * @method bool hasRelationWith(string|osto\Entity|osto\Reflection\EntityReflection $reflection)
  */
 final class EntityReflection
 {
