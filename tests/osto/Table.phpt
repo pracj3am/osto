@@ -132,7 +132,7 @@ __halt_compiler();
 
 
 			SELECT `a_a`, `C`.`c_c`
-			FROM `a`
+			FROM `a` JOIN `c` AS `C` ON `c_id` = `C`.`c_id` 
 			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
 

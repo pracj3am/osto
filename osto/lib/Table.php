@@ -38,6 +38,12 @@ class Table implements \IDataSource
      */
     protected $_extends;
 
+    /**
+     * Array of tables that has been already joined
+     * @var array
+     */
+    private $_joined = array();
+
 
 
     /**
@@ -201,6 +207,25 @@ class Table implements \IDataSource
         if ($c === FALSE) {
             throw new Exception("Undefined column '$matches[1]' for entity {$this->_entity}");
         }
+
+        //auto-joining
+        $pair = explode('.', $c);
+        if (isset($pair[1]) && !isset($this->_joined[$pair[0]])) {
+            if (isset($this->_reflection->parents[$pair[0]])) {
+                $entity = $this->_reflection->parents[$pair[0]];
+
+            } elseif (isset($this->_reflection->singles[$pair[0]])) {
+                $entity = $this->_reflection->singles[$pair[0]];
+
+            } elseif (isset($this->_reflection->children[$pair[0]])) {
+                $entity = $this->_reflection->children[$pair[0]];
+
+            } else {
+                throw new Exception("Undefined relation '$pair[0]'");
+            }
+            $table = new self($entity);
+            $this->join($table, $pair[0]);
+        }
         return $c;
     }
 
@@ -244,6 +269,8 @@ class Table implements \IDataSource
         }
 
         if ($alias) {
+            $this->_joined[$alias] = 1;
+            
             $sql .= ' AS [' . $alias . ']';
 
             if (isset($this->_reflection->parents[$alias])) {
