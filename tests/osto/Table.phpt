@@ -125,21 +125,21 @@ __halt_compiler();
 
 
 			SELECT *
-			FROM `a` JOIN `c` AS `C` ON `c_id` = `C`.`c_id`
+			FROM `a` JOIN `c` AS `C` ON `a`.`c_id` = `C`.`c_id`
 
 
 
 
 
 			SELECT `a_a`, `C`.`c_c`
-			FROM `a` JOIN `c` AS `C` ON `c_id` = `C`.`c_id` 
+			FROM `a` JOIN `c` AS `C` ON `a`.`c_id` = `C`.`c_id`
 			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
 
 
 
 			SELECT *
-			FROM `c` JOIN `a` AS `A` ON `c_id` = `A`.`c_id`
+			FROM `c` JOIN `a` AS `A` ON `c`.`c_id` = `A`.`c_id`
 
 
         

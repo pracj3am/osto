@@ -274,10 +274,10 @@ class Table implements \IDataSource
             $sql .= ' AS [' . $alias . ']';
 
             if (isset($this->_reflection->parents[$alias])) {
-                $sql .= ' ON ['.$this->_reflection->getColumnName($alias).'] = ['.$alias.'.'.$table->_reflection->primaryKeyColumn.']';
+                $sql .= ' ON [' . $this->getName() . '.'.$this->_reflection->getColumnName($alias).'] = ['.$alias.'.'.$table->_reflection->primaryKeyColumn.']';
 
             } elseif (isset($this->_reflection->singles[$alias]) || isset($this->_reflection->children[$alias])) {
-                $sql .= ' ON ['.$this->_reflection->primaryKeyColumn.'] = ['.$alias.'.'.$this->_reflection->getForeignKeyName($alias).']';
+                $sql .= ' ON [' . $this->getName() . '.'.$this->_reflection->primaryKeyColumn.'] = ['.$alias.'.'.$this->_reflection->getForeignKeyName($alias).']';
 
             }
         }
