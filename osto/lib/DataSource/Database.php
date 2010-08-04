@@ -10,13 +10,15 @@ class Database extends \DibiDataSource
 {
 
     private $rowClass = 'DibiRow';
+    /** @var \DibiTranslator */
+    private $translator;
 
 
     public function __construct()
     {
         $args = func_get_args();
-        $translator = new \DibiTranslator(\dibi::getConnection()->driver);
-        parent::__construct($translator->translate($args), \dibi::getConnection());
+        $this->translator = new \DibiTranslator(\dibi::getConnection()->driver);
+        parent::__construct($this->translator->translate($args), \dibi::getConnection());
     }
 
 
@@ -39,4 +41,37 @@ class Database extends \DibiDataSource
         return $result;
     }
 
+
+
+    /**
+     * Joins table to SQL
+     * @param string $sql SQL of joined table
+     */
+    public function join($sql)
+    {
+        $this->setSql($this->sql . ' JOIN ' . $sql);
+    }
+
+
+
+    /**
+     * Sets SQL
+     * @param string $sql
+     */
+    public function setSql($sql)
+    {
+        $this->sql = $this->translator->translate((array)$sql);
+   		$this->result = $this->count = $this->totalCount = NULL;
+    }
+
+
+
+    /**
+     * Returns SQL
+     * @return string SQL
+     */
+    public function getSql()
+    {
+        return $this->sql;
+    }
 }

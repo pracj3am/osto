@@ -44,6 +44,7 @@ class B extends A
 
 /**
  * @property string $c
+ * @property A $A , has_many
  */
 class C extends Entity
 {
@@ -52,13 +53,17 @@ class C extends Entity
 
 $a = new Table('A');
 $a1 = new Table(new A);
+$a2 = new Table(new A);
 $b = new Table('B');
+$c = new Table('C');
 
 output($a);
 output($b);
 output($a->where($a->id->eq(1))->select($a->a)->orderBy($a->id));
 output($b->where('[:aid:] = ', 1)->select(':a:')->orderBy(':aid:'));
-output($a1->where('[:aid:] = ', 1)->select(':a:')->select(':C.c:')->orderBy(':aid:'));
+output($a1->join($c));
+output($a2->where('[:aid:] = ', 1)->select(':a:')->select(':C.c:')->orderBy(':aid:'));
+output($c->join($a1));
 
 try {
     new Table('osto\Entity');
@@ -99,7 +104,7 @@ __halt_compiler();
 
 
 			SELECT *
-			FROM (SELECT * FROM `b` JOIN `a` USING (`sid`) ) t
+			FROM `b` JOIN `a` USING (`sid`)
 
 
 
@@ -113,17 +118,31 @@ __halt_compiler();
 
 
 			SELECT `a_a`
-			FROM (SELECT * FROM `b` JOIN `a` USING (`sid`) ) t
+			FROM `b` JOIN `a` USING (`sid`)
 			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
 
 
 
-			SELECT `a_a`, `C`.`c_c` 
+			SELECT *
+			FROM `a` JOIN `c` AS `C` ON `c_id` = `C`.`c_id`
+
+
+
+
+
+			SELECT `a_a`, `C`.`c_c`
 			FROM `a`
 			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
 
+
+
+			SELECT *
+			FROM `c` JOIN `a` AS `A` ON `c_id` = `A`.`c_id`
+
+
+        
 
 string(48) "Can't create reflection for entity 'osto\Entity'"
 

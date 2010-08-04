@@ -61,25 +61,23 @@ class Table implements \IDataSource
             throw new Exception("Can't create reflection for entity '$entity'", 0, $e);
         }
 
+        $this->_dataSource = new DataSource\Database($this->getName());
+        $this->_dataSource->setRowClass($this->_entity);
+
         if ($this->_reflection->isExtendingEntity()) {
             $this->_extends = new self($this->_reflection->parentEntity);
         }
 
         if (isset($this->_extends)) {
             $table = $this;
-            $sql = "SELECT * FROM [{$this->_reflection->tableName}] ";
             while (isset($table->_extends)) {
                 $etn = $table->_extends->getName();
-                $sql .= "JOIN [$etn] USING ([{$table->_reflection->columns[Entity::EXTENDED]}]) ";
+                $this->_dataSource->join("[$etn] USING ([{$table->_reflection->columns[Entity::EXTENDED]}])");
 
                 $table = $table->_extends;
             }
-        } else {
-            $sql = $this->_reflection->tableName;
         }
 
-        $this->_dataSource = new DataSource\Database($sql);
-        $this->_dataSource->setRowClass($this->_entity);
     }
 
 
@@ -94,6 +92,18 @@ class Table implements \IDataSource
     }
 
 
+
+    /**
+     * Return SQL FROM clause
+     * @return string
+     */
+    protected function getSql()
+    {
+        return $this->_dataSource->getSql();
+    }
+
+
+    
     /**
      * Getter for table properties
      * @param string $name
@@ -214,6 +224,39 @@ class Table implements \IDataSource
             $col = $this->_translateColumns((string)$col);
         }
         $this->_dataSource->select($col, $as);
+        return $this;
+    }
+
+
+
+    /**
+     * Joins table to SQL query
+     * @param Table $table
+     * @param string $alias   name of the relation
+     * @return Table          provides a fluent interface
+     */
+    public function join(Table $table, $alias = NULL)
+    {
+        $sql = '[' . $table->getName() . ']'; //$table->getSql();
+
+        if ($alias === NULL) {
+            $alias = $this->_reflection->getRelationWith($table->_reflection);
+        }
+
+        if ($alias) {
+            $sql .= ' AS [' . $alias . ']';
+
+            if (isset($this->_reflection->parents[$alias])) {
+                $sql .= ' ON ['.$this->_reflection->getColumnName($alias).'] = ['.$alias.'.'.$table->_reflection->primaryKeyColumn.']';
+
+            } elseif (isset($this->_reflection->singles[$alias]) || isset($this->_reflection->children[$alias])) {
+                $sql .= ' ON ['.$this->_reflection->primaryKeyColumn.'] = ['.$alias.'.'.$this->_reflection->getForeignKeyName($alias).']';
+
+            }
+        }
+
+        $this->_dataSource->join($sql);
+
         return $this;
     }
 
