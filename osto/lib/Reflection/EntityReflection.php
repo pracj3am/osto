@@ -140,18 +140,18 @@ final class EntityReflection
 
     public function __isset($name)
     {
-        return method_exists(__CLASS__, Helpers::getter($name));
+        return \method_exists(__CLASS__, Helpers::getter($name));
     }
 
 
 
     public function __call($name, $arguments)
     {
-        if (method_exists(__CLASS__, $name) || method_exists(__CLASS__, $name = ltrim($name, '_'))) { //caching results of static methods
-            $cachePath = array($name, md5(serialize($arguments)));
+        if (\method_exists(__CLASS__, $name) || \method_exists(__CLASS__, $name = ltrim($name, '_'))) { //caching results of static methods
+            $cachePath = array($name, md5(\serialize($arguments)));
             $cache = & $this->getCache($cachePath);
             if ($cache === array()) {
-                $cache = call_user_func_array(array($this, $name), $arguments);
+                $cache = \call_user_func_array(array($this, $name), $arguments);
             }
             return $cache;
         }
@@ -236,8 +236,8 @@ final class EntityReflection
 
     private function getColumnName($name, $alias = FALSE)
     {
-        if (($pos = strpos($name, '.')) !== FALSE) {
-            $entityName = substr($name, 0, $pos);
+        if (($pos = \strpos($name, '.')) !== FALSE) {
+            $entityName = \substr($name, 0, $pos);
             $parents = $this->parents;
             $singles = $this->singles;
             if (($a = isset($parents[$entityName])) || isset($singles[$entityName])) {
@@ -307,10 +307,10 @@ final class EntityReflection
     public function getTableName()
     {
         if (!isset($this->_tableName)) {
-            if (($tn = $this->getAnnotation('table')) && is_string($tn))
+            if (($tn = $this->getAnnotation('table')) && \is_string($tn))
                 $this->_tableName = $tn;
             else
-                $this->_tableName = Helpers::fromCamelCase(strrpos($this->name, '\\') !== FALSE ? substr($this->name, strrpos($this->name, '\\') + 1) : $this->name);
+                $this->_tableName = Helpers::fromCamelCase(strrpos($this->name, '\\') !== FALSE ? \substr($this->name, \strrpos($this->name, '\\') + 1) : $this->name);
         }
 
         return $this->_tableName;
@@ -321,10 +321,10 @@ final class EntityReflection
     public function getPrefix()
     {
         if (!isset($this->_prefix)) {
-            if (($prefix = $this->getAnnotation('prefix')) && is_string($prefix))
+            if (($prefix = $this->getAnnotation('prefix')) && \is_string($prefix))
                 $this->_prefix = $prefix;
             else
-                $this->_prefix = strtolower(preg_replace('/[^A-Z0-9]*/', '', $this->name));
+                $this->_prefix = \strtolower(\preg_replace('/[^A-Z0-9]*/', '', $this->name));
         }
 
         return $this->_prefix;
@@ -362,14 +362,14 @@ final class EntityReflection
 
     public function isColumn($name)
     {
-        return in_array($name, $this->columns, TRUE);
+        return \in_array($name, $this->columns, TRUE);
     }
 
 
 
     public function isProperty($name)
     {
-        return array_key_exists($name, $this->columns);
+        return \array_key_exists($name, $this->columns);
     }
 
 
@@ -415,7 +415,7 @@ final class EntityReflection
 
     public function isSelfReferencing()
     {
-        return $this->_getColumnName('parent_id') && in_array($this->name, $this->children);
+        return $this->_getColumnName('parent_id') && \in_array($this->name, $this->children);
     }
 
 
@@ -432,7 +432,7 @@ final class EntityReflection
     {
         $cache = self::instantiateCache();
         if (isset($cache[$entityClass])) {
-            $r = @unserialize($cache[$entityClass]);
+            $r = @\unserialize($cache[$entityClass]);
         } else {
             $r = new self($entityClass);
         }
@@ -455,7 +455,7 @@ final class EntityReflection
         try {
             $cache = self::instantiateCache();
             if (!isset($cache[$this->name])) {
-                $cache->save($this->name, serialize($this), array(
+                $cache->save($this->name, \serialize($this), array(
                     Caching\Cache::FILES => array($this->getFileName())
                 ));
             }
