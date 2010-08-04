@@ -147,21 +147,23 @@ final class EntityReflection
 
     public function __isset($name)
     {
-        return \method_exists(__CLASS__, Helpers::getter($name));
+        return \method_exists($this, Helpers::getter($name)) || \method_exists($this->getReflection(), Helpers::getter($name));
     }
 
 
 
     public function __call($name, $arguments)
     {
-        if (\method_exists(__CLASS__, $name) || \method_exists(__CLASS__, $name = ltrim($name, '_'))) { //caching results of static methods
+        //caching results of static methods
+        if (\method_exists($target = $this, $name) || \method_exists($target = $this, $name = ltrim($name, '_')) || \method_exists($target = $this->getReflection(), $name)) {
             $cachePath = array($name, md5(\serialize($arguments)));
             $cache = & $this->getCache($cachePath);
             if ($cache === array()) {
-                $cache = \call_user_func_array(array($this, $name), $arguments);
+                $cache = \call_user_func_array(array($target, $name), $arguments);
             }
             return $cache;
         }
+
     }
 
 
@@ -189,6 +191,7 @@ final class EntityReflection
         }
         return $this->_reflection;
     }
+
 
 
     private function getName()
