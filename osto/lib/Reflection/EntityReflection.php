@@ -9,9 +9,11 @@ use osto\Exception;
 use osto\Nette\AnnotationsParser;
 use osto\Nette\Caching;
 
+
 if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
     define('OSTO_TMP_DIR', TMP_DIR);
 }
+
 
 
 /**
@@ -93,6 +95,7 @@ final class EntityReflection
         foreach ($this->_properties as &$pa) {
             if ($pa->primary_key) {
                 continue;
+
             } elseif ($pa->relation === 'belongs_to') {
                 $parentClass = $pa->type;
                 $pr = &$parentClass::getReflection();
@@ -102,16 +105,19 @@ final class EntityReflection
                 $this->parents[$pa->name] = $parentClass;
                 $this->columns[$pa->name] = $pa->column;
                 $this->types[$this->columns[$pa->name]] = $pr->types[$pr->getPrimaryKeyColumn()];
+
             } elseif ($pa->relation === 'has_many') {
                 $this->children[$pa->name] = $pa->type;
                 $this->foreign_keys[$pa->name] = is_string($pa->column) ?
                         $pa->column :
                         $this->columns[$this->primary_key];
+
             } elseif ($pa->relation === 'has_one') {
                 $this->singles[$pa->name] = $pa->type;
                 $this->foreign_keys[$pa->name] = is_string($pa->column) ?
                         $pa->column :
                         $this->columns[$this->primary_key];
+
             } elseif ($pa->relation === FALSE) {
                 $this->columns[$pa->name] = is_string($pa->column) ?
                         $pa->column :
@@ -189,7 +195,7 @@ final class EntityReflection
         return $this->getReflection()->name;
     }
 
-    
+
 
     private function getAllAnnotations()
     {
@@ -216,10 +222,11 @@ final class EntityReflection
 
     private function getPropertyAnnotations($prop)
     {
-        if ($prop instanceof \ReflectionProperty)
+        if ($prop instanceof \ReflectionProperty) {
             $rp = $prop;
-        else
+        } else {
             $rp = $this->getProperty($prop);
+        }
 
         return AnnotationsParser::getAll($rp);
     }
@@ -314,7 +321,7 @@ final class EntityReflection
     }
 
 
-    
+
     public function getTableName()
     {
         if (!isset($this->_tableName)) {
@@ -427,6 +434,29 @@ final class EntityReflection
     public function isSelfReferencing()
     {
         return $this->_getColumnName('parent_id') && \in_array($this->name, $this->children);
+    }
+
+
+
+    /**
+     * Has reflected entity relation with another entity?
+     * @param mixed $reflection EntityReflection or Entity
+     * @return bool
+     * @throws osto\Exception
+     */
+    private function hasRelationWith($reflection)
+    {
+        if (!$reflection instanceof EntityReflection) {
+            try {
+                $reflection = $reflection::getReflection();
+            } catch (\Exception $e) {
+                throw new Exception("Unable to get EntityReflection from '$reflection'", 0, $e);
+            }
+        }
+
+        return \in_array($reflection->name, $this->parents, TRUE) ||
+                \in_array($reflection->name, $this->singles, TRUE) ||
+                \in_array($reflection->name, $this->children, TRUE);
     }
 
 

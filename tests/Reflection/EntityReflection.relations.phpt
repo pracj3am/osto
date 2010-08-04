@@ -78,6 +78,10 @@ dump(C::getReflection()->getChildren());
 output('D columns:');
 dump(D::getReflection()->getColumns());
 
+\Assert::true(A::getReflection()->hasRelationWith('Test\B'));
+\Assert::true(A::getReflection()->hasRelationWith(new C));
+\Assert::true(A::getReflection()->hasRelationWith(D::getReflection()));
+\Assert::false(B::getReflection()->hasRelationWith('Test\D'));
 
 __halt_compiler();
 
