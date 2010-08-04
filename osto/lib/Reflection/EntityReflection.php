@@ -440,12 +440,12 @@ final class EntityReflection
 
 
     /**
-     * Has reflected entity relation with another entity?
+     * If reflected entity has relation with another entity, returns relation name
      * @param mixed $reflection EntityReflection or Entity
-     * @return bool
+     * @return bool|string
      * @throws osto\Exception
      */
-    private function hasRelationWith($reflection)
+    private function getRelationWith($reflection)
     {
         if (!$reflection instanceof EntityReflection) {
             try {
@@ -455,9 +455,19 @@ final class EntityReflection
             }
         }
 
-        return \in_array($reflection->name, $this->parents, TRUE) ||
-                \in_array($reflection->name, $this->singles, TRUE) ||
-                \in_array($reflection->name, $this->children, TRUE);
+        if ($name = \array_search($reflection->name, $this->parents, TRUE)) {
+            return $name;
+        }
+
+        if ($name = \array_search($reflection->name, $this->singles, TRUE)) {
+            return $name;
+        }
+
+        if ($name = \array_search($reflection->name, $this->children, TRUE)) {
+            return $name;
+        }
+
+        return FALSE;
     }
 
 
