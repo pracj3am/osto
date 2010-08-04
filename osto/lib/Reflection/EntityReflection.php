@@ -33,7 +33,7 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
  * @method string getColumnName(string $name, string|bool $alias)
  * @method string getForeignKeyName(string $name)
  * @method bool isExtendingEntity()
- * @method bool hasRelationWith(string|osto\Entity|osto\Reflection\EntityReflection $reflection)
+ * @method string getRelationWith(string|osto\Entity|osto\Reflection\EntityReflection $reflection)
  */
 final class EntityReflection
 {
