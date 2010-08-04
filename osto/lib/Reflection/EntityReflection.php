@@ -235,7 +235,7 @@ final class EntityReflection
 
 
     private function getColumnName($name, $alias = FALSE)
-    {//dump($name);dump($this);
+    {
         if (($pos = \strpos($name, '.')) !== FALSE) {
             $entityName = \substr($name, 0, $pos);
             $parents = $this->parents;
@@ -249,10 +249,21 @@ final class EntityReflection
 
             return FALSE;
         }
+
         $r = ( isset($this->columns[$name]) ? $this->columns[$name] :
                         ( $this->_isColumn($name) ? $name : FALSE )
                 );
-        return $r === FALSE ? $r : ($alias ? $alias . '.' : '') . $r;
+        if ($r !== FALSE) {
+            return ($alias ? $alias . '.' : '') . $r;
+        }
+
+        if ($this->_isExtendingEntity()) {
+            $parentEntity = $this->_getParentEntity();
+            $pr = &$parentEntity::getReflection();
+            return $pr->getColumnName($name, $alias);
+        }
+
+        return FALSE;
     }
 
 
