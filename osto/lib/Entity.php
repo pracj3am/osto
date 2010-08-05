@@ -1107,6 +1107,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     final public function offsetSet($name, $value)
     {
+        if (!\is_int($name) && !\is_string($name)) {
+            throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
+        }
+
         if ($name && \array_key_exists($name, $this->_values)) {
             $this->_setValue($name, $value);
         } elseif ($name == $this->_reflection->entityColumn) {
@@ -1127,6 +1131,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     final public function offsetExists($name)
     {
+        if (!\is_int($name) && !\is_string($name)) {
+            throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
+        }
         return \array_key_exists($name, $this->_values);
     }
 
@@ -1134,6 +1141,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     final public function offsetUnset($name)
     {
+        if (!\is_int($name) && !\is_string($name)) {
+            throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
+        }
         if (\array_key_exists($name, $this->_values)) {
             unset($this->_values[$name]);
         }
