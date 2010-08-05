@@ -210,7 +210,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         if ($name == 'id' || $name == $this->_reflection->primaryKey) {
             if (\array_key_exists(self::EXTENDED, $this->_parents)) {
-                return $this->parents[self::EXTENDED]->id;
+                return $this->_parents[self::EXTENDED]->id;
             }
             return $this->_id;
         }
