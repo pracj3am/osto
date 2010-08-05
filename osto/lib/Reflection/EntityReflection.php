@@ -99,7 +99,11 @@ final class EntityReflection
 
             } elseif ($pa->relation === 'belongs_to') {
                 $parentClass = $pa->type;
-                $pr = &$parentClass::getReflection();
+                if ($parentClass == $this->name) {
+                    $pr = $this;
+                } else {
+                    $pr = &$parentClass::getReflection();
+                }
                 \is_string($pa->column) or
                         $pa->column = $pr->getPrimaryKeyColumn();
 
