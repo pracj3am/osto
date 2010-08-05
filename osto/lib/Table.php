@@ -127,7 +127,7 @@ class Table implements \IDataSource
             return new Table\Column($this, $name);
         }
 
-        if ($name === 'id') {
+        if ($name == 'id') {
             return new Table\Column($this, $this->_reflection->primaryKeyColumn);
         }
 
