@@ -80,7 +80,7 @@ final class EntityReflection
         foreach ($this->_properties as &$pa) {
             if ($pa->primary_key) {
                 $this->primary_key = $pa->name;
-                $this->columns[$pa->name] = is_string($pa->column) ?
+                $this->columns[$pa->name] = \is_string($pa->column) ?
                         $pa->column :
                         $default_primary_key;
                 $this->types[$this->columns[$pa->name]] = $pa->type;
@@ -100,7 +100,7 @@ final class EntityReflection
             } elseif ($pa->relation === 'belongs_to') {
                 $parentClass = $pa->type;
                 $pr = &$parentClass::getReflection();
-                is_string($pa->column) or
+                \is_string($pa->column) or
                         $pa->column = $pr->getPrimaryKeyColumn();
 
                 $this->parents[$pa->name] = $parentClass;
@@ -109,18 +109,18 @@ final class EntityReflection
 
             } elseif ($pa->relation === 'has_many') {
                 $this->children[$pa->name] = $pa->type;
-                $this->foreign_keys[$pa->name] = is_string($pa->column) ?
+                $this->foreign_keys[$pa->name] = \is_string($pa->column) ?
                         $pa->column :
                         $this->columns[$this->primary_key];
 
             } elseif ($pa->relation === 'has_one') {
                 $this->singles[$pa->name] = $pa->type;
-                $this->foreign_keys[$pa->name] = is_string($pa->column) ?
+                $this->foreign_keys[$pa->name] = \is_string($pa->column) ?
                         $pa->column :
                         $this->columns[$this->primary_key];
 
             } elseif ($pa->relation === FALSE) {
-                $this->columns[$pa->name] = is_string($pa->column) ?
+                $this->columns[$pa->name] = \is_string($pa->column) ?
                         $pa->column :
                         ($pa->column = $this->prefix . '_' . $pa->name);
                 $this->types[$this->columns[$pa->name]] = $pa->type;
