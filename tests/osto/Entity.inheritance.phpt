@@ -103,76 +103,107 @@ unset($c);
 
 output('A =====');
 foreach (A::findAll() as $row)
-	dump($row->values);
+	output($row);
 
 output('B =====');
 foreach (B::findAll() as $row)
-	dump($row->values);
+	output($row);
 
 output('C =====');
 foreach (C::findAll() as $row)
-	dump($row->values);
+	output($row);
 
+
+output('Created C =====');
+$c = A::create(4);
+output($c);
 
 __halt_compiler();
 
 ------EXPECT------
 A =====
 
-array(2) {
-	"id" => int(1)
-	"a" => int(1)
-}
+Array
+(
+    [id] => 1
+    [a] => 1
+)
 
-array(4) {
-	"id" => int(2)
-	"a" => int(2)
-	"b" => int(3)
-	"a_id" => int(2)
-}
 
-array(2) {
-	"id" => int(3)
-	"a" => int(7)
-}
+Array
+(
+    [id] => 2
+    [a] => 2
+    [b] => 3
+    [a_id] => 2
+)
 
-array(7) {
-	"id" => int(4)
-	"a" => int(4)
-	"b" => int(5)
-	"a_id" => int(4)
-	"c" => int(6)
-	"a_id2" => int(3)
-	"b_id" => int(2)
-}
+
+Array
+(
+    [id] => 3
+    [a] => 7
+)
+
+
+Array
+(
+    [id] => 4
+    [a] => 4
+    [b] => 5
+    [a_id] => 4
+    [c] => 6
+    [a_id2] => 3
+    [b_id] => 2
+)
+
 
 B =====
 
-array(4) {
-	"id" => int(2)
-	"a" => int(2)
-	"b" => int(3)
-	"a_id" => int(2)
-}
+Array
+(
+    [id] => 2
+    [a] => 2
+    [b] => 3
+    [a_id] => 2
+)
 
-array(7) {
-	"id" => int(4)
-	"a" => int(4)
-	"b" => int(5)
-	"a_id" => int(4)
-	"c" => int(6)
-	"a_id2" => int(3)
-	"b_id" => int(2)
-}
+
+Array
+(
+    [id] => 4
+    [a] => 4
+    [b] => 5
+    [a_id] => 4
+    [c] => 6
+    [a_id2] => 3
+    [b_id] => 2
+)
+
 
 C =====
 
-array(7) {
-	"id" => int(4)
-	"a" => int(4)
-	"b" => int(5)
-	"a_id" => int(4)
-	"c" => int(6)
-	"a_id2" => int(3)
-	"b_id" => int(2)
-}
+Array
+(
+    [id] => 4
+    [a] => 4
+    [b] => 5
+    [a_id] => 4
+    [c] => 6
+    [a_id2] => 3
+    [b_id] => 2
+)
+
+
+Created C =====
+
+Array
+(
+    [id] => 4
+    [a] => 4
+    [b] => 5
+    [a_id] => 4
+    [c] => 6
+    [a_id2] => 3
+    [b_id] => 2
+) 

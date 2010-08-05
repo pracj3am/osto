@@ -84,7 +84,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         $r = &static::getReflection();
         $entityColumn = $r->entityColumn;
 
-        $values = $entity->values;
+        $values = $entity->_values;
+        $values[$r->primaryKeyColumn] = $entity->_id;
         $values[$r->entityColumn] = $entity->getEntityClass();
 
         return static::createFromValues($values);
@@ -601,8 +602,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 if ($row) {
                     $this->id = $row->{$this->_reflection->primaryKeyColumn};
                     foreach ($row as $name => $value) {
-                        if (\array_key_exists($name, $this->_values)) {
-                            $this->_setValue($name, $value);
+                        if (isset($this[$name])) {
+                            $this[$name] = $value;
                             $this->_modified[$name] = self::VALUE_SET;
                         }
                     }
@@ -1130,7 +1131,18 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     final public function offsetGet($name)
     {
-        return $this->_values[$name];
+        if (!\is_int($name) && !\is_string($name)) {
+            throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
+        }
+
+        if ($name && \array_key_exists($name, $this->_values)) {
+            return $this->_values[$name];
+        }
+        if ($name == $this->_reflection->entityColumn) {
+            return $this->getEntityClass();
+        }
+
+        throw new Exception("Undefined property property '$name'.");
     }
 
 
@@ -1140,7 +1152,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if (!\is_int($name) && !\is_string($name)) {
             throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
         }
-        return \array_key_exists($name, $this->_values);
+        return \array_key_exists($name, $this->_values) || $name == $this->_reflection->entityColumn;
     }
 
 

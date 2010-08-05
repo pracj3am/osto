@@ -89,6 +89,8 @@ __halt_compiler();
 ------EXPECT------
 string(28) "Undeclared property a_a_alt."
 
+
+Notice: %a%
 Table Test values:
 
 array(9) {
