@@ -232,6 +232,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     $this->loadParents($name);
                 } catch (\Exception $e) {
                     $this->_parents[$name] = new $this->_reflection->parents[$name];
+                    $m = $e->getMessage();
+                    \trigger_error("Loading of $name failed ($m).", E_USER_NOTICE);
                 }
             }
             return $this->_parents[$name];
@@ -250,6 +252,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     $this->loadSingles($name);
                 } catch (\Exception $e) {
                     $this->_singles[$name] = new $this->_reflection->singles[$name];
+                    $m = $e->getMessage();
+                    \trigger_error("Loading of $name failed ($m).", E_USER_NOTICE);
                 }
                 $this->loadSingles($name);
             }
@@ -269,6 +273,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     $this->loadChildren($name);
                 } catch (\Exception $e) {
                     $this->_children[$name] = new DataSource\ArraySource;
+                    $m = $e->getMessage();
+                    \trigger_error("Loading of $name failed ($m).", E_USER_NOTICE);
                 }
             }
             return $this->_children[$name];
