@@ -74,4 +74,21 @@ class Database extends \DibiDataSource
     {
         return $this->sql;
     }
+
+
+
+    /**
+     * Returns the number of rows in a given data source.
+     * @return int
+     */
+    public function count()
+    {
+        if ($this->count === NULL) {
+            $this->count = (int) $this->connection->nativeQuery(
+                    \preg_replace('/SELECT\s+(.*?)\s+FROM/', 'SELECT COUNT(*) FROM', $this->__toString())
+            )->fetchSingle();
+        }
+        return $this->count;
+    }
+
 }
