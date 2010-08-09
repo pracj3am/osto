@@ -1138,6 +1138,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if ($name && \array_key_exists($name, $this->_values)) {
             return $this->_values[$name];
         }
+        if ($name == $this->_reflection->primaryKeyColumn) {
+            return $this->_id;
+        }
         if ($name == $this->_reflection->entityColumn) {
             return $this->getEntityClass();
         }
@@ -1152,7 +1155,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if (!\is_int($name) && !\is_string($name)) {
             throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
         }
-        return \array_key_exists($name, $this->_values) || $name == $this->_reflection->entityColumn;
+        return \array_key_exists($name, $this->_values) || $name == $this->_reflection->primaryKeyColumn || $name == $this->_reflection->entityColumn;
     }
 
 
