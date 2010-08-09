@@ -347,13 +347,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         //primary key
         if ($name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->primaryKeyColumn) {
-            $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->primaryKeyColumn]);
-            $newId = $value === 0 ? NULL : $value;
-            if ($this->_id !== $newId && $this->_id !== NULL) {
-                $this->_modified = array_fill_keys(array_keys($this->_values), self::VALUE_MODIFIED);
-                \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
-            }
-            $this->_id = $newId;
+            $this->_setId($value);
             return;
         }
 
@@ -405,6 +399,23 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         throw new Exception("Undeclared property $name.");
+    }
+
+
+
+    /**
+     * Internal method so set primary key value
+     * @param integer $value
+     */
+    private function _setId($value)
+    {
+        $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->primaryKeyColumn]);
+        $newId = $value === 0 ? NULL : $value;
+        if ($this->_id !== $newId && $this->_id !== NULL) {
+            $this->_modified = array_fill_keys(array_keys($this->_values), self::VALUE_MODIFIED);
+            \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
+        }
+        $this->_id = $newId;
     }
 
 
@@ -601,6 +612,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 $row = dibi::fetch("SELECT * FROM [{$table->getName()}] WHERE %and", array($table->id->eq($this->_id)));
                 if ($row) {
                     $this->id = $row->{$this->_reflection->primaryKeyColumn};
+                    unset($row->{$this->_reflection->primaryKeyColumn});
                     foreach ($row as $name => $value) {
                         if (isset($this[$name])) {
                             $this[$name] = $value;
@@ -1120,6 +1132,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         if ($name && \array_key_exists($name, $this->_values)) {
             $this->_setValue($name, $value);
+        } elseif ($name == $this->_reflection->primaryKeyColumn) {
+            $this->_setId($value);
         } elseif ($name == $this->_reflection->entityColumn) {
             $this->setEntityClass($value);
         } else {
