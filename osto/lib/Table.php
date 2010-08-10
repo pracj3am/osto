@@ -7,7 +7,7 @@ namespace osto;
  * Table query API
  * @author Jan Prachař <jan.prachar@gmail.com>
  */
-class Table implements \IDataSource
+class Table implements \IDataSource, \ArrayAccess
 {
 
     const ALIAS = '$this';
@@ -359,6 +359,34 @@ class Table implements \IDataSource
     public function count()
     {
         return $this->_dataSource->count();
+    }
+
+
+
+    public function offsetSet($name, $value)
+    {
+       $this->_dataSource->offsetSet($name, $value);
+    }
+
+
+
+    public function offsetGet($name)
+    {
+        return $this->_dataSource->offsetGet($name);
+    }
+
+
+
+    public function offsetExists($name)
+    {
+        return $this->_dataSource->offsetExists($name);
+    }
+
+
+
+    public function offsetUnset($name)
+    {
+        $this->_dataSource->offsetUnset($name);
     }
 
 }

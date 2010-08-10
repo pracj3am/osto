@@ -142,6 +142,11 @@ foreach ($p->L as $row)
 output('... and the P itself');
 dump($p->values);
 
+//test přidání dalšího L pomocí []
+$p->L[] = $l1->copy();
+$p->save();
+Assert::same(Lkjh::count(), 3);
+
 output('Parent of the first L:');
 $ls = Lkjh::findAll();
 
@@ -239,6 +244,8 @@ array(6) {
 		}
 	}
 }
+
+Saved sucessfully
 
 Parent of the first L:
 
