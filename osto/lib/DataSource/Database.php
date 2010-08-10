@@ -139,7 +139,7 @@ class Database extends \DibiDataSource implements \ArrayAccess
      * Selects columns to order by.
      * @param  string|array  column name or array of column names
      * @param  string  		 sorting direction
-     * @return DibiDataSource  provides a fluent interface
+     * @return Database  provides a fluent interface
      */
     public function orderBy($row, $sorting = 'ASC')
     {
@@ -154,7 +154,7 @@ class Database extends \DibiDataSource implements \ArrayAccess
      * Limits number of rows.
      * @param  int limit
      * @param  int offset
-     * @return DibiDataSource  provides a fluent interface
+     * @return Database  provides a fluent interface
      */
     public function applyLimit($limit, $offset = NULL)
     {

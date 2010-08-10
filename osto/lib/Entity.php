@@ -864,7 +864,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     /**
      * Deletes entity from database
      * (deleting of its chidren and singles must be ensured in database itself via foreign keys)
-     * @throws Exception
+     * @throws DatabaseException
      */
     final public function delete($in_transaction = FALSE)
     {
