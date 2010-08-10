@@ -750,7 +750,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      * Saves the entity to database
      * @param bool $in_transaction Is method called in outer db transaction?
      * @return bool FALSE on failure, TRUE otherwise
-     * @throws SavingException
+     * @throws DatabaseException
      */
     final public function save($in_transaction = FALSE)
     {
@@ -826,7 +826,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             $in_transaction === TRUE or
             dibi::rollback();
 
-            throw new SavingException('Error when saving entity "' . \get_class($this) . '."', 0, $e);
+            throw new DatabaseException('Error when saving entity "' . \get_class($this) . '."', 0, $e);
 
             return FALSE;
         }
@@ -884,7 +884,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             } catch (\DibiException $e) {
                 $in_transaction === TRUE or
                 dibi::rollback();
-                throw new Exception("Error while deleting entity '" .  \get_class($this) . "' with id {$this->_id}", 0, $e);
+                throw new DatabaseException("Error while deleting entity '" .  \get_class($this) . "' with id {$this->_id}", 0, $e);
             }
 
             $in_transaction === TRUE or
