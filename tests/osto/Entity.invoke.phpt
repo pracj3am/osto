@@ -66,29 +66,26 @@ namespace {
 ------EXPECT------
 
 			SELECT *
-			FROM `a`
+			FROM `a` AS `$this`
 
 
 
 
 
 			SELECT *
-			FROM `a`
+			FROM `a` AS `$this`
 			 WHERE (`a_a` = 'b')
 
 
 
 
 			SELECT *
-			FROM `a`
+			FROM `a` AS `$this`
 			 WHERE (`a_id` =  6)
 
 
 
 
 			SELECT *
-			FROM `a`
-
-
-
+			FROM `a` AS `$this`
 

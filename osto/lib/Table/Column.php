@@ -133,6 +133,6 @@ class Column
 
     public function __toString()
     {
-        return /*$this->table->getName().'.'.*/$this->name;
+        return $this->name;
     }
 }

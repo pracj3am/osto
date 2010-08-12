@@ -10,9 +10,13 @@ namespace osto;
 class Table implements \IDataSource, \ArrayAccess
 {
 
+    /**#@+
+     * Alias consts
+     */
     const ALIAS = '$this';
     const ALIAS_DELIM = '->';
-
+    const ALIAS_PARENT = 'parent0xrzu';
+    /**#@- */
 
     /**
      * Entity class name
@@ -67,7 +71,8 @@ class Table implements \IDataSource, \ArrayAccess
             throw new Exception("Can't create reflection for entity '$entity'", 0, $e);
         }
 
-        $this->_dataSource = new DataSource\Database($this->getName());
+        $this->_dataSource = new DataSource\Database;
+        $this->_dataSource->setSql('[' . $this->getName() . '] AS [' . self::ALIAS . ']');
         $this->_dataSource->setRowClass($this->_entity);
 
         if ($this->_reflection->isExtendingEntity()) {
@@ -76,9 +81,11 @@ class Table implements \IDataSource, \ArrayAccess
 
         if (isset($this->_extends)) {
             $table = $this;
+            $alias = self::ALIAS;
             while (isset($table->_extends)) {
                 $etn = $table->_extends->getName();
-                $this->_dataSource->join("[$etn] USING ([{$table->_reflection->columns[Entity::EXTENDED]}])");
+                $alias = $alias . self::ALIAS_DELIM . self::ALIAS_PARENT;
+                $this->_dataSource->join("[$etn] AS [$alias] USING ([{$table->_reflection->columns[Entity::EXTENDED]}])");
 
                 $table = $table->_extends;
             }
@@ -226,7 +233,7 @@ class Table implements \IDataSource, \ArrayAccess
             $table = new self($entity);
             $this->join($table, $pair[0]);
         }
-        return $c;
+        return self::ALIAS . (isset($pair[1]) ? self::ALIAS_DELIM : '.') . $c;
     }
 
 
@@ -271,13 +278,13 @@ class Table implements \IDataSource, \ArrayAccess
         if ($alias) {
             $this->_joined[$alias] = 1;
             
-            $sql .= ' AS [' . $alias . ']';
+            $sql .= ' AS [' . self::ALIAS . self::ALIAS_DELIM . $alias . ']';
 
             if (isset($this->_reflection->parents[$alias])) {
-                $sql .= ' ON [' . $this->getName() . '.'.$this->_reflection->getColumnName($alias).'] = ['.$alias.'.'.$table->_reflection->primaryKeyColumn.']';
+                $sql .= ' ON ['.self::ALIAS.'.'.$this->_reflection->getColumnName($alias).'] = ['.self::ALIAS.self::ALIAS_DELIM.$alias.'.'.$table->_reflection->primaryKeyColumn.']';
 
             } elseif (isset($this->_reflection->singles[$alias]) || isset($this->_reflection->children[$alias])) {
-                $sql .= ' ON [' . $this->getName() . '.'.$this->_reflection->primaryKeyColumn.'] = ['.$alias.'.'.$this->_reflection->getForeignKeyName($alias).']';
+                $sql .= ' ON ['.self::ALIAS.'.'.$this->_reflection->primaryKeyColumn.'] = ['.self::ALIAS.self::ALIAS_DELIM.$alias.'.'.$this->_reflection->getForeignKeyName($alias).']';
 
             }
         }
