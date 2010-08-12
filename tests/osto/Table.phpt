@@ -63,7 +63,12 @@ output($a->where($a->id->eq(1))->select($a->a)->orderBy($a->id));
 output($b->where('[:aid:] = ', 1)->select(':a:')->orderBy(':aid:'));
 output($a1->join($c));
 output($a2->where('[:aid:] = ', 1)->select(':a:')->select(':C.c:')->orderBy(':aid:'));
-output($c->join($a1));
+
+try {
+    $c->join($a1);
+} catch (osto\Exception $e) {
+    dump($e->getMessage());
+}
 
 try {
     new Table('osto\Entity');
@@ -137,12 +142,7 @@ __halt_compiler();
 			 ORDER BY `$a`.`sid` ASC
 
 
-
-			SELECT *
-			FROM `c` AS `$c` JOIN (`a` AS `$c->A` JOIN (`c` AS `$c->A->C`) USING (`c_id`)) USING(`c_id`)
-
-
-        
+string(46) "Circular reference between tables 'c' and 'a'."
 
 string(48) "Can't create reflection for entity 'osto\Entity'"
 

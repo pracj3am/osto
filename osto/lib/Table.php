@@ -22,6 +22,12 @@ class Table implements \IDataSource, \ArrayAccess
     private $_entity;
 
     /**
+     * Alias of table in SQL query
+     * @var string
+     */
+    private $_alias;
+
+    /**
      * Instance of DataSource
      * @var DataSource
      */
@@ -43,13 +49,20 @@ class Table implements \IDataSource, \ArrayAccess
      * Array of tables that has been already joined
      * @var array
      */
-    private $_joined = array();
+    protected $_joined = array();
+
+    /**
+     * Is datasource $sql valid?
+     * @var bool
+     */
+    protected $_isSqlValid = FALSE;
 
 
 
     /**
      * Constructor
      * @param Entity|string $entity
+     * @param string $alias     Alias for SQL query
      */
     public function __construct($entity)
     {
@@ -68,8 +81,9 @@ class Table implements \IDataSource, \ArrayAccess
             throw new Exception("Can't create reflection for entity '$entity'", 0, $e);
         }
 
+        $this->_alias = '$' . $this->getName();
+
         $this->_dataSource = new DataSource\Database;
-        $this->_dataSource->setSql('[' . $this->getName() . '] AS [' . $this->getAlias() . ']');
         $this->_dataSource->setRowClass($this->_entity);
 
         if ($this->_reflection->isExtendingEntity()) {
@@ -95,54 +109,51 @@ class Table implements \IDataSource, \ArrayAccess
 
 
     /**
-     * Returns table alias
-     * @return string
-     */
-    public function getAlias()
-    {
-        return '$' . $this->getName();
-    }
-
-
-
-    /**
      * Returns column SQL identifier, performs autojoining!
      * @param string $name
-     * @return string|bool Returns FALSE if the column does not exists
+     * @return string|bool Returns SQL identifier; FALSE if the column does not exists
      */
-    public function getColumnIdentifier($name, $alias = FALSE)
+    protected function getColumnIdentifier($name)
     {
         if (($pos = \strpos($name, '.')) !== FALSE) {
             $relName = \substr($name, 0, $pos);
             $relations = $this->_reflection->parents + $this->_reflection->singles;
 
             if (isset($relations[$relName])) {
-                $class = $relations[$relName];
                 $name = substr($name, $pos + 1);
 
-                /*if (isset($this->_joined[$relName])) {
+                //auto joining
+                if (isset($this->_joined[$relName])) {
                     $table = $this->_joined[$relName];
-                } else {*/
-                    $table = new self($class);
-                //}
+                } else {
+                    $table = new self($relations[$relName]);
+                    $this->join($table);
+                }
 
-                $r = $table->getColumnIdentifier($name, $relName);
-                $this->join($table);
-                return $r === FALSE ? $r : ($alias ? $alias . self::ALIAS_DELIM : '') . $r;
+                $i = $table->getColumnIdentifier($name);
+
+                if ($i !== FALSE) {
+                    return $i;
+                }
+
+            }
+
+            if (isset($this->_extends)) {
+                return $this->_extends->getColumnIdentifier($name);
             }
 
             return FALSE;
         }
 
-        $r = ( isset($this->_reflection->columns[$name]) ? $this->_reflection->columns[$name] :
-                        ( $this->_reflection->isColumn($name) ? $name : FALSE )
-                );
-        if ($r !== FALSE) {
-            return ($alias ? $alias . '.' : '') . $r;
+        $i = isset($this->_reflection->columns[$name]) ? $this->_reflection->columns[$name] :
+                        ( $this->_reflection->isColumn($name) ? $name : FALSE );
+
+        if ($i !== FALSE) {
+            return "$this->_alias.$i";
         }
 
         if (isset($this->_extends)) {
-            return $this->_extends->getColumnIdentifier($name, ($alias ? $alias . Table::ALIAS_DELIM : '') . Entity::EXTENDED);
+            return $this->_extends->getColumnIdentifier($name);
         }
 
         return FALSE;
@@ -150,23 +161,6 @@ class Table implements \IDataSource, \ArrayAccess
 
 
 
-    /**
-     * Return SQL FROM clause
-     * @param string $alias Optionally alias name (used instead of '$this')
-     * @return string
-     */
-    protected function getSql($alias = NULL)
-    {
-        $sql = $this->_dataSource->getSql();
-        if ($alias === NULL) {
-            return $sql;
-        }
-
-        return str_replace($this->getAlias(), $alias, $sql);
-    }
-
-
-    
     /**
      * Getter for table properties
      * @param string $name
@@ -237,6 +231,19 @@ class Table implements \IDataSource, \ArrayAccess
 
 
     /**
+     * Sets table alias
+     * @param string $alias
+     */
+    public function setAlias($alias)
+    {
+        $this->_alias = $alias;
+        foreach ($this->_joined as $relName=>$table) {
+            $table->setAlias($this->_alias . self::ALIAS_DELIM . $relName);
+        }
+    }
+
+
+    /**
      * Insert table name before column name in substitution string
      * @param string|array $string
      * @return string|array
@@ -266,40 +273,91 @@ class Table implements \IDataSource, \ArrayAccess
             throw new Exception("Undefined column '$matches[1]' for entity {$this->_entity}");
         }
 
-        //auto-joining
-        $pair = explode('.', $c);
+        return $c;
+    }
 
-        if (isset($pair[1]) && !isset($this->_joined[$pair[0]])) {
-            if (isset($this->_reflection->parents[$pair[0]])) {
-                $entity = $this->_reflection->parents[$pair[0]];
 
-            } elseif (isset($this->_reflection->singles[$pair[0]])) {
-                $entity = $this->_reflection->singles[$pair[0]];
 
-            } elseif (isset($this->_reflection->children[$pair[0]])) {
-                $entity = $this->_reflection->children[$pair[0]];
-
-            } else {
-                throw new Exception("Undefined relation '$pair[0]'");
-            }
-            $table = new self($entity);
-            $this->join($table, $pair[0]);
-        }
-        return $this->getAlias() . (isset($pair[1]) ? self::ALIAS_DELIM : '.') . $c;
+    /**
+     * Returns SQL FROM clause
+     * @return string SQL FROM clause
+     */
+    protected function getSql()
+    {
+        $this->buildQuery(FALSE);
+        return $this->_dataSource->getSql();
     }
 
 
 
 	/**
-	 * Builds SQL
+	 * Builds SQL FROM clause
 	 */
-	private function buildQuery()
+	protected function buildQuery($emptyStack = TRUE)
 	{
+        static $stack;
+
+        if ($emptyStack) {
+            $stack = array();
+        }
+
+        if ($stack && \in_array($this, $stack)) {
+            throw new Exception("Circular reference occured when building query.");
+        }
+
+        $stack[] = $this;
+
+        
+        if ($this->_isSqlValid) {
+            return;
+        }
+
+
+        $sql = '[' . $this->getName() . '] AS [' . $this->_alias . ']';
+
+        foreach ($this->_joined as $relName=>$table) {
+            $sql .= ' JOIN (' . $table->getSql() . ')';
+
+            if (isset($this->_reflection->parents[$relName])) {
+                $c1 = $this->_reflection->columns[$relName];
+                $c2 = $table->_reflection->primaryKeyColumn;
+
+                if ($c1 === $c2) {
+                    $sql .= " USING ([$c1])";
+                } else {
+                    $sql .= " ON [{$this->_alias}.$c1] = [{$table->_alias}.$c2]";
+                }
+
+            } elseif (isset($this->_reflection->singles[$relName]) || isset($this->_reflection->children[$relName])) {
+                $c1 = $this->_reflection->primaryKeyColumn;
+                $c2 = $this->_reflection->getForeignKeyName($relName);
+
+                if ($c1 === $c2) {
+                    $sql .= " USING([$c1])";
+                } else {
+                    $sql .= " ON [{$this->_alias}.$c1] = [{$table->_alias}.$c2]";
+                }
+
+            }
+        }
+
+        $this->_dataSource->setSql($sql);
 
 	}
 
-	
 
+
+    /**
+     * Invalidates SQL FROM clause
+     */
+    protected function invalidateQuery()
+    {
+        $this->_dataSource->release();
+        $this->_isSqlValid = FALSE;
+    }
+
+
+    
     /**
      * Selects columns to query.
      * @param  string|array|Table\Column  column name or array of column names
@@ -327,52 +385,28 @@ class Table implements \IDataSource, \ArrayAccess
     /**
      * Joins table to SQL query
      * @param Table $table
-     * @param string $alias   name of the relation
-     * @return Table          provides a fluent interface
+     * @param string $relName   name of the relation
+     * @return Table            provides a fluent interface
      */
-    public function join(Table $table, $alias = NULL)
+    public function join(Table $table, $relName = NULL)
     {
-        if ($alias === NULL) {
-            $alias = $this->_reflection->getRelationWith($table->_reflection);
+        if ($relName === NULL) {
+            $relName = $this->_reflection->getRelationWith($table->_reflection)
+                    or function(){throw new Exception("No relation exists between table '" . $this->getName() . "' and '" . $table->getName() . "'.");};
         }
 
-        if ($alias) {
-            if (isset($this->_joined[$alias])) {
-                return $this;
-            }
-            
-            $this->_joined[$alias] = TRUE;
-
-            $aliasJoined = $this->getAlias() . self::ALIAS_DELIM . $alias;
-            
-            $sql = '(' . $table->getSql($aliasJoined) . ')';
-
-            if (isset($this->_reflection->parents[$alias])) {
-                $c1 = $this->_reflection->columns[$alias];
-                $c2 = $table->_reflection->primaryKeyColumn;
-                
-                if ($c1 === $c2) {
-                    $sql .= " USING ([$c1])";
-                } else {
-                    $sql .= " ON [" . $this->getAlias() . ".$c1] = [$aliasJoined.$c2]";
-                }
-
-            } elseif (isset($this->_reflection->singles[$alias]) || isset($this->_reflection->children[$alias])) {
-                $c1 = $this->_reflection->primaryKeyColumn;
-                $c2 = $this->_reflection->getForeignKeyName($alias);
-
-                if ($c1 === $c2) {
-                    $sql .= " USING([$c1])";
-                } else {
-                    $sql .= " ON [" . $this->getAlias() . ".$c1] = [$aliasJoined.$c2]";
-                }
-
-            }
-        } else {
-            $sql = $table->getSql();
+        if (isset($this->_joined[$relName])) {
+            throw new Exception("Tables '" . $this->getName() . "' and '" . $table->getName() . "' are already joined.");
         }
 
-        $this->_dataSource->join($sql);
+        if (\in_array($this, $table->_joined)) {
+            throw new Exception("Circular reference between tables '" . $this->getName() . "' and '" . $table->getName() . "'.");
+        }
+
+        $table->setAlias($this->_alias . self::ALIAS_DELIM . $relName);
+        $this->_joined[$relName] = $table;
+
+        $this->invalidateQuery();
 
         return $this;
     }
