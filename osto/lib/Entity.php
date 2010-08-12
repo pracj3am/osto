@@ -657,13 +657,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         foreach ($this->_reflection->parents as $parentName => $parentClass) {
-            if (in_array($parentName, $parentNames) && isset($this[$this->_reflection->getColumnName($parentName)])) {
+            if (in_array($parentName, $parentNames) && isset($this[$this->_reflection->columns[$parentName]])) {
 
                 if ($parentName === self::EXTENDED) {
-                    $parentEntity = new $parentClass($this[$this->_reflection->getColumnName($parentName)]);
+                    $parentEntity = new $parentClass($this[$this->_reflection->columns[$parentName]]);
                     $parentEntity->load($depth);
                 } else {
-                    $parentEntity = $parentClass::find($this[$this->_reflection->getColumnName($parentName)]) or
+                    $parentEntity = $parentClass::find($this[$this->_reflection->columns[$parentName]]) or
                         $parentEntity = new $parentClass;
                     if ($depth > 0) {
                         $parentEntity->load($depth);
@@ -763,7 +763,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if ($parentEntity instanceof self) {
                     $parentEntity->save(TRUE);
-                    $this[$this->_reflection->getColumnName($parentName)] = $parentEntity->_id;
+                    $this[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
                 }
             }
 
@@ -913,7 +913,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         foreach ($this->_parents as $parentName => $parentEntity) {
             unset($values[$parentName]);
             //foreign key
-            $values[$this->_reflection->getColumnName($parentName)] = $this->_values[$this->_reflection->getColumnName($parentName)];
+            $values[$this->_reflection->columns[$parentName]] = $this->_values[$this->_reflection->columns[$parentName]];
             if ($parentName === self::EXTENDED) {
                 $values = $this->{self::EXTENDED}->values + $values;
             } elseif ($parentEntity instanceof self) {
