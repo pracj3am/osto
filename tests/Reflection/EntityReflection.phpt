@@ -53,13 +53,6 @@ Assert::same(subTest::getReflection()->getAnnotation('prefix'), 'st');
 
 dump(TestA::getReflection()->getAnnotations('property'));
 
-Assert::same( TestA::getReflection()->getColumnName('one'),  't_one' );
-Assert::same( TestA::getReflection()->getColumnName('one'),  't_one' );
-
-Assert::same( subTest::getReflection()->getColumnName('test.one'),  'test.t_one' );
-Assert::same( subTest::getReflection()->getColumnName('test.one', 'xxx'),  'xxx->test.t_one' );
-Assert::same( subTest::getReflection()->getColumnName('test.x_y', 'xxx'),  'xxx->test.x_y' );
-
 Assert::same( TestA::getReflection()->getTableName(), 'model_test' );
 Assert::same( subTest::getReflection()->getTableName(), 'sub_test' );
 

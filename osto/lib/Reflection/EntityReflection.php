@@ -29,8 +29,8 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
  * @property-read string $prefix
  * @property-read string $parentEntity
  * @property-read string $entityColumn
+ * @method bool isColumn(string $name)
  * @method bool isNullColumn(string $name)
- * @method string getColumnName(string $name, string|bool $alias)
  * @method string getForeignKeyName(string $name)
  * @method bool isExtendingEntity()
  * @method string getRelationWith(string|osto\Entity|osto\Reflection\EntityReflection $reflection)
@@ -249,40 +249,6 @@ final class EntityReflection
 
 
 
-    private function getColumnName($name, $alias = FALSE)
-    {
-        if (($pos = \strpos($name, '.')) !== FALSE) {
-            $entityName = \substr($name, 0, $pos);
-            $parents = $this->parents;
-            $singles = $this->singles;
-            if (($a = isset($parents[$entityName])) || isset($singles[$entityName])) {
-                $class = $a ? $parents[$entityName] : $singles[$entityName];
-                $name = substr($name, $pos + 1);
-                $r = $class::getReflection()->getColumnName($name, $entityName);
-                return $r === FALSE ? $r : ($alias ? $alias . Table::ALIAS_DELIM : '') . $r;
-            }
-
-            return FALSE;
-        }
-
-        $r = ( isset($this->columns[$name]) ? $this->columns[$name] :
-                        ( $this->_isColumn($name) ? $name : FALSE )
-                );
-        if ($r !== FALSE) {
-            return ($alias ? $alias . '.' : '') . $r;
-        }
-
-        if ($this->_isExtendingEntity()) {
-            $parentEntity = $this->_getParentEntity();
-            $pr = &$parentEntity::getReflection();
-            return $pr->getColumnName($name, $alias);
-        }
-
-        return FALSE;
-    }
-
-
-
     private function getForeignKeyName($name)
     {
         return isset($this->foreign_keys[$name]) ? $this->foreign_keys[$name] :
@@ -441,7 +407,7 @@ final class EntityReflection
 
     public function isSelfReferencing()
     {
-        return $this->_getColumnName('parent_id') && \in_array($this->name, $this->children);
+        return $this->_isColumn('parent_id') && \in_array($this->name, $this->children);
     }
 
 

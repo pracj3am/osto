@@ -10,13 +10,10 @@ namespace osto;
 class Table implements \IDataSource, \ArrayAccess
 {
 
-    /**#@+
-     * Alias consts
+    /**
+     * Alias delimiter
      */
-    const ALIAS = '$this';
     const ALIAS_DELIM = '->';
-    const ALIAS_PARENT = 'parent0xrzu';
-    /**#@- */
 
     /**
      * Entity class name
@@ -72,7 +69,7 @@ class Table implements \IDataSource, \ArrayAccess
         }
 
         $this->_dataSource = new DataSource\Database;
-        $this->_dataSource->setSql('[' . $this->getName() . '] AS [' . self::ALIAS . ']');
+        $this->_dataSource->setSql('[' . $this->getName() . '] AS [' . $this->getAlias() . ']');
         $this->_dataSource->setRowClass($this->_entity);
 
         if ($this->_reflection->isExtendingEntity()) {
@@ -80,15 +77,7 @@ class Table implements \IDataSource, \ArrayAccess
         }
 
         if (isset($this->_extends)) {
-            $table = $this;
-            $alias = self::ALIAS;
-            while (isset($table->_extends)) {
-                $etn = $table->_extends->getName();
-                $alias = $alias . self::ALIAS_DELIM . self::ALIAS_PARENT;
-                $this->_dataSource->join("[$etn] AS [$alias] USING ([{$table->_reflection->columns[Entity::EXTENDED]}])");
-
-                $table = $table->_extends;
-            }
+            $this->join($this->_extends, Entity::EXTENDED);
         }
 
     }
@@ -105,6 +94,61 @@ class Table implements \IDataSource, \ArrayAccess
     }
 
 
+    /**
+     * Returns table alias
+     * @return string
+     */
+    public function getAlias()
+    {
+        return '$' . $this->getName();
+    }
+
+
+
+    /**
+     * Returns column SQL identifier, performs autojoining!
+     * @param string $name
+     * @return string|bool Returns FALSE if the column does not exists
+     */
+    public function getColumnIdentifier($name, $alias = FALSE)
+    {
+        if (($pos = \strpos($name, '.')) !== FALSE) {
+            $relName = \substr($name, 0, $pos);
+            $relations = $this->_reflection->parents + $this->_reflection->singles;
+
+            if (isset($relations[$relName])) {
+                $class = $relations[$relName];
+                $name = substr($name, $pos + 1);
+
+                /*if (isset($this->_joined[$relName])) {
+                    $table = $this->_joined[$relName];
+                } else {*/
+                    $table = new self($class);
+                //}
+
+                $r = $table->getColumnIdentifier($name, $relName);
+                $this->join($table);
+                return $r === FALSE ? $r : ($alias ? $alias . self::ALIAS_DELIM : '') . $r;
+            }
+
+            return FALSE;
+        }
+
+        $r = ( isset($this->_reflection->columns[$name]) ? $this->_reflection->columns[$name] :
+                        ( $this->_reflection->isColumn($name) ? $name : FALSE )
+                );
+        if ($r !== FALSE) {
+            return ($alias ? $alias . '.' : '') . $r;
+        }
+
+        if (isset($this->_extends)) {
+            return $this->_extends->getColumnIdentifier($name, ($alias ? $alias . Table::ALIAS_DELIM : '') . Entity::EXTENDED);
+        }
+
+        return FALSE;
+    }
+
+
 
     /**
      * Return SQL FROM clause
@@ -118,7 +162,7 @@ class Table implements \IDataSource, \ArrayAccess
             return $sql;
         }
 
-        return str_replace(self::ALIAS, $alias, $sql);
+        return str_replace($this->getAlias(), $alias, $sql);
     }
 
 
@@ -133,7 +177,7 @@ class Table implements \IDataSource, \ArrayAccess
         $entity = $this->_entity;
 
         if ($this->_reflection->isProperty($name)) {
-            return new Table\Column($this, $this->_reflection->getColumnName($name));
+            return new Table\Column($this, $this->_reflection->columns[$name]);
         }
 
         if ($this->_reflection->isColumn($name)) {
@@ -181,6 +225,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function  __toString()
     {
         try {
+			$this->buildQuery();
             $s = $this->_dataSource->__toString();
         } catch (\Exception $e) {
             \trigger_error($e->getMessage(), \E_USER_ERROR);
@@ -216,13 +261,14 @@ class Table implements \IDataSource, \ArrayAccess
      */
     private function _translateCb($matches)
     {
-        $c = $this->_reflection->getColumnName($matches[1]);
+        $c = $this->getColumnIdentifier($matches[1]);
         if ($c === FALSE) {
             throw new Exception("Undefined column '$matches[1]' for entity {$this->_entity}");
         }
 
         //auto-joining
         $pair = explode('.', $c);
+
         if (isset($pair[1]) && !isset($this->_joined[$pair[0]])) {
             if (isset($this->_reflection->parents[$pair[0]])) {
                 $entity = $this->_reflection->parents[$pair[0]];
@@ -239,9 +285,20 @@ class Table implements \IDataSource, \ArrayAccess
             $table = new self($entity);
             $this->join($table, $pair[0]);
         }
-        return self::ALIAS . (isset($pair[1]) ? self::ALIAS_DELIM : '.') . $c;
+        return $this->getAlias() . (isset($pair[1]) ? self::ALIAS_DELIM : '.') . $c;
     }
 
+
+
+	/**
+	 * Builds SQL
+	 */
+	private function buildQuery()
+	{
+
+	}
+
+	
 
     /**
      * Selects columns to query.
@@ -280,15 +337,35 @@ class Table implements \IDataSource, \ArrayAccess
         }
 
         if ($alias) {
-            $this->_joined[$alias] = 1;
+            if (isset($this->_joined[$alias])) {
+                return $this;
+            }
             
-            $sql = '(' . $table->getSql(self::ALIAS . self::ALIAS_DELIM . $alias) . ')';
+            $this->_joined[$alias] = TRUE;
+
+            $aliasJoined = $this->getAlias() . self::ALIAS_DELIM . $alias;
+            
+            $sql = '(' . $table->getSql($aliasJoined) . ')';
 
             if (isset($this->_reflection->parents[$alias])) {
-                $sql .= ' ON ['.self::ALIAS.'.'.$this->_reflection->getColumnName($alias).'] = ['.self::ALIAS.self::ALIAS_DELIM.$alias.'.'.$table->_reflection->primaryKeyColumn.']';
+                $c1 = $this->_reflection->columns[$alias];
+                $c2 = $table->_reflection->primaryKeyColumn;
+                
+                if ($c1 === $c2) {
+                    $sql .= " USING ([$c1])";
+                } else {
+                    $sql .= " ON [" . $this->getAlias() . ".$c1] = [$aliasJoined.$c2]";
+                }
 
             } elseif (isset($this->_reflection->singles[$alias]) || isset($this->_reflection->children[$alias])) {
-                $sql .= ' ON ['.self::ALIAS.'.'.$this->_reflection->primaryKeyColumn.'] = ['.self::ALIAS.self::ALIAS_DELIM.$alias.'.'.$this->_reflection->getForeignKeyName($alias).']';
+                $c1 = $this->_reflection->primaryKeyColumn;
+                $c2 = $this->_reflection->getForeignKeyName($alias);
+
+                if ($c1 === $c2) {
+                    $sql .= " USING([$c1])";
+                } else {
+                    $sql .= " ON [" . $this->getAlias() . ".$c1] = [$aliasJoined.$c2]";
+                }
 
             }
         } else {
@@ -354,15 +431,102 @@ class Table implements \IDataSource, \ArrayAccess
 
 
 
+	/**
+	 * Returns (and queries) DibiResult.
+	 * @return DibiResult
+	 */
+	public function getResult()
+	{
+		$this->buildQuery();
+		return $this->_dataSource->getResult();
+	}
+
+
+
     /**
      * Gets iterator
      * @return Traversable
      */
     public function getIterator()
     {
+		$this->buildQuery();
         return $this->_dataSource->getIterator();
     }
 
+
+	
+	/**
+	 * Generates, executes SQL query and fetches the single row.
+	 * @return Entity|FALSE  array on success, FALSE if no next record
+	 */
+	public function fetch()
+	{
+		$this->buildQuery();
+		return $this->_dataSource->fetch();
+	}
+
+
+
+	/**
+	 * Like fetch(), but returns only first field.
+	 * @return mixed  value on success, FALSE if no next record
+	 */
+	public function fetchSingle()
+	{
+		$this->buildQuery();
+		return $this->_dataSource->fetchSingle();
+	}
+
+
+
+	/**
+	 * Fetches all records from table.
+	 * @return array
+	 */
+	public function fetchAll()
+	{
+		$this->buildQuery();
+		return $this->_dataSource->fetchAll();
+	}
+
+
+
+	/**
+	 * Fetches all records from table and returns associative tree.
+	 * @param  string  associative descriptor
+	 * @return array
+	 */
+	public function fetchAssoc($assoc)
+	{
+		$this->buildQuery();
+		return $this->_dataSource->fetchAssoc($assoc);
+	}
+
+
+
+	/**
+	 * Fetches all records from table like $key => $value pairs.
+	 * @param  string  associative key
+	 * @param  string  value
+	 * @return array
+	 */
+	public function fetchPairs($key = NULL, $value = NULL)
+	{
+		$this->buildQuery();
+		return $this->_dataSource->fetchPairs($key, $value);
+	}
+
+
+
+	/**
+	 * Returns the number of rows in a given data source.
+	 * @return int
+	 */
+	public function getTotalCount()
+	{
+		$this->buildQuery();
+		return $this->_dataSource->getTotalCount();
+	}
 
 
     /**
@@ -371,6 +535,7 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function count()
     {
+		$this->buildQuery();
         return $this->_dataSource->count();
     }
 

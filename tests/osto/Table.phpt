@@ -97,49 +97,49 @@ __halt_compiler();
 ------EXPECT------
 
 			SELECT *
-			FROM `a` AS `$this` 
+			FROM `a` AS `$a`
 
 
 
 
 
 			SELECT *
-			FROM `b` AS `$this` JOIN `a` AS `%S%` USING (`sid`)
+			FROM `b` AS `$b` JOIN (`a` AS `%S%`) USING (`sid`)
 
 
 
 
 
 			SELECT `a_a`
-			FROM `a` AS `$this`
+			FROM `a` AS `$a`
 			 WHERE (`sid` =  1)
 			 ORDER BY `sid` ASC
 
 
 
-			SELECT `$this`.`a_a`
-			FROM `b` AS `$this` JOIN `a` AS `%S%` USING (`sid`)
-			 WHERE (`$this`.`sid` =  1)
-			 ORDER BY `$this`.`sid` ASC
+			SELECT `$b->extendedEntity`.`a_a`
+			FROM `b` AS `$b` JOIN (`a` AS `%S%`) USING (`sid`)
+			 WHERE (`$b->extendedEntity`.`sid` =  1)
+			 ORDER BY `$b->extendedEntity`.`sid` ASC
 
 
 
 			SELECT *
-			FROM `a` AS `$this` JOIN (`c` AS `$this->C`) ON `$this`.`c_id` = `$this->C`.`c_id`
+			FROM `a` AS `$a` JOIN (`c` AS `$a->C`) USING (`c_id`)
 
 
 
 
 
-			SELECT `$this`.`a_a`, `$this->C`.`c_c`
-			FROM `a` AS `$this` JOIN (`c` AS `$this->C`) ON `$this`.`c_id` = `$this->C`.`c_id`
-			 WHERE (`$this`.`sid` =  1)
-			 ORDER BY `$this`.`sid` ASC
+			SELECT `$a`.`a_a`, `$a->C`.`c_c`
+			FROM `a` AS `$a` JOIN (`c` AS `$a->C`) USING (`c_id`)  
+			 WHERE (`$a`.`sid` =  1)
+			 ORDER BY `$a`.`sid` ASC
 
 
 
 			SELECT *
-			FROM `c` AS `$this` JOIN (`a` AS `$this->A` JOIN (`c` AS `$this->A->C`) ON `$this->A`.`c_id` = `$this->A->C`.`c_id`) ON `$this`.`c_id` = `$this->A`.`c_id`
+			FROM `c` AS `$c` JOIN (`a` AS `$c->A` JOIN (`c` AS `$c->A->C`) USING (`c_id`)) USING(`c_id`)
 
 
         
