@@ -125,21 +125,21 @@ __halt_compiler();
 
 
 			SELECT *
-			FROM `a` AS `$this` JOIN `c` AS `$this->C` ON `$this`.`c_id` = `$this->C`.`c_id`
+			FROM `a` AS `$this` JOIN (`c` AS `$this->C`) ON `$this`.`c_id` = `$this->C`.`c_id`
 
 
 
 
 
 			SELECT `$this`.`a_a`, `$this->C`.`c_c`
-			FROM `a` AS `$this` JOIN `c` AS `$this->C` ON `$this`.`c_id` = `$this->C`.`c_id`
+			FROM `a` AS `$this` JOIN (`c` AS `$this->C`) ON `$this`.`c_id` = `$this->C`.`c_id`
 			 WHERE (`$this`.`sid` =  1)
 			 ORDER BY `$this`.`sid` ASC
 
 
 
 			SELECT *
-			FROM `c` AS `$this` JOIN `a` AS `$this->A` ON `$this`.`c_id` = `$this->A`.`c_id`
+			FROM `c` AS `$this` JOIN (`a` AS `$this->A` JOIN (`c` AS `$this->A->C`) ON `$this->A`.`c_id` = `$this->A->C`.`c_id`) ON `$this`.`c_id` = `$this->A`.`c_id`
 
 
         

@@ -108,11 +108,17 @@ class Table implements \IDataSource, \ArrayAccess
 
     /**
      * Return SQL FROM clause
+     * @param string $alias Optionally alias name (used instead of '$this')
      * @return string
      */
-    protected function getSql()
+    protected function getSql($alias = NULL)
     {
-        return $this->_dataSource->getSql();
+        $sql = $this->_dataSource->getSql();
+        if ($alias === NULL) {
+            return $sql;
+        }
+
+        return str_replace(self::ALIAS, $alias, $sql);
     }
 
 
@@ -269,8 +275,6 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function join(Table $table, $alias = NULL)
     {
-        $sql = '[' . $table->getName() . ']'; //$table->getSql();
-
         if ($alias === NULL) {
             $alias = $this->_reflection->getRelationWith($table->_reflection);
         }
@@ -278,7 +282,7 @@ class Table implements \IDataSource, \ArrayAccess
         if ($alias) {
             $this->_joined[$alias] = 1;
             
-            $sql .= ' AS [' . self::ALIAS . self::ALIAS_DELIM . $alias . ']';
+            $sql = '(' . $table->getSql(self::ALIAS . self::ALIAS_DELIM . $alias) . ')';
 
             if (isset($this->_reflection->parents[$alias])) {
                 $sql .= ' ON ['.self::ALIAS.'.'.$this->_reflection->getColumnName($alias).'] = ['.self::ALIAS.self::ALIAS_DELIM.$alias.'.'.$table->_reflection->primaryKeyColumn.']';
@@ -287,6 +291,8 @@ class Table implements \IDataSource, \ArrayAccess
                 $sql .= ' ON ['.self::ALIAS.'.'.$this->_reflection->primaryKeyColumn.'] = ['.self::ALIAS.self::ALIAS_DELIM.$alias.'.'.$this->_reflection->getForeignKeyName($alias).']';
 
             }
+        } else {
+            $sql = $table->getSql();
         }
 
         $this->_dataSource->join($sql);
