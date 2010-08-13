@@ -62,7 +62,6 @@ class Table implements \IDataSource, \ArrayAccess
     /**
      * Constructor
      * @param Entity|string $entity
-     * @param string $alias     Alias for SQL query
      */
     public function __construct($entity)
     {
