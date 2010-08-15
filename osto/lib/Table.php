@@ -116,7 +116,7 @@ class Table implements \IDataSource, \ArrayAccess
     {
         if (($pos = \strpos($name, '.')) !== FALSE) {
             $relName = \substr($name, 0, $pos);
-            $relations = $this->_reflection->parents + $this->_reflection->singles;
+            $relations = $this->_reflection->parents + $this->_reflection->singles + $this->_reflection->children;
 
             if (isset($relations[$relName])) {
                 $name = substr($name, $pos + 1);

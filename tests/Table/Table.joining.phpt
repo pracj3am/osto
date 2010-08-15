@@ -73,6 +73,7 @@ output($a2->select(':C.c:'));
 output($b1->select(':a:'));
 output($b2->select(':C.c:'));
 output($d->select(':B.a:'));
+output($c->select(':A.a:'));
 
 
 
@@ -113,3 +114,10 @@ __halt_compiler();
 
 
                     
+
+			SELECT `%S%`.`a_a`
+			FROM `c` AS `%S%` JOIN (`a` AS `%S%`) USING(`c_id`)
+
+
+
+
