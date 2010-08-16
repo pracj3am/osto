@@ -17,6 +17,7 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
 
 
 /**
+ * @property-read string $name
  * @property-read array $children
  * @property-read array $parents
  * @property-read array $singles

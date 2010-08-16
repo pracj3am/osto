@@ -120,7 +120,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      * Initializes entity internal properties. Called by the constructor
      * @return void
      */
-    private function initialize()
+    protected function initialize()
     {
         $this->_self_loaded = FALSE;
 
@@ -430,7 +430,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if ($value !== NULL) {
             $type = $this->_reflection->types[$name];
             if (\class_exists($type)) {
-                $value = new $type($value);
+                if (!$value instanceof $type) {
+                    $value = new $type($value);
+                }
             } else {
                 \settype($value, $type);
             }
@@ -491,7 +493,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public static function __callStatic($name, $arguments)
     {
         if (\method_exists(__NAMESPACE__ . '\Table\Helpers', $name)) {
-            \array_unshift($arguments, new Table(\get_called_class()));
+            $class = \get_called_class();
+            \array_unshift($arguments, $class::getTable());
             return \call_user_func_array(array(__NAMESPACE__ . '\Table\Helpers', $name), $arguments);
         }
 
