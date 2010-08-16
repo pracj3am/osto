@@ -120,7 +120,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      * Initializes entity internal properties. Called by the constructor
      * @return void
      */
-    private function initialize()
+    protected function initialize()
     {
         $this->_self_loaded = FALSE;
 
