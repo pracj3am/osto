@@ -440,7 +440,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         if ($this->_modified[$name] == self::VALUE_NOT_SET) {
             $this->_modified[$name] = self::VALUE_SET;
-        } elseif ($this->_modified[$name] == self::VALUE_SET && ($value != $this->_values[$name])) {
+        } elseif ($this->_modified[$name] == self::VALUE_SET && ($value !== $this->_values[$name])) {
             $this->_modified[$name] = self::VALUE_MODIFIED;
         }
 
@@ -772,6 +772,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
             //values
             $values = $values_update = $this->_values;
+
             foreach ($values as $column => $value) {
                 // only modified values are updated
                 if ($this->_modified[$column] !== self::VALUE_MODIFIED) {
@@ -793,7 +794,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 $values[$this->_reflection->entityColumn] = $values_update[$this->_reflection->entityColumn] = $this->_entityClass;
             }
 
-            $this->beforeSave($values);
+            $this->beforeSave($values, $values_update);
 
             dibi::query(
                 'INSERT INTO `' . $this->_reflection->tableName . '`', $values+array($this->_reflection->primaryKeyColumn=>$this->_id),
@@ -801,7 +802,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                  %if', $values_update, ', %a', $values_update, '%end'
             );
 
-            $this->afterSave($values);
+            $this->afterSave($values, $values_update);
 
             if ($this->_id === NULL) {
                 $this->id = dibi::insertId();
@@ -844,9 +845,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     /**
      * Called immediatelly before entity saving. Intetionally for oveloading.
-     * @param array $values The values, which will be saved to database
+     * @param array $values         The values, which will be inserted to database
+     * @param array $values_update  The values, which will be updated in database
      */
-    protected function beforeSave(&$values)
+    protected function beforeSave(&$values, &$values_update)
     {
 
     }
@@ -855,9 +857,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     /**
      * Called immediatelly after entity saving. Intetionally for oveloading.
-     * @param array $values The values, which were saved to database
+     * @param array $values         The values, which were saved to database (insert)
+     * @param array $values_update  The values, which were saved to database (update)
      */
-    protected function afterSave(&$values)
+    protected function afterSave(&$values, &$values_update)
     {
 
     }
