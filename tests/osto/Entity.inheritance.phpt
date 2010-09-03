@@ -47,7 +47,7 @@ dibi::query('
 	`c_c` INT NULL ,
 	`c_entity` VARCHAR(255) ,
 	`a_id2` INT NOT NULL ,
-	`b_id` INT NOT NULL ,
+	`b_id` INT NULL ,
 	KEY(a_id2) ,
 	KEY(b_id)
 	) ENGINE = InnoDB;
@@ -64,6 +64,7 @@ class A extends Entity
 
 /**
  * @property int $b
+ * @property A $A , belongs_to
  */
 class B extends A 
 {
@@ -73,6 +74,7 @@ class B extends A
 /**
  * @property int $c
  * @property A $A, belongs_to, column=a_id2
+ * @property B $B , belongs_to , null
  */
 class C extends B 
 {
@@ -89,6 +91,7 @@ $b = new B;
 
 $b->a = 2;
 $b->b = 3;
+$b->A->a = 8;
 $b->save();
 unset($b);
 
@@ -115,7 +118,7 @@ foreach (C::findAll() as $row)
 
 
 output('Created C =====');
-$c = A::create(4);
+$c = A::create(5);
 output($c);
 
 __halt_compiler();
@@ -133,28 +136,35 @@ Array
 Array
 (
     [id] => 2
-    [a] => 2
-    [b] => 3
-    [a_id] => 2
+    [a] => 8
 )
 
 
 Array
 (
     [id] => 3
-    [a] => 7
+    [a] => 2
+    [b] => 3
+    [a_id] => 3
 )
 
 
 Array
 (
     [id] => 4
+    [a] => 7
+)
+
+
+Array
+(
+    [id] => 5
     [a] => 4
     [b] => 5
-    [a_id] => 4
+    [a_id] => 5
     [c] => 6
-    [a_id2] => 3
-    [b_id] => 2
+    [a_id2] => 4
+    [b_id] => 5
 )
 
 
@@ -162,22 +172,22 @@ B =====
 
 Array
 (
-    [id] => 2
+    [id] => 3
     [a] => 2
     [b] => 3
-    [a_id] => 2
+    [a_id] => 3
 )
 
 
 Array
 (
-    [id] => 4
+    [id] => 5
     [a] => 4
     [b] => 5
-    [a_id] => 4
+    [a_id] => 5
     [c] => 6
-    [a_id2] => 3
-    [b_id] => 2
+    [a_id2] => 4
+    [b_id] => 5
 )
 
 
@@ -185,13 +195,13 @@ C =====
 
 Array
 (
-    [id] => 4
+    [id] => 5
     [a] => 4
     [b] => 5
-    [a_id] => 4
+    [a_id] => 5
     [c] => 6
-    [a_id2] => 3
-    [b_id] => 2
+    [a_id2] => 4
+    [b_id] => 5
 )
 
 
@@ -199,11 +209,11 @@ Created C =====
 
 Array
 (
-    [id] => 4
+    [id] => 5
     [a] => 4
     [b] => 5
-    [a_id] => 4
+    [a_id] => 5
     [c] => 6
-    [a_id2] => 3
-    [b_id] => 2
+    [a_id2] => 4
+    [b_id] => 5
 ) 

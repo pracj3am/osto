@@ -109,7 +109,7 @@ __halt_compiler();
 
 
 			SELECT *
-			FROM `b` AS `$b` JOIN (`a` AS `%S%`) USING (`sid`)
+			FROM `b` AS `$b` JOIN (`a` AS `%S%`) ON `$b`.`b_id` = `%S%`.`sid`
 
 
 
@@ -123,7 +123,7 @@ __halt_compiler();
 
 
 			SELECT `$b->extendedEntity`.`a_a`
-			FROM `b` AS `$b` JOIN (`a` AS `%S%`) USING (`sid`)
+			FROM `b` AS `$b` JOIN (`a` AS `%S%`) ON `$b`.`b_id` = `%S%`.`sid`
 			 WHERE (`$b->extendedEntity`.`sid` =  1)
 			 ORDER BY `$b->extendedEntity`.`sid` ASC
 

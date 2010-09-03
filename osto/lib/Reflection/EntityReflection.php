@@ -136,7 +136,7 @@ final class EntityReflection
             $parentEntity = $this->_getParentEntity();
             $pr = &$parentEntity::getReflection();
             $this->parents[Entity::EXTENDED] = $parentEntity;
-            $this->columns[Entity::EXTENDED] = $pr->getPrimaryKeyColumn();
+            $this->columns[Entity::EXTENDED] = $this->getPrimaryKeyColumn();
             $this->types[$this->columns[Entity::EXTENDED]] = $pr->types[$pr->getPrimaryKeyColumn()];
         }
     }

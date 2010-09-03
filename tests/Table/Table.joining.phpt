@@ -95,21 +95,21 @@ __halt_compiler();
 
 
 			SELECT `$b->extendedEntity`.`a_a`
-			FROM `b` AS `$b` JOIN (`a` AS `$b->extendedEntity`) USING (`sid`)
+			FROM `b` AS `$b` JOIN (`a` AS `$b->extendedEntity`) ON `$b`.`b_id` = `$b->extendedEntity`.`sid`
 
 
 
 
 
 			SELECT `$b->extendedEntity->C`.`c_c`
-			FROM `b` AS `$b` JOIN (`a` AS `$b->extendedEntity` JOIN (`c` AS `$b->extendedEntity->C`) USING (`c_id`)) USING (`sid`)
+			FROM `b` AS `$b` JOIN (`a` AS `$b->extendedEntity` JOIN (`c` AS `$b->extendedEntity->C`) USING (`c_id`)) ON `$b`.`b_id` = `$b->extendedEntity`.`sid`
 
 
 
 
 
 			SELECT `$d->B->extendedEntity`.`a_a`
-			FROM `d` AS `$d` JOIN (`b` AS `$d->B` JOIN (`a` AS `$d->B->extendedEntity`) USING (`sid`)) USING (`b_id`)
+			FROM `d` AS `$d` JOIN (`b` AS `$d->B` JOIN (`a` AS `$d->B->extendedEntity`) ON `$d->B`.`b_id` = `$d->B->extendedEntity`.`sid`) USING (`b_id`)
 
 
 

@@ -63,10 +63,10 @@ dibi::query('
  */
 class Poiu extends Entity 
 {
-    protected function beforeSave(&$values) {
+    protected function beforeSave(&$values, &$values_update) {
         $values['p_a']++;
     }
-    protected function afterSave(&$values) {
+    protected function afterSave(&$values, &$values_update) {
         output('Saved sucessfully');
     }
 }

@@ -35,7 +35,6 @@ dibi::query('
 dibi::query('
 	CREATE TEMPORARY TABLE `test`.`b` (
 	`b_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-	`sid` INT NOT NULL ,
 	`b_b` FLOAT NOT NULL ,
 	KEY (b_id)
 	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
@@ -79,17 +78,23 @@ $b->b = 2;
 $b->save();
 unset($b);
 
+output('Find all A: =====');
 foreach (A::findAll() as $a) {
     output($a);
 }
 
+output('Find A (id = 4): =====');
 output(A::find(4));
+output('Find A (a = 1): =====');
 output(A::findOne('a_a = ', 1));
+output('Find B (a = 1): =====');
 output(B::findOne('a_a = ', 1));
 Assert::same(A::count(), 3);
 
 __halt_compiler();
 ------EXPECT------
+Find all A: =====
+
 Array
 (
     [aid] => 3
@@ -108,11 +113,12 @@ Array
 (
     [aid] => 5
     [a] => 1
-    [id] => 1
+    [id] => 5
     [b] => 2
-    [sid] => 5
 )
 
+
+Find A (id = 4): =====
 
 Array
 (
@@ -121,6 +127,8 @@ Array
 )
 
 
+Find A (a = 1): =====
+
 Array
 (
     [aid] => 3
@@ -128,11 +136,12 @@ Array
 )
 
 
+Find B (a = 1): =====
+
 Array
 (
     [aid] => 5
     [a] => 1
-    [id] => 1
+    [id] => 5
     [b] => 2
-    [sid] => 5
 )

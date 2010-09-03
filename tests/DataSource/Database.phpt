@@ -35,7 +35,6 @@ dibi::query('
 dibi::query('
 	CREATE TEMPORARY TABLE `test`.`b` (
 	`b_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-	`sid` INT NOT NULL ,
 	`b_b` FLOAT NOT NULL ,
 	KEY (b_id)
 	) ENGINE = InnoDB DEFAULT CHARSET=utf8;
@@ -99,9 +98,8 @@ Array
 (
     [aid] => 2
     [a] => 0
-    [id] => 1
+    [id] => 2
     [b] => 2
-    [sid] => 2
 )
 
 
@@ -109,9 +107,8 @@ Array
 (
     [aid] => 2
     [a] => 0
-    [id] => 1
+    [id] => 2
     [b] => 2
-    [sid] => 2
 )
 
 
@@ -119,9 +116,8 @@ Array
 (
     [aid] =>
     [a] => 0
-    [id] => 1
+    [id] => 2
     [b] => 2
-    [sid] =>
 )
 
 

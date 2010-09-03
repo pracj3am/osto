@@ -110,8 +110,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         $sClass = $values[$entityColumn];
-        $fkColumn = $sClass::getTable()->{self::EXTENDED};
-        return $sClass::getTable()->where($fkColumn->eq($values[$r->primaryKeyColumn]))->fetch();
+        $sTable = $sClass::getTable();
+        return $sTable->where($sTable->id->eq($values[$r->primaryKeyColumn]))->fetch();
     }
 
 
@@ -210,13 +210,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         /***** primary key *****/
 
         if ($name == 'id' || $name == $this->_reflection->primaryKey) {
-            if (\array_key_exists(self::EXTENDED, $this->_parents)) {
-                return $this->_parents[self::EXTENDED]->id;
-            }
-            return $this->_id;
-        }
-
-        if ($name == $this->_reflection->primaryKeyColumn) {
             return $this->_id;
         }
 
@@ -314,7 +307,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public function __isset($name)
     {
         if (
-                $name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->primaryKeyColumn ||
+                $name == 'id' || $name == $this->_reflection->primaryKey ||
                 \method_exists($this, Helpers::getter($name)) ||
                 \array_key_exists($name, $this->_properties) ||
                 \array_key_exists($name, $this->_children) && $this->_children[$name] !== NULL ||
@@ -663,7 +656,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             if (in_array($parentName, $parentNames) && isset($this[$this->_reflection->columns[$parentName]])) {
 
                 if ($parentName === self::EXTENDED) {
-                    $parentEntity = new $parentClass($this[$this->_reflection->columns[$parentName]]);
+                    $parentEntity = new $parentClass($this->_id);
                     $parentEntity->load($depth);
                 } else {
                     $parentEntity = $parentClass::find($this[$this->_reflection->columns[$parentName]]) or
@@ -918,12 +911,15 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         foreach ($this->_parents as $parentName => $parentEntity) {
             unset($values[$parentName]);
-            //foreign key
-            $values[$this->_reflection->columns[$parentName]] = $this->_values[$this->_reflection->columns[$parentName]];
             if ($parentName === self::EXTENDED) {
                 $values = $this->{self::EXTENDED}->values + $values;
-            } elseif ($parentEntity instanceof self) {
-                $values[$parentName] = $parentEntity->values;
+            } else {
+                //foreign key
+                $values[$this->_reflection->columns[$parentName]] = $this->_values[$this->_reflection->columns[$parentName]];
+                
+                if ($parentEntity instanceof self) {
+                    $values[$parentName] = $parentEntity->values;
+                }
             }
         }
 
