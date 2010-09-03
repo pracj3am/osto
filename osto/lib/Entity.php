@@ -345,8 +345,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         //parents
-        if (\array_key_exists($name, $this->_parents)) {
-            if (\is_object($value) && \get_class($value) == $this->_reflection->parents[$name]) {
+        if (\array_key_exists($name, $this->_parents)) {dump(get_class($value));
+            if (\is_object($value) && $value instanceof $this->_reflection->parents[$name]) {
                 $this->_parents[$name] = $value;
                 return;
             }
@@ -355,7 +355,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         //singles
         if (\array_key_exists($name, $this->_singles)) {
-            if (\is_object($value) && \get_class($value) == $this->_reflection->singles[$name]) {
+            if (\is_object($value) && $value instanceof $this->_reflection->singles[$name]) {
                 $this->_singles[$name] = $value;
                 return;
             }
