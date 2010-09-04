@@ -70,7 +70,7 @@ class Table implements \IDataSource, \ArrayAccess
         } elseif ($entity instanceof Entity) {
             $this->_entity = $entity->getEntityClass();
         } else {
-            throw new Exception("$entity is neither entity class name nor entity itself.");
+            throw new Exception("'$entity' is neither entity class name nor entity itself.");
         }
 
         $entity = $this->_entity;
