@@ -26,7 +26,7 @@ NetteTestHelpers::purge(OSTO_TMP_DIR);
  * @prefix t
  * @property int $one
  * @property int $two
- * @property int $parent_id, column=parent_id
+ * @property Test $Parent , belongs_to, column=parent_id
  * @property Test $children, has_many 
  */
 class Test extends Entity 
@@ -36,7 +36,7 @@ class Test extends Entity
 
 /**
  * @prefix t2
- * @property int $parent_id
+ * @property Test2 $Parent , belongs_to, column=parent_id
  * @property Test $children, has_many 
  */
 class Test2 extends Entity 
@@ -46,7 +46,7 @@ class Test2 extends Entity
 
 /** 
  * @prefix t3
- * @property int $xxxent_id, column=parent_id
+ * @property Test3 $Parent , belongs_to, column=xxx_id
  * @property Test3 $children, has_many 
  */
 class Test3 extends Entity 
@@ -56,7 +56,7 @@ class Test3 extends Entity
 
 /** 
  * @prefix t4
- * @property int $xxxent_id, column=xxxent_id
+ * @property Test4 $Parent , belongs_one, column=parent_id
  * @property Test4 $children, has_many 
  */
 class Test4 extends Entity 

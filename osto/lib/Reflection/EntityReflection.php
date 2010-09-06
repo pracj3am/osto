@@ -408,7 +408,7 @@ final class EntityReflection
 
     public function isSelfReferencing()
     {
-        return $this->_isColumn('parent_id') && \in_array($this->name, $this->children);
+        return \in_array($this->name, $this->parents) && \in_array($this->name, $this->children);
     }
 
 
