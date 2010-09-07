@@ -294,7 +294,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             return $this->{self::EXTENDED}->$name;
         }
 
-        throw new Exception("Undeclared property $name.");
+        $class = \get_called_class();
+        throw new Exception("Undeclared property {$class}->{$name}.");
     }
 
 
@@ -391,7 +392,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             return;
         }
 
-        throw new Exception("Undeclared property $name.");
+        $class = \get_called_class();
+        throw new Exception("Undeclared property {$class}->{$name}.");
     }
 
 
@@ -1142,7 +1144,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         } elseif ($name == $this->_reflection->entityColumn) {
             $this->setEntityClass($value);
         } else {
-            throw new Exception("Cannot set new property '$name'.");
+            $class = \get_called_class();
+            throw new Exception("Cannot set undeclared property '{$class}[{$name}]'.");
         }
     }
 
@@ -1164,7 +1167,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             return $this->getEntityClass();
         }
 
-        throw new Exception("Undefined property property '$name'.");
+        $class = \get_called_class();
+        throw new Exception("Undeclared property '{$class}[{$name}]'.");
     }
 
 

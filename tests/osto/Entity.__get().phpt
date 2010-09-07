@@ -145,5 +145,5 @@ array(2) {
 	"a" => int(1)
 }
 
-string(22) "Undeclared property x."
+string(25) "Undeclared property A->x."
  

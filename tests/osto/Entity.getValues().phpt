@@ -87,7 +87,7 @@ dump($t->values);
 __halt_compiler();
 
 ------EXPECT------
-string(28) "Undeclared property a_a_alt."
+string(34) "Undeclared property Test->a_a_alt."
 
 
 Notice: %a%

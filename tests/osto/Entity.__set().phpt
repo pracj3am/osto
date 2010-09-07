@@ -103,7 +103,7 @@ string(48) "Property B must implement interface IDataSource."
 
 string(36) "Property C must be entity of class C"
 
-string(22) "Undeclared property x."
+string(25) "Undeclared property A->x."
 
 array(4) {
 	"rid" => NULL
