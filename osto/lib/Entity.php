@@ -1143,6 +1143,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             $this->_setId($value);
         } elseif ($name == $this->_reflection->entityColumn) {
             $this->setEntityClass($value);
+        } elseif (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            $this->_parents[self::EXTENDED]->offsetSet($name, $value);
         } else {
             $class = \get_called_class();
             throw new Exception("Cannot set undeclared property '{$class}[{$name}]'.");
@@ -1166,6 +1168,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if ($name == $this->_reflection->entityColumn) {
             return $this->getEntityClass();
         }
+        if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            return $this->_parents[self::EXTENDED]->offsetGet($name);
+        }
 
         $class = \get_called_class();
         throw new Exception("Undeclared property '{$class}[{$name}]'.");
@@ -1178,7 +1183,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if (!\is_int($name) && !\is_string($name)) {
             throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
         }
-        return \array_key_exists($name, $this->_values) || $name == $this->_reflection->primaryKeyColumn || $name == $this->_reflection->entityColumn;
+        return \array_key_exists($name, $this->_values) ||
+                $name == $this->_reflection->primaryKeyColumn ||
+                $name == $this->_reflection->entityColumn ||
+                \array_key_exists(self::EXTENDED, $this->_parents) && $this->_parents[self::EXTENDED]->offsetExists($name);
     }
 
 
@@ -1190,6 +1198,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
         if (\array_key_exists($name, $this->_values)) {
             unset($this->_values[$name]);
+        }
+        if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            $this->_parents[self::EXTENDED]->offsetUnset($name);
         }
     }
 
