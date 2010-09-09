@@ -117,7 +117,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
 
     /**
-     * Initializes entity internal properties. Called by the constructor
+     * Initializes entity internal properties. Called by the constructor.
      * @return void
      */
     protected function initialize()
@@ -134,6 +134,17 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             }
         }
 
+        $this->initializeRelations();
+    }
+
+
+
+    /**
+     * Initialize entity relations. Called by constructor and after unserialization.
+     * @return void
+     */
+    protected function initializeRelations()
+    {
         foreach ($this->_reflection->parents as $parentName => $parentClass) {
             $this->_parents[$parentName] = NULL;
             $this->_loaded[$parentName] = FALSE;
@@ -918,7 +929,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             } else {
                 //foreign key
                 $values[$this->_reflection->columns[$parentName]] = $this->_values[$this->_reflection->columns[$parentName]];
-                
+
                 if ($parentEntity instanceof self) {
                     $values[$parentName] = $parentEntity->values;
                 }
@@ -1216,6 +1227,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public function serialize()
     {
         $this->_reflection = NULL;
+        $this->_parents = array();
+        $this->_children = array();
+        $this->_singles = array();
         return \serialize(\get_object_vars($this));
     }
 
@@ -1227,6 +1241,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             $this->$p = $v;
         }
         $this->_reflection = &static::getReflection();
+        $this->initializeRelations();
     }
 
 
