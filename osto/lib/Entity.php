@@ -733,11 +733,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         foreach ($this->_reflection->children as $childName => $childClass) {
             if (in_array($childName, $childrenNames)) {
                 if ($this->_id !== NULL) {
-                    if (get_class($this) == $childClass) {//load children of the same class
-                        $fk = 'parent_id';
-                    } else {
-                        $fk = $this->_reflection->getForeignKeyName($childName);
-                    }
+                    $fk = $this->_reflection->getForeignKeyName($childName);
                     $fkColumn = $childClass::getTable()->$fk;
                     $children = $childClass::getTable()->where($fkColumn->eq($this->id));
                 } else {
@@ -1112,27 +1108,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             return \call_user_func_array(array($t, 'where'), $args);
         }
         return $t;
-    }
-
-
-
-    /**
-     * @todo is it neccessary?
-     */
-    public function getParent($root = false)
-    {
-        if (static::isSelfReferencing() && $this->parent_id) {
-            $parent = static::create($this->parent_id);
-            $parent->load();
-            if ($root)
-                while ($parent->parent_id !== NULL) {
-                    $parent = static::create($parent->parent_id);
-                    $parent->load();
-                }
-            return $parent;
-        }
-
-        return NULL;
     }
 
 
