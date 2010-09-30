@@ -21,7 +21,7 @@ class Database extends \DibiDataSource implements \ArrayAccess
 
     public function __construct()
     {
-        $args = func_get_args();
+        $args = \func_get_args();
         $this->translator = new \DibiTranslator(\dibi::getConnection()->driver);
         parent::__construct($this->translator->translate($args), \dibi::getConnection());
     }
