@@ -160,8 +160,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         if ($this->_reflection->isExtendingEntity()) {
-            $this->_parents[self::EXTENDED] = new $this->_reflection->parentEntity;
-            $this->_parents[self::EXTENDED]->setEntityClass(\get_class($this));
+            $this->{self::EXTENDED}->setEntityClass(\get_class($this));
         }
     }
 
@@ -325,7 +324,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 \array_key_exists($name, $this->_children) && $this->_children[$name] !== NULL ||
                 \array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL ||
                 \array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL ||
-                \array_key_exists(self::EXTENDED,$this->_parents) && isset($this->{self::EXTENDED}->$name)
+                \array_key_exists(self::EXTENDED, $this->_parents) && isset($this->{self::EXTENDED}->$name)
         ) {
             return TRUE;
         }
