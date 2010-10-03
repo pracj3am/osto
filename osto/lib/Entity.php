@@ -421,6 +421,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
         }
         $this->_id = $newId;
+
+        //inheritance
+        if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            $this->{self::EXTENDED}->id = $value;
+        }
     }
 
 
