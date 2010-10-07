@@ -81,7 +81,7 @@ foreach ($b as $bb) {
 
 $a->release();
 $b->release();
-output($b->select(array($b->a, $b->b, $b->id))->fetch());
+output($b->select(array($b->a, $b->id))->fetch());
 dump($a->where($a->a->eq(0))->select($a->a)->fetchSingle());
 dump($a->where(':a: = ', 0)->select(':a:')->fetchSingle());
 
@@ -114,10 +114,10 @@ Array
 
 Array
 (
-    [aid] =>
+    [aid] => 2
     [a] => 0
     [id] => 2
-    [b] => 2
+    [b] =>
 )
 
 
