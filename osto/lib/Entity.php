@@ -545,23 +545,30 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      */
     public function __clone()
     {
-        if (\is_array($this->_parents))
+        if (\is_array($this->_parents)) {
             foreach ($this->_parents as $parentName => $parentEntity) {
-                if ($parentEntity !== NULL)
+                if ($parentEntity instanceof self) {
                     $this->_parents[$parentName] = clone $this->_parents[$parentName];
-            }
-        if (\is_array($this->_children))
-            foreach ($this->_children as $childName => $childEntities) {
-                $this->_children[$childName] = clone $this->_children[$childName];
-                foreach ($this->_children[$childName] as $i => $childEntity) {
-                    $this->_children[$childName][$i] = clone $this->_children[$childName][$i];
                 }
             }
-        if (\is_array($this->_singles))
-            foreach ($this->_singles as $singleName => $singleEntity) {
-                if ($singleEntity !== NULL)
-                    $this->_singles[$singleName] = clone $this->_singles[$singleName];
+        }
+        if (\is_array($this->_children)) {
+            foreach ($this->_children as $childName => $childEntities) {
+                if ($childEntities instanceof \IDataSource) {
+                    $this->_children[$childName] = clone $this->_children[$childName];
+                    foreach ($this->_children[$childName] as $i => $childEntity) {
+                        $this->_children[$childName][$i] = clone $this->_children[$childName][$i];
+                    }
+                }
             }
+        }
+        if (\is_array($this->_singles)) {
+            foreach ($this->_singles as $singleName => $singleEntity) {
+                if ($singleEntity instanceof self) {
+                    $this->_singles[$singleName] = clone $this->_singles[$singleName];
+                }
+            }
+        }
     }
 
 
