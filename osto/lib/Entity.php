@@ -448,7 +448,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             }
         }
 
-        if ($this->_modified[$name] == self::VALUE_NOT_SET) {
+        if ($this->_id === NULL) { //seting values of entity without id
+            $this->_modified[$name] = self::VALUE_MODIFIED;
+        } elseif ($this->_modified[$name] == self::VALUE_NOT_SET) {
             $this->_modified[$name] = self::VALUE_SET;
         } elseif ($this->_modified[$name] == self::VALUE_SET && ($value !== $this->_values[$name])) {
             $this->_modified[$name] = self::VALUE_MODIFIED;
