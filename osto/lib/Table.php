@@ -218,7 +218,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function  __toString()
     {
         try {
-			$this->buildQuery();
+            $this->buildQuery();
             $s = $this->_dataSource->__toString();
         } catch (\Exception $e) {
             \trigger_error($e->getMessage(), \E_USER_ERROR);
@@ -289,11 +289,11 @@ class Table implements \IDataSource, \ArrayAccess
 
 
 
-	/**
-	 * Builds SQL FROM clause
-	 */
-	protected function buildQuery($emptyStack = TRUE)
-	{
+    /**
+     * Builds SQL FROM clause
+     */
+    protected function buildQuery($emptyStack = TRUE)
+    {
         static $stack;
 
         if ($emptyStack) {
@@ -342,7 +342,7 @@ class Table implements \IDataSource, \ArrayAccess
 
         $this->_dataSource->setSql($sql);
 
-	}
+    }
 
 
 
@@ -464,15 +464,15 @@ class Table implements \IDataSource, \ArrayAccess
 
 
 
-	/**
-	 * Returns (and queries) DibiResult.
-	 * @return DibiResult
-	 */
-	public function getResult()
-	{
-		$this->buildQuery();
-		return $this->_dataSource->getResult();
-	}
+    /**
+     * Returns (and queries) DibiResult.
+     * @return DibiResult
+     */
+    public function getResult()
+    {
+        $this->buildQuery();
+        return $this->_dataSource->getResult();
+    }
 
 
 
@@ -482,84 +482,85 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function getIterator()
     {
-		$this->buildQuery();
+        $this->buildQuery();
         return $this->_dataSource->getIterator();
     }
 
 
-	
-	/**
-	 * Generates, executes SQL query and fetches the single row.
-	 * @return Entity|FALSE  array on success, FALSE if no next record
-	 */
-	public function fetch()
-	{
-		$this->buildQuery();
-		return $this->_dataSource->fetch();
-	}
+
+    /**
+     * Generates, executes SQL query and fetches the single row.
+     * @return Entity|FALSE  array on success, FALSE if no next record
+     */
+    public function fetch()
+    {
+        $this->buildQuery();
+        return $this->_dataSource->fetch();
+    }
 
 
 
-	/**
-	 * Like fetch(), but returns only first field.
-	 * @return mixed  value on success, FALSE if no next record
-	 */
-	public function fetchSingle()
-	{
-		$this->buildQuery();
-		return $this->_dataSource->fetchSingle();
-	}
+    /**
+     * Like fetch(), but returns only first field.
+     * @return mixed  value on success, FALSE if no next record
+     */
+    public function fetchSingle()
+    {
+        $this->buildQuery();
+        return $this->_dataSource->fetchSingle();
+    }
 
 
 
-	/**
-	 * Fetches all records from table.
-	 * @return array
-	 */
-	public function fetchAll()
-	{
-		$this->buildQuery();
-		return $this->_dataSource->fetchAll();
-	}
+    /**
+     * Fetches all records from table.
+     * @return array
+     */
+    public function fetchAll()
+    {
+        $this->buildQuery();
+        return $this->_dataSource->fetchAll();
+    }
 
 
 
-	/**
-	 * Fetches all records from table and returns associative tree.
-	 * @param  string  associative descriptor
-	 * @return array
-	 */
-	public function fetchAssoc($assoc)
-	{
-		$this->buildQuery();
-		return $this->_dataSource->fetchAssoc($assoc);
-	}
+    /**
+     * Fetches all records from table and returns associative tree.
+     * @param  string  associative descriptor
+     * @return array
+     */
+    public function fetchAssoc($assoc)
+    {
+        $this->buildQuery();
+        return $this->_dataSource->fetchAssoc($assoc);
+    }
 
 
 
-	/**
-	 * Fetches all records from table like $key => $value pairs.
-	 * @param  string  associative key
-	 * @param  string  value
-	 * @return array
-	 */
-	public function fetchPairs($key = NULL, $value = NULL)
-	{
-		$this->buildQuery();
-		return $this->_dataSource->fetchPairs($key, $value);
-	}
+    /**
+     * Fetches all records from table like $key => $value pairs.
+     * @param  string  associative key
+     * @param  string  value
+     * @return array
+     */
+    public function fetchPairs($key = NULL, $value = NULL)
+    {
+        $this->buildQuery();
+        return $this->_dataSource->fetchPairs($key, $value);
+    }
 
 
 
-	/**
-	 * Returns the number of rows in a given data source.
-	 * @return int
-	 */
-	public function getTotalCount()
-	{
-		$this->buildQuery();
-		return $this->_dataSource->getTotalCount();
-	}
+    /**
+     * Returns the number of rows in a given data source.
+     * @return int
+     */
+    public function getTotalCount()
+    {
+        $this->buildQuery();
+        return $this->_dataSource->getTotalCount();
+    }
+
 
 
     /**
@@ -568,7 +569,7 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function count()
     {
-		$this->buildQuery();
+        $this->buildQuery();
         return $this->_dataSource->count();
     }
 
@@ -598,6 +599,16 @@ class Table implements \IDataSource, \ArrayAccess
     public function offsetUnset($name)
     {
         $this->_dataSource->offsetUnset($name);
+    }
+
+
+
+    /**
+     * Should not by called directly
+     */
+    public function __clone()
+    {
+        $this->_dataSource = clone $this->_dataSource;
     }
 
 }
