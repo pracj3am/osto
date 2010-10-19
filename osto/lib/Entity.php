@@ -81,7 +81,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             return $entity;
         }
 
-        $r = &static::getReflection();
+        $r = static::getReflection();
         $entityColumn = $r->entityColumn;
 
         $values = $entity->_values;
@@ -103,7 +103,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public static function createFromValues(array $values)
     {
         $class = \get_called_class();
-        $r = &static::getReflection();
+        $r = static::getReflection();
         $entityColumn = $r->entityColumn;
         if (!isset($values[$entityColumn]) || $class === $values[$entityColumn]) {
             return new $class($values);
@@ -124,7 +124,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     {
         $this->_self_loaded = FALSE;
 
-        $this->_reflection = &static::getReflection();
+        $this->_reflection = $this::getReflection();
 
         foreach ($this->_reflection->columns as $prop=>$column) {
             if ($prop != $this->_reflection->primaryKey) {
@@ -1073,7 +1073,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             $namespace = substr($nsClassName, 0, $pos);
         }
 
-        $r = &static::getReflection();
+        $r = static::getReflection();
         foreach ($r->columns as $prop=>$column) {
             dibi::addSubst("$className.$prop", "$column%n");
             dibi::addSubst("$nsClassName.$prop", "$column%n");
@@ -1099,12 +1099,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      * Returns entity reflection instance
      * @return Reflection\EntityReflection
      */
-    public static function &getReflection()
+    public static function getReflection()
     {
-        if (!isset(self::$reflections[get_called_class()])) {
-            self::$reflections[get_called_class()] = Reflection\EntityReflection::create(get_called_class());
+        if (!isset(self::$reflections[\get_called_class()])) {
+            self::$reflections[\get_called_class()] = Reflection\EntityReflection::create(\get_called_class());
         }
-        return self::$reflections[get_called_class()];
+        return self::$reflections[\get_called_class()];
     }
 
 
@@ -1228,7 +1228,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         foreach (\unserialize($serialized) as $p=>$v) {
             $this->$p = $v;
         }
-        $this->_reflection = &static::getReflection();
+        $this->_reflection = $this::getReflection();
         $this->initializeRelations();
     }
 

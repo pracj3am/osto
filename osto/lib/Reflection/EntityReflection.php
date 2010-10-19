@@ -103,7 +103,7 @@ final class EntityReflection
                 if ($parentClass == $this->name) {
                     $pr = $this;
                 } else {
-                    $pr = &$parentClass::getReflection();
+                    $pr = $parentClass::getReflection();
                 }
                 \is_string($pa->column) or
                         $pa->column = $pr->getPrimaryKeyColumn();
@@ -134,7 +134,7 @@ final class EntityReflection
 
         if ($this->_isExtendingEntity()) {
             $parentEntity = $this->_getParentEntity();
-            $pr = &$parentEntity::getReflection();
+            $pr = $parentEntity::getReflection();
             $this->parents[Entity::EXTENDED] = $parentEntity;
             $this->columns[Entity::EXTENDED] = $this->getPrimaryKeyColumn();
             $this->types[$this->columns[Entity::EXTENDED]] = $pr->types[$pr->getPrimaryKeyColumn()];
