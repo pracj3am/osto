@@ -357,7 +357,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         //parents
         if (\array_key_exists($name, $this->_parents)) {
-            if (\is_object($value) && $value instanceof $this->_reflection->parents[$name]) {
+            if ($value === NULL || \is_object($value) && $value instanceof $this->_reflection->parents[$name]) {
                 $this->_parents[$name] = $value;
                 return;
             }
@@ -1214,6 +1214,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     public function serialize()
     {
+        foreach ($this->_parents as $parentName=>$parentEntity) {
+            if ($parentEntity instanceof self) {
+                $this->_values[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
+            }
+        }
+
         $this->_reflection = NULL;
         $this->_parents = array();
         $this->_children = array();
