@@ -62,14 +62,14 @@ class B extends A
 $a = new A;
 $b = new B;
 
-$a->id = 3;
 $a->a = 1;
+$a->id = 3;
 $a->save();
 unset($a);
 
 $a = new A;
-$a->id = 4;
 $a->a = 2;
+$a->id = 4;
 $a->save();
 unset($a);
 

@@ -31,6 +31,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     private $_values = array();
     private $_properties = array();
     private $_modified = array();
+    private $_self_modified;
     private $_parents = array();
     private $_children = array();
     private $_singles = array();
@@ -123,6 +124,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     protected function initialize()
     {
         $this->_self_loaded = FALSE;
+        $this->_self_modified = self::VALUE_NOT_SET;
 
         $this->_reflection = $this::getReflection();
 
@@ -449,10 +451,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         if ($this->_id === NULL) { //seting values of entity without id
+            $this->_self_modified = self::VALUE_MODIFIED;
             $this->_modified[$name] = self::VALUE_MODIFIED;
         } elseif ($this->_modified[$name] == self::VALUE_NOT_SET) {
+            $this->_self_modified = self::VALUE_SET;
             $this->_modified[$name] = self::VALUE_SET;
         } elseif ($this->_modified[$name] == self::VALUE_SET && ($value !== $this->_values[$name])) {
+            $this->_self_modified = self::VALUE_MODIFIED;
             $this->_modified[$name] = self::VALUE_MODIFIED;
         }
 
@@ -785,43 +790,48 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 }
             }
 
-            //values
-            $values = $values_update = $this->_values;
+            // saving only if the entity values were modified
+            if ($this->_self_modified != self::VALUE_SET) {
 
-            foreach ($values as $column => $value) {
-                // only modified values are updated
-                if ($this->_modified[$column] !== self::VALUE_MODIFIED) {
-                    unset($values_update[$column]);
+                //values
+                $values = $values_update = $this->_values;
+
+                foreach ($values as $column => $value) {
+                    // only modified values are updated
+                    if ($this->_modified[$column] !== self::VALUE_MODIFIED) {
+                        unset($values_update[$column]);
+                    }
+                    // DB default value will be used
+                    if ($value === NULL && !$this->_reflection->isNullColumn($column)) {
+                        unset($values[$column]);
+                        unset($values_update[$column]);
+                    }
+                    // make a reference
+                    if (isset($values_update[$column])) {
+                        $values_update[$column] = &$values[$column];
+                    }
                 }
-                // DB default value will be used
-                if ($value === NULL && !$this->_reflection->isNullColumn($column)) {
-                    unset($values[$column]);
-                    unset($values_update[$column]);
+
+                //entity column
+                if (isset($this->_entityClass)) {
+                    $values[$this->_reflection->entityColumn] = $values_update[$this->_reflection->entityColumn] = $this->_entityClass;
                 }
-                // make a reference
-                if (isset($values_update[$column])) {
-                    $values_update[$column] = &$values[$column];
+
+                $this->beforeSave($values, $values_update);
+
+                dibi::query(
+                    'INSERT INTO `' . $this->_reflection->tableName . '`', $values+array($this->_reflection->primaryKeyColumn=>$this->_id),
+                    'ON DUPLICATE KEY UPDATE ' . $this->_reflection->primaryKeyColumn . '=LAST_INSERT_ID(' . $this->_reflection->primaryKeyColumn . ')
+                     %if', $values_update, ', %a', $values_update, '%end'
+                );
+
+                $this->afterSave($values, $values_update);
+
+                if ($this->_id === NULL) {
+                    $this->id = dibi::insertId();
                 }
             }
 
-            //entity column
-            if (isset($this->_entityClass)) {
-                $values[$this->_reflection->entityColumn] = $values_update[$this->_reflection->entityColumn] = $this->_entityClass;
-            }
-
-            $this->beforeSave($values, $values_update);
-
-            dibi::query(
-                'INSERT INTO `' . $this->_reflection->tableName . '`', $values+array($this->_reflection->primaryKeyColumn=>$this->_id),
-                'ON DUPLICATE KEY UPDATE ' . $this->_reflection->primaryKeyColumn . '=LAST_INSERT_ID(' . $this->_reflection->primaryKeyColumn . ')
-                 %if', $values_update, ', %a', $values_update, '%end'
-            );
-
-            $this->afterSave($values, $values_update);
-
-            if ($this->_id === NULL) {
-                $this->id = dibi::insertId();
-            }
 
             //save singles
             foreach ($this->_singles as $singleName => $single) {

@@ -245,8 +245,6 @@ array(6) {
 	}
 }
 
-Saved sucessfully
-
 Parent of the first L:
 
 array(4) {
