@@ -782,6 +782,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         dibi::begin();
 
         try {
+
+            $this->startSave();
+
             //saving parents
             foreach ($this->_parents as $parentName => $parentEntity) {
                 if ($parentEntity instanceof self) {
@@ -864,6 +867,16 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         dibi::commit();
 
         return TRUE;
+    }
+
+
+
+    /**
+     * Called when saving procedure starts. Intetionally for oveloading.
+     */
+    protected function startSave()
+    {
+
     }
 
 
