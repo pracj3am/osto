@@ -494,6 +494,16 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 $childName = $a ? $varName : $VarName;
                 return $this->loadChildren(array($childName), $depth);
             }
+
+        //has{Parent}
+        } elseif (strpos($name, 'has') === 0) {
+            $VarName = substr($name, 3);
+            $varName = lcfirst($VarName);
+
+            if (($a = \array_key_exists($varName, $this->_parents)) || \array_key_exists($VarName, $this->_parents)) {
+                $parentName = $a ? $varName : $VarName;
+                return $this[$this->_reflection->columns[$parentName]] !== NULL;
+            }
         }
 
         return static::__callStatic($name, $arguments);
