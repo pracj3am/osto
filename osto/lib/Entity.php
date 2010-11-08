@@ -1243,11 +1243,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             }
         }
 
-        $this->_reflection = NULL;
-        $this->_parents = array();
-        $this->_children = array();
-        $this->_singles = array();
-        return \serialize(\get_object_vars($this));
+        $vars = \get_object_vars($this);
+        $vars['_reflection'] = NULL;
+        $vars['_parents'] = array();
+        $vars['_children'] = array();
+        $vars['_singles'] = array();
+        return \serialize($vars);
     }
 
 
@@ -1263,6 +1264,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
 
 
+    public function __destruct()
+    {
+        
+    }
 
 }
 ?>
