@@ -599,7 +599,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         $copy = clone $this;
         $copy->_id = NULL;
         foreach ($copy->_modified as $name => $v) {
-            $copy->_modified[$name] = self::VALUE_SET;
+            $copy->_modified[$name] = self::VALUE_MODIFIED;
         }
         foreach ($copy->_parents as $parentName => $parentEntity) {
             if ($parentEntity instanceof self) {
