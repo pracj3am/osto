@@ -506,6 +506,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             }
         }
 
+
+        /***** inheritance *****/
+
+        if (\array_key_exists(self::EXTENDED, $this->_parents)) {
+            return \call_user_func_array(array($this->{self::EXTENDED}, $name) , $arguments);
+        }
+
+
         return static::__callStatic($name, $arguments);
     }
 
