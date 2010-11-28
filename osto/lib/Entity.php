@@ -419,7 +419,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->primaryKeyColumn]);
         $newId = $value === 0 ? NULL : $value;
         if ($this->_id !== $newId && $this->_id !== NULL) {
-            $this->_modified = array_fill_keys(array_keys($this->_values), self::VALUE_MODIFIED);
+            $this->_modified = \array_fill_keys(\array_keys($this->_values), self::VALUE_MODIFIED);
             \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
         }
         $this->_id = $newId;
@@ -848,10 +848,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                      %if', $values_update, ', %a', $values_update, '%end'
                 );
 
+                if ($this->_id === NULL) {
+                    $id = dibi::insertId();
+                }
+
                 $this->afterSave($values, $values_update);
 
                 if ($this->_id === NULL) {
-                    $this->id = dibi::insertId();
+                    $this->id = $id;
                 }
             }
 
