@@ -77,22 +77,22 @@ dump($b->a->neq($b->b));
 __halt_compiler();
 ------EXPECT------
 array(2) {
-	0 => string(8) "[a_a] = "
+	0 => string(10) "[a_a] = %s"
 	1 => NULL
 }
 
 array(2) {
-	0 => string(9) "[a_a] != "
+	0 => string(11) "[a_a] != %s"
 	1 => string(1) "2"
 }
 
 array(2) {
-	0 => string(8) "[a_a] < "
+	0 => string(10) "[a_a] < %f"
 	1 => float(1.2)
 }
 
 array(2) {
-	0 => string(9) "[a_a] <= "
+	0 => string(11) "[a_a] <= %d"
 	1 => object(DateTime) (3) {
 		"date" => string(19) "2010-10-10 00:00:00"
 		"timezone_type" => int(3)
@@ -101,12 +101,12 @@ array(2) {
 }
 
 array(2) {
-	0 => string(8) "[a_a] > "
+	0 => string(10) "[a_a] > %i"
 	1 => int(1)
 }
 
 array(2) {
-	0 => string(9) "[a_a] >= "
+	0 => string(11) "[a_a] >= %s"
 	1 => string(4) "aaaa"
 }
 

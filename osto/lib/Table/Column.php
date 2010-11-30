@@ -52,6 +52,14 @@ class Column
         if ($operand instanceof self) {
             $cond .= '%n';
             $operand = (string)$operand;
+        } elseif ($operand instanceof \DateTime) {
+            $cond .= '%d';
+        } elseif (\is_int($operand)) {
+            $cond .= '%i';
+        } elseif (\is_float ($operand)) {
+            $cond .= '%f';
+        } else {
+            $cond .= '%s';
         }
 
         return array($cond, $operand);
