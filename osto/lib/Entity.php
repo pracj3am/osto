@@ -509,7 +509,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     \array_key_exists($childName = $varName, $this->_children) || \array_key_exists($childName = $VarName, $this->_children)) {
                 
                 $fk = $this->_reflection->getForeignKeyName($childName);
-                $childClass = $this->_reflection->children[$childName];
+                $childClass = @$this->_reflection->children[$childName] or
+                        $childClass = $this->_reflection->singles[$childName];
                 $fkColumn = $childClass::getTable()->$fk;
                 return $childClass::getTable()->where($fkColumn->eq($this->id))->count() > 0;
             }
