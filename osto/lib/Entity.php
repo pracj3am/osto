@@ -495,7 +495,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 return $this->loadChildren(array($childName), $depth);
             }
 
-        //has{Parent}
+        //has{Parent} or has{Single} or has{Children}
         } elseif (strpos($name, 'has') === 0) {
             $VarName = substr($name, 3);
             $varName = lcfirst($VarName);
@@ -503,6 +503,15 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             if (($a = \array_key_exists($varName, $this->_parents)) || \array_key_exists($VarName, $this->_parents)) {
                 $parentName = $a ? $varName : $VarName;
                 return $this[$this->_reflection->columns[$parentName]] !== NULL;
+            }
+
+            if (\array_key_exists($childName = $varName, $this->_singles) || \array_key_exists($childName = $VarName, $this->_singles) ||
+                    \array_key_exists($childName = $varName, $this->_children) || \array_key_exists($childName = $VarName, $this->_children)) {
+                
+                $fk = $this->_reflection->getForeignKeyName($childName);
+                $childClass = $this->_reflection->children[$childName];
+                $fkColumn = $childClass::getTable()->$fk;
+                return $childClass::getTable()->where($fkColumn->eq($this->id))->count() > 0;
             }
         }
 
