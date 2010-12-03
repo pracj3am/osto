@@ -512,7 +512,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 $childClass = @$this->_reflection->children[$childName] or
                         $childClass = $this->_reflection->singles[$childName];
                 $fkColumn = $childClass::getTable()->$fk;
-                return $childClass::getTable()->where($fkColumn->eq($this->id))->count() > 0;
+                $tmpResult = $childClass::getTable()->where($fkColumn->eq($this->id));
+                if ($arguments) {
+                    $tmpResult = \call_user_func_array(array($tmpResult, 'where'), $arguments);
+                }
+                return $tmpResult->count() > 0;
             }
         }
 
@@ -1172,6 +1176,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      */
     public static function getTable($where = NULL)
     {
+        if (\is_int($where)) {
+            return self::find($where);
+        }
         $t = new Table(\get_called_class());
         if ($where) {
             $args = \func_get_args();
