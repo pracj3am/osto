@@ -368,7 +368,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         //singles
         if (\array_key_exists($name, $this->_singles)) {
-            if (\is_object($value) && $value instanceof $this->_reflection->singles[$name]) {
+            if ($value === NULL || \is_object($value) && $value instanceof $this->_reflection->singles[$name]) {
                 $this->_singles[$name] = $value;
                 return;
             }
