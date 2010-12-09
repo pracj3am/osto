@@ -377,7 +377,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         //children
         if (\array_key_exists($name, $this->_children)) {
-            if (\is_object($value) && $value instanceof \IDataSource) {
+            if ($value === NULL || \is_object($value) && $value instanceof \IDataSource) {
                 $this->_children[$name] = $value;
                 return;
             }
