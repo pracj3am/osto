@@ -854,16 +854,19 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     $values[$this->_reflection->entityColumn] = $values_update[$this->_reflection->entityColumn] = $this->_entityClass;
                 }
 
+                //primary key
+                $values = $values + array($this->_reflection->primaryKeyColumn=>$this->_id);
+
                 $this->beforeSave($values, $values_update);
 
                 dibi::query(
-                    'INSERT INTO `' . $this->_reflection->tableName . '`', $values+array($this->_reflection->primaryKeyColumn=>$this->_id),
+                    'INSERT INTO `' . $this->_reflection->tableName . '`', $values,
                     'ON DUPLICATE KEY UPDATE ' . $this->_reflection->primaryKeyColumn . '=LAST_INSERT_ID(' . $this->_reflection->primaryKeyColumn . ')
                      %if', $values_update, ', %a', $values_update, '%end'
                 );
 
                 if ($this->_id === NULL) {
-                    $id = dibi::insertId();
+                    $id = $values[$this->_reflection->primaryKeyColumn] = dibi::insertId();
                 }
 
                 $this->afterSave($values, $values_update);
