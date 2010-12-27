@@ -111,9 +111,13 @@ class Database extends \DibiDataSource implements \ArrayAccess
     public function count()
     {
         if ($this->count === NULL) {
-            $this->count = (int) $this->connection->nativeQuery(
-                    \preg_replace('/SELECT\s+(.*?)\s+FROM/', 'SELECT COUNT(*) FROM', $this->__toString())
-            )->fetchSingle();
+            if ($this->limit !== NULL || $this->offset) {
+                $this->count = parent::count();
+            } else {
+                $this->count = (int) $this->connection->nativeQuery(
+                        \preg_replace('/SELECT\s+(.*?)\s+FROM/', 'SELECT COUNT(*) FROM', $this->__toString())
+                )->fetchSingle();
+            }
         }
         return $this->count;
     }
