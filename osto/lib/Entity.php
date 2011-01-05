@@ -1314,4 +1314,3 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     }
 
 }
-?>
