@@ -46,7 +46,7 @@ class Database extends \DibiDataSource implements \ArrayAccess
         }
 
         $result = parent::getResult();
-        $result->setRowClass(array($this->rowClass,'createFromValues'));
+        $result->setRowClass(array($this->rowClass, 'createFromValues'));
         return $result;
     }
 
