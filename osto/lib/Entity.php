@@ -528,8 +528,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
 
-        /** @todo: really neccessary in v5.3.3? */
-        \trigger_error('Calling magic static method from non-static context', \E_USER_DEPRECATED);
         return static::__callStatic($name, $arguments);
     }
 
