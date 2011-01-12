@@ -29,7 +29,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     private $_id;
     private $_values = array();
-    private $_properties = array();
     private $_modified = array();
     private $_self_modified;
     private $_parents = array();
@@ -129,9 +128,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         $this->_reflection = $this::getReflection();
 
         foreach ($this->_reflection->columns as $prop=>$column) {
-            if ($prop != $this->_reflection->primaryKey) {
+            if ($prop != $this->_reflection->primaryKey && $prop != self::EXTENDED) {
                 $this->_modified[$column] = self::VALUE_NOT_SET;
-                $this->_properties[$prop] = $column;
                 $this->_values[$column] = NULL;
             }
         }
@@ -150,7 +148,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         foreach ($this->_reflection->parents as $parentName => $parentClass) {
             $this->_parents[$parentName] = NULL;
             $this->_loaded[$parentName] = FALSE;
-            unset($this->_properties[$parentName]);
         }
         foreach ($this->_reflection->children as $childName => $childClass) {
             $this->_children[$childName] = NULL;
@@ -288,16 +285,16 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         /***** values *****/
 
-        if ($_name && \array_key_exists($_name, $this->_properties)) {
-            return $this->_values[$this->_properties[$_name]];
+        if ($_name && \array_key_exists($_name, $this->_reflection->columns) && !\array_key_exists($_name, $this->_parents)) {
+            return $this->_values[$this->_reflection->columns[$_name]];
         }
 
         if (\method_exists($this, ($m_name = Helpers::getter($name)))) {//get{Name}
             return $this->{$m_name}();
         }
 
-        if (\array_key_exists($name, $this->_properties)) {
-            return $this->_values[$this->_properties[$name]];
+        if (\array_key_exists($name, $this->_reflection->columns) && !\array_key_exists($name, $this->_parents)) {
+            return $this->_values[$this->_reflection->columns[$name]];
         }
 
         /***** inheritance *****/
@@ -322,7 +319,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if (
                 $name == 'id' || $name == $this->_reflection->primaryKey ||
                 \method_exists($this, Helpers::getter($name)) ||
-                \array_key_exists($name, $this->_properties) ||
+                \array_key_exists($name, $this->_reflection->columns) && !\array_key_exists($name, $this->_parents) ||
                 \array_key_exists($name, $this->_children) && $this->_children[$name] !== NULL ||
                 \array_key_exists($name, $this->_parents) && $this->_parents[$name] !== NULL ||
                 \array_key_exists($name, $this->_singles) && $this->_singles[$name] !== NULL ||
@@ -386,16 +383,16 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         /***** values *****/
 
-        if ($_name && \array_key_exists($_name, $this->_properties)) {
-            return $this->_setValue($this->_properties[$_name], $value);
+        if ($_name && \array_key_exists($_name, $this->_reflection->columns) && !\array_key_exists($_name, $this->_parents) ) {
+            return $this->_setValue($this->_reflection->columns[$_name], $value);
         }
 
         if (\method_exists($this, ($m_name = Helpers::setter($name)))) {//set{Name}
             return $this->{$m_name}($value);
         }
 
-        if (\array_key_exists($name, $this->_properties)) {
-            return $this->_setValue($this->_properties[$name], $value);
+        if (\array_key_exists($name, $this->_reflection->columns) && !\array_key_exists($name, $this->_parents) ) {
+            return $this->_setValue($this->_reflection->columns[$name], $value);
         }
 
         //inheritance
@@ -439,6 +436,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      */
     private function _setValue($name, $value)
     {
+        if (!\array_key_exists($name, $this->_values)) {
+            return;
+        }
+
         if ($value !== NULL) {
             $type = $this->_reflection->types[$name];
             if (\class_exists($type)) {
@@ -989,8 +990,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     {
         $values = array();
         $values[$this->_reflection->primaryKey] = $this->_id;
-        foreach ($this->_properties as $prop => $column) {
-            $values[$prop] = $this->_values[$column];
+        foreach ($this->_reflection->columns as $prop => $column) {
+            if (\array_key_exists($column, $this->_values) && !\array_key_exists($prop, $this->_parents)) {
+                $values[$prop] = $this->_values[$column];
+            }
         }
 
         foreach ($this->_parents as $parentName => $parentEntity) {
@@ -1055,8 +1058,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 continue;
             }
 
-            if (\array_key_exists($key, $this->_properties) && !$isColumns) {
-                $this->_setValue($this->_properties[$key], $value);
+            if (\array_key_exists($key, $this->_reflection->columns) && !\array_key_exists($key, $this->_parents) && !$isColumns) {
+                $this->_setValue($this->_reflection->columns[$key], $value);
                 //unset($values[$key]);
                 continue;
             }
@@ -1312,4 +1315,3 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     }
 
 }
-?>
