@@ -717,7 +717,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         foreach ($this->_reflection->parents as $parentName => $parentClass) {
-            if (in_array($parentName, $parentNames) && isset($this[$this->_reflection->columns[$parentName]])) {
+            if (in_array($parentName, $parentNames)) {
 
                 if ($parentName === self::EXTENDED) {
                     $parentEntity = new $parentClass($this->_id);
