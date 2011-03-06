@@ -22,7 +22,7 @@ class Database extends \DibiDataSource implements \ArrayAccess
     public function __construct()
     {
         $args = \func_get_args();
-        $this->translator = new \DibiTranslator(\dibi::getConnection()->driver);
+        $this->translator = new \DibiTranslator(\dibi::getConnection());
         parent::__construct($this->translator->translate($args), \dibi::getConnection());
     }
 
@@ -218,6 +218,13 @@ class Database extends \DibiDataSource implements \ArrayAccess
         if (\array_key_exists($name, $this->values)) {
             unset($this->array[$name]);
         }
+    }
+    
+    
+    
+    public function __destruct()
+    {
+        $this->release();
     }
 
 }

@@ -1118,7 +1118,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     /**
      * Registers entity
-     *  - adds dibi substitutions
      *  - defines global function with the same name
      */
     public static function register()
@@ -1136,12 +1135,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         } else {
             $className = substr($nsClassName, $pos+1);
             $namespace = substr($nsClassName, 0, $pos);
-        }
-
-        $r = static::getReflection();
-        foreach ($r->columns as $prop=>$column) {
-            dibi::addSubst("$className.$prop", "$column%n");
-            dibi::addSubst("$nsClassName.$prop", "$column%n");
         }
 
 
