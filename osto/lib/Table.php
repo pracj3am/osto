@@ -19,43 +19,43 @@ class Table implements \IDataSource, \ArrayAccess
      * Entity class name
      * @var string
      */
-    private $_entity;
+    private $entity;
 
     /**
      * Alias of table in SQL query
      * @var string
      */
-    private $_alias;
+    private $alias;
 
     /**
      * Instance of DataSource
      * @var DataSource
      */
-    private $_dataSource;
+    private $dataSource;
 
     /**
      * Reflection of the entity
      * @var Reflection\EntityReflection
      */
-    protected $_reflection;
+    protected $reflection;
 
     /**
      * Table which corresponds to extended entity
      * @var Table
      */
-    protected $_extends;
+    protected $extends;
 
     /**
      * Array of tables that has been already joined
      * @var array
      */
-    protected $_joined = array();
+    protected $joined = array();
 
     /**
      * Is datasource $sql valid?
      * @var bool
      */
-    protected $_isSqlValid = FALSE;
+    protected $isSqlValid = FALSE;
 
 
 
@@ -66,31 +66,31 @@ class Table implements \IDataSource, \ArrayAccess
     public function __construct($entity)
     {
         if (is_string($entity) && \class_exists($entity)) {
-            $this->_entity = $entity;
+            $this->entity = $entity;
         } elseif ($entity instanceof Entity) {
-            $this->_entity = $entity->getEntityClass();
+            $this->entity = $entity->getEntityClass();
         } else {
             throw new Exception("'$entity' is neither entity class name nor entity itself.");
         }
 
-        $entity = $this->_entity;
+        $entity = $this->entity;
         try {
-            $this->_reflection = $entity::getReflection();
+            $this->reflection = $entity::getReflection();
         } catch (Exception $e) {
             throw new Exception("Can't create reflection for entity '$entity'", 0, $e);
         }
 
-        $this->_alias = '$' . $this->getName();
+        $this->alias = '$' . $this->getName();
 
-        $this->_dataSource = new DataSource\Database;
-        $this->_dataSource->setRowClass($this->_entity);
+        $this->dataSource = new DataSource\Database;
+        $this->dataSource->setRowClass($this->entity);
 
-        if ($this->_reflection->isExtendingEntity()) {
-            $this->_extends = new self($this->_reflection->parentEntity);
+        if ($this->reflection->isExtendingEntity()) {
+            $this->extends = new self($this->reflection->getParentEntity());
         }
 
-        if (isset($this->_extends)) {
-            $this->join($this->_extends, Entity::EXTENDED);
+        if (isset($this->extends)) {
+            $this->join($this->extends, Entity::EXTENDED);
         }
 
     }
@@ -103,7 +103,7 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function getName()
     {
-        return $this->_reflection->tableName;
+        return $this->reflection->tableName;
     }
 
 
@@ -116,14 +116,14 @@ class Table implements \IDataSource, \ArrayAccess
     {
         if (($pos = \strpos($name, '.')) !== FALSE) {
             $relName = \substr($name, 0, $pos);
-            $relations = $this->_reflection->parents + $this->_reflection->singles + $this->_reflection->children;
+            $relations = $this->reflection->parents + $this->reflection->singles + $this->reflection->children;
 
             if (isset($relations[$relName])) {
                 $name = substr($name, $pos + 1);
 
                 //auto joining
-                if (isset($this->_joined[$relName])) {
-                    $table = $this->_joined[$relName];
+                if (isset($this->joined[$relName])) {
+                    $table = $this->joined[$relName];
                 } else {
                     $table = new self($relations[$relName]);
                     $this->join($table);
@@ -137,22 +137,22 @@ class Table implements \IDataSource, \ArrayAccess
 
             }
 
-            if (isset($this->_extends)) {
-                return $this->_extends->getColumnIdentifier($name);
+            if (isset($this->extends)) {
+                return $this->extends->getColumnIdentifier($name);
             }
 
             return FALSE;
         }
 
-        $i = isset($this->_reflection->columns[$name]) ? $this->_reflection->columns[$name] :
-                        ( $this->_reflection->isColumn($name) ? $name : FALSE );
+        $i = isset($this->reflection->columns[$name]) ? $this->reflection->columns[$name] :
+                        ( $this->reflection->isColumn($name) ? $name : FALSE );
 
         if ($i !== FALSE) {
-            return "$this->_alias.$i";
+            return "$this->alias.$i";
         }
 
-        if (isset($this->_extends)) {
-            return $this->_extends->getColumnIdentifier($name);
+        if (isset($this->extends)) {
+            return $this->extends->getColumnIdentifier($name);
         }
 
         return FALSE;
@@ -167,22 +167,22 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function __get($name)
     {
-        $entity = $this->_entity;
+        $entity = $this->entity;
 
-        if ($this->_reflection->isProperty($name)) {
-            return new Table\Column($this, $this->_reflection->columns[$name]);
+        if ($this->reflection->isProperty($name)) {
+            return new Table\Column($this, $this->reflection->columns[$name]);
         }
 
-        if ($this->_reflection->isColumn($name)) {
+        if ($this->reflection->isColumn($name)) {
             return new Table\Column($this, $name);
         }
 
         if ($name == 'id') {
-            return new Table\Column($this, $this->_reflection->primaryKeyColumn);
+            return new Table\Column($this, $this->reflection->getPrimaryKeyColumn());
         }
 
-        if (isset($this->_extends) && isset($this->_extends->$name)) {
-            return $this->_extends->$name;
+        if (isset($this->extends) && isset($this->extends->$name)) {
+            return $this->extends->$name;
         }
 
         throw new Exception("Undeclared column or property $name.");
@@ -191,7 +191,7 @@ class Table implements \IDataSource, \ArrayAccess
 
     public function __isset($name)
     {
-        if ($this->_reflection->isProperty($name) || $this->_reflection->isColumn($name) || $name === 'id') {
+        if ($this->reflection->isProperty($name) || $this->reflection->isColumn($name) || $name === 'id') {
             return TRUE;
         }
 
@@ -206,7 +206,7 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function __call($name, $args)
     {
-        return \call_user_func_array(array($this->_dataSource, $name), $args);
+        return \call_user_func_array(array($this->dataSource, $name), $args);
     }
 
 
@@ -219,7 +219,7 @@ class Table implements \IDataSource, \ArrayAccess
     {
         try {
             $this->buildQuery();
-            $s = $this->_dataSource->__toString();
+            $s = $this->dataSource->__toString();
         } catch (\Exception $e) {
             \trigger_error($e->getMessage(), \E_USER_ERROR);
             return '';
@@ -235,9 +235,9 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function setAlias($alias)
     {
-        $this->_alias = $alias;
-        foreach ($this->_joined as $relName=>$table) {
-            $table->setAlias($this->_alias . self::ALIAS_DELIM . $relName);
+        $this->alias = $alias;
+        foreach ($this->joined as $relName=>$table) {
+            $table->setAlias($this->alias . self::ALIAS_DELIM . $relName);
         }
     }
 
@@ -269,7 +269,7 @@ class Table implements \IDataSource, \ArrayAccess
     {
         $c = $this->getColumnIdentifier($matches[1]);
         if ($c === FALSE) {
-            throw new Exception("Undefined column '$matches[1]' for entity {$this->_entity}");
+            throw new Exception("Undefined column '$matches[1]' for entity {$this->entity}");
         }
 
         return $c;
@@ -284,7 +284,7 @@ class Table implements \IDataSource, \ArrayAccess
     protected function getSql()
     {
         $this->buildQuery(FALSE);
-        return $this->_dataSource->getSql();
+        return $this->dataSource->getSql();
     }
 
 
@@ -307,40 +307,40 @@ class Table implements \IDataSource, \ArrayAccess
         $stack[] = $this;
 
         
-        if ($this->_isSqlValid) {
+        if ($this->isSqlValid) {
             return;
         }
 
 
-        $sql = '[' . $this->getName() . '] AS [' . $this->_alias . ']';
+        $sql = '[' . $this->getName() . '] AS [' . $this->alias . ']';
 
-        foreach ($this->_joined as $relName=>$table) {
+        foreach ($this->joined as $relName=>$table) {
             $sql .= ' JOIN (' . $table->getSql() . ')';
 
-            if (isset($this->_reflection->parents[$relName])) {
-                $c1 = $this->_reflection->columns[$relName];
-                $c2 = $table->_reflection->primaryKeyColumn;
+            if (isset($this->reflection->parents[$relName])) {
+                $c1 = $this->reflection->columns[$relName];
+                $c2 = $table->reflection->getPrimaryKeyColumn();
 
                 if ($c1 === $c2) {
                     $sql .= " USING ([$c1])";
                 } else {
-                    $sql .= " ON [{$this->_alias}.$c1] = [{$table->_alias}.$c2]";
+                    $sql .= " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
                 }
 
-            } elseif (isset($this->_reflection->singles[$relName]) || isset($this->_reflection->children[$relName])) {
-                $c1 = $this->_reflection->primaryKeyColumn;
-                $c2 = $this->_reflection->getForeignKeyName($relName);
+            } elseif (isset($this->reflection->singles[$relName]) || isset($this->reflection->children[$relName])) {
+                $c1 = $this->reflection->getPrimaryKeyColumn();
+                $c2 = $this->reflection->getForeignKeyName($relName);
 
                 if ($c1 === $c2) {
                     $sql .= " USING([$c1])";
                 } else {
-                    $sql .= " ON [{$this->_alias}.$c1] = [{$table->_alias}.$c2]";
+                    $sql .= " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
                 }
 
             }
         }
 
-        $this->_dataSource->setSql($sql);
+        $this->dataSource->setSql($sql);
 
     }
 
@@ -351,8 +351,8 @@ class Table implements \IDataSource, \ArrayAccess
      */
     protected function invalidateQuery()
     {
-        $this->_dataSource->release();
-        $this->_isSqlValid = FALSE;
+        $this->dataSource->release();
+        $this->isSqlValid = FALSE;
     }
 
 
@@ -375,7 +375,7 @@ class Table implements \IDataSource, \ArrayAccess
         } else {
             $col = $this->_translateColumns((string)$col);
         }
-        $this->_dataSource->select($col, $as);
+        $this->dataSource->select($col, $as);
         return $this;
     }
 
@@ -390,20 +390,20 @@ class Table implements \IDataSource, \ArrayAccess
     public function join(Table $table, $relName = NULL)
     {
         if ($relName === NULL) {
-            $relName = $this->_reflection->getRelationWith($table->_reflection)
+            $relName = $this->reflection->getRelationWith($table->reflection)
                     or function(){throw new Exception("No relation exists between table '" . $this->getName() . "' and '" . $table->getName() . "'.");};
         }
 
-        if (isset($this->_joined[$relName])) {
+        if (isset($this->joined[$relName])) {
             throw new Exception("Tables '" . $this->getName() . "' and '" . $table->getName() . "' are already joined.");
         }
 
-        if (\in_array($this, $table->_joined)) {
+        if (\in_array($this, $table->joined)) {
             throw new Exception("Circular reference between tables '" . $this->getName() . "' and '" . $table->getName() . "'.");
         }
 
-        $table->setAlias($this->_alias . self::ALIAS_DELIM . $relName);
-        $this->_joined[$relName] = $table;
+        $table->setAlias($this->alias . self::ALIAS_DELIM . $relName);
+        $this->joined[$relName] = $table;
 
         $this->invalidateQuery();
 
@@ -420,7 +420,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function where($cond)
     {
         $args = $this->_translateColumns(\func_get_args());
-        \call_user_func_array(array($this->_dataSource, 'where'), $args);
+        \call_user_func_array(array($this->dataSource, 'where'), $args);
         return $this;
     }
 
@@ -444,7 +444,7 @@ class Table implements \IDataSource, \ArrayAccess
         } else {
             $col = $this->_translateColumns((string)$col);
         }
-        $this->_dataSource->orderBy($this->_translateColumns($col), $sorting);
+        $this->dataSource->orderBy($this->_translateColumns($col), $sorting);
         return $this;
     }
 
@@ -458,7 +458,7 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function applyLimit($limit, $offset = NULL)
     {
-        $this->_dataSource->applyLimit($limit, $offset);
+        $this->dataSource->applyLimit($limit, $offset);
         return $this;
     }
 
@@ -471,7 +471,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function getResult()
     {
         $this->buildQuery();
-        return $this->_dataSource->getResult();
+        return $this->dataSource->getResult();
     }
 
 
@@ -483,7 +483,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function getIterator()
     {
         $this->buildQuery();
-        return $this->_dataSource->getIterator();
+        return $this->dataSource->getIterator();
     }
 
 
@@ -495,7 +495,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function fetch()
     {
         $this->buildQuery();
-        return $this->_dataSource->fetch();
+        return $this->dataSource->fetch();
     }
 
 
@@ -507,7 +507,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function fetchSingle()
     {
         $this->buildQuery();
-        return $this->_dataSource->fetchSingle();
+        return $this->dataSource->fetchSingle();
     }
 
 
@@ -519,7 +519,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function fetchAll()
     {
         $this->buildQuery();
-        return $this->_dataSource->fetchAll();
+        return $this->dataSource->fetchAll();
     }
 
 
@@ -532,7 +532,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function fetchAssoc($assoc)
     {
         $this->buildQuery();
-        return $this->_dataSource->fetchAssoc($assoc);
+        return $this->dataSource->fetchAssoc($assoc);
     }
 
 
@@ -546,7 +546,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function fetchPairs($key = NULL, $value = NULL)
     {
         $this->buildQuery();
-        return $this->_dataSource->fetchPairs($key, $value);
+        return $this->dataSource->fetchPairs($key, $value);
     }
 
 
@@ -558,7 +558,7 @@ class Table implements \IDataSource, \ArrayAccess
     public function getTotalCount()
     {
         $this->buildQuery();
-        return $this->_dataSource->getTotalCount();
+        return $this->dataSource->getTotalCount();
     }
 
 
@@ -570,35 +570,35 @@ class Table implements \IDataSource, \ArrayAccess
     public function count()
     {
         $this->buildQuery();
-        return $this->_dataSource->count();
+        return $this->dataSource->count();
     }
 
 
 
     public function offsetSet($name, $value)
     {
-       $this->_dataSource->offsetSet($name, $value);
+       $this->dataSource->offsetSet($name, $value);
     }
 
 
 
     public function offsetGet($name)
     {
-        return $this->_dataSource->offsetGet($name);
+        return $this->dataSource->offsetGet($name);
     }
 
 
 
     public function offsetExists($name)
     {
-        return $this->_dataSource->offsetExists($name);
+        return $this->dataSource->offsetExists($name);
     }
 
 
 
     public function offsetUnset($name)
     {
-        $this->_dataSource->offsetUnset($name);
+        $this->dataSource->offsetUnset($name);
     }
 
 
@@ -608,7 +608,14 @@ class Table implements \IDataSource, \ArrayAccess
      */
     public function __clone()
     {
-        $this->_dataSource = clone $this->_dataSource;
+        $this->dataSource = clone $this->dataSource;
+    }
+    
+    
+    
+    public function __destruct()
+    {
+        unset($this->dataSource);
     }
 
 }
