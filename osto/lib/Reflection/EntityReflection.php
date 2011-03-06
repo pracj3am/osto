@@ -17,24 +17,12 @@ if (!defined('OSTO_TMP_DIR') && defined('TMP_DIR')) {
 
 
 /**
- * @property-read string $name
- * @property-read array $children
- * @property-read array $parents
- * @property-read array $singles
- * @property-read array $columns
- * @property-read array $types
- * @property-read array $foreignKeys
- * @property-read string $primaryKey
- * @property-read string $primaryKeyColumn
- * @property-read string $tableName
- * @property-read string $prefix
- * @property-read string $parentEntity
- * @property-read string $entityColumn
- * @method bool isColumn(string $name)
  * @method bool isNullColumn(string $name)
+ * @method string getName()
+ * @method string getParentEntity()
  * @method string getForeignKeyName(string $name)
+ * @method bool isEntity()
  * @method bool isExtendingEntity()
- * @method string getRelationWith(string|osto\Entity|osto\Reflection\EntityReflection $reflection)
  */
 final class EntityReflection
 {
@@ -43,22 +31,36 @@ final class EntityReflection
     const ENTITY_COLUMN = 'entity';
 
 
-    protected $children = array();
-    protected $parents = array();
-    protected $singles = array();
-    protected $columns = array();
-    protected $types = array();
-    protected $foreign_keys = array();
-    protected $primary_key;
-    private $_cache;
+    /** @var array */
+    public $children = array();
+    /** @var array */
+    public $parents = array();
+    /** @var array */
+    public $singles = array();
+    /** @var array */
+    public $columns = array();
+    /** @var array */
+    public $types = array();
+    /** @var array */
+    public $foreignKeys = array();
+
+    /** @var string */
+    public $primaryKey;
+    /** @var string */
+    public $tableName;
+    /** @var string */
+    public $prefix;
+
+    /** @var array */
+    private $cache = array();
+    
     private $_properties;
-    private $_prefix;
-    private $_tableName;
 
     /**
      * @var \ReflectionClass
      */
     private $_reflection;
+    /** @var string */
     private $_class;
 
 
@@ -70,9 +72,17 @@ final class EntityReflection
     {
         $this->_class = $argument;
 
-        if (!$this->_isEntity()) {
-            throw new Exception("Cannot create reflection: {$this->name} is not an entity.");
+        if (!$this->__call('isEntity')) {
+            throw new Exception("Cannot create reflection: '$argument' is not an entity.");
         }
+
+
+        if (($prefix = $this->getAnnotation('prefix')) && \is_string($prefix)) {
+            $this->prefix = $prefix;
+        } else {
+            $this->prefix = \strtolower(\preg_replace('/[^A-Z0-9]*/', '', $this->getName()));
+        }
+
 
         $default_primary_key =  $this->prefix . '_' . self::ID;
 
@@ -80,7 +90,7 @@ final class EntityReflection
 
         foreach ($this->_properties as &$pa) {
             if ($pa->primary_key) {
-                $this->primary_key = $pa->name;
+                $this->primaryKey = $pa->name;
                 $this->columns[$pa->name] = \is_string($pa->column) ?
                         $pa->column :
                         $default_primary_key;
@@ -88,8 +98,8 @@ final class EntityReflection
             }
         }
 
-        if ($this->primary_key === NULL) {
-            $this->primary_key = self::ID;
+        if ($this->primaryKey === NULL) {
+            $this->primaryKey = self::ID;
             $this->columns[self::ID] = $default_primary_key;
             $this->types[$this->columns[self::ID]] = 'int';
         }
@@ -100,7 +110,7 @@ final class EntityReflection
 
             } elseif ($pa->relation === 'belongs_to') {
                 $parentClass = $pa->type;
-                if ($parentClass == $this->name) {
+                if ($parentClass == $this->getName()) {
                     $pr = $this;
                 } else {
                     $pr = $parentClass::getReflection();
@@ -114,15 +124,15 @@ final class EntityReflection
 
             } elseif ($pa->relation === 'has_many') {
                 $this->children[$pa->name] = $pa->type;
-                $this->foreign_keys[$pa->name] = \is_string($pa->column) ?
+                $this->foreignKeys[$pa->name] = \is_string($pa->column) ?
                         $pa->column :
-                        $this->columns[$this->primary_key];
+                        $this->columns[$this->primaryKey];
 
             } elseif ($pa->relation === 'has_one') {
                 $this->singles[$pa->name] = $pa->type;
-                $this->foreign_keys[$pa->name] = \is_string($pa->column) ?
+                $this->foreignKeys[$pa->name] = \is_string($pa->column) ?
                         $pa->column :
-                        $this->columns[$this->primary_key];
+                        $this->columns[$this->primaryKey];
 
             } elseif ($pa->relation === FALSE) {
                 $this->columns[$pa->name] = \is_string($pa->column) ?
@@ -132,59 +142,56 @@ final class EntityReflection
             }
         }
 
-        if ($this->_isExtendingEntity()) {
-            $parentEntity = $this->_getParentEntity();
+        if ($this->__call('isExtendingEntity')) {
+            $parentEntity = $this->__call('getParentEntity');
             $pr = $parentEntity::getReflection();
             $this->parents[Entity::EXTENDED] = $parentEntity;
             $this->columns[Entity::EXTENDED] = $this->getPrimaryKeyColumn();
             $this->types[$this->columns[Entity::EXTENDED]] = $pr->types[$pr->getPrimaryKeyColumn()];
         }
+
+        
+        if (($tn = $this->getAnnotation('table')) && \is_string($tn)) {
+            $this->tableName = $tn;
+        } else {
+            $this->tableName = Helpers::fromCamelCase(strrpos($this->getName(), '\\') !== FALSE ? \substr($this->getName(), \strrpos($this->getName(), '\\') + 1) : $this->getName());
+        }
+
+
     }
 
 
 
-    public function __get($name)
+    public function __call($name, $arguments = array())
     {
-        return $this->__call(Helpers::getter($name), array());
-    }
-
-
-
-    public function __isset($name)
-    {
-        return \method_exists($this, Helpers::getter($name)) || \method_exists($this->getReflection(), Helpers::getter($name));
-    }
-
-
-
-    public function __call($name, $arguments)
-    {
-        //caching results of static methods
-        if (\method_exists($target = $this, $name) || \method_exists($target = $this, $name = ltrim($name, '_')) || \method_exists($target = $this->getReflection(), $name)) {
-            $cachePath = array($name, md5(\serialize($arguments)));
-            $cache = & $this->getCache($cachePath);
-            if ($cache === array()) {
-                $cache = \call_user_func_array(array($target, $name), $arguments);
+        //caching results of methods call
+        if (\method_exists($target = $this, $name) || \method_exists($target = $this->getReflection(), $name)) {
+            $key = $name . ($arguments ? '|' . $arguments[0] . (isset($arguments[1]) ? ',' . $arguments[1] . (isset($arguments[2]) ? ',' . $arguments[2] : '') : '') : '');
+            if (!isset($this->cache[$key])) {
+                $this->cache[$key] = \call_user_func_array(array($target, $name), $arguments);
             }
-            return $cache;
+            return $this->cache[$key];
         }
 
     }
 
 
-
-    private function &getCache($cachePath = NULL)
+    public function getTableName()
     {
-        $cache = & $this->_cache;
-        if (is_array($cachePath)) {
-            foreach ($cachePath as $part) {
-                if (!isset($cache[$part]))
-                    $cache[$part] = array();
+        return $this->tableName;
+    }
 
-                $cache = & $cache[$part];
-            }
-        }
-        return $cache;
+
+    public function getPrefix()
+    {
+        return $this->prefix;
+    }
+
+
+
+    public function getPrimaryKey()
+    {
+        return $this->primaryKey;
     }
 
 
@@ -215,7 +222,7 @@ final class EntityReflection
 
     private function getAnnotations($name)
     {
-        $res = $this->_getAllAnnotations();
+        $res = $this->__call('getAllAnnotations');
         return isset($res[$name]) ? $res[$name] : array();
     }
 
@@ -223,7 +230,7 @@ final class EntityReflection
 
     private function getAnnotation($name)
     {
-        $res = $this->_getAllAnnotations();
+        $res = $this->__call('getAllAnnotations');
         return isset($res[$name]) ? end($res[$name]) : NULL;
     }
 
@@ -244,7 +251,7 @@ final class EntityReflection
 
     private function getPropertyAnnotation($prop, $name)
     {
-        $res = $this->_getPropertyAnnotations($prop);
+        $res = $this->__call('getPropertyAnnotations', array($prop));
         return isset($res[$name]) ? end($res[$name]) : NULL;
     }
 
@@ -252,7 +259,7 @@ final class EntityReflection
 
     private function getForeignKeyName($name)
     {
-        return isset($this->foreign_keys[$name]) ? $this->foreign_keys[$name] :
+        return isset($this->foreignKeys[$name]) ? $this->foreignKeys[$name] :
                 FALSE;
     }
 
@@ -267,8 +274,8 @@ final class EntityReflection
 
     private function isExtendingEntity()
     {
-        $parentEntity = $this->_getParentEntity();
-        if (!$parentEntity || !$this->_isEntity()) {
+        $parentEntity = $this->__call('getParentEntity');
+        if (!$parentEntity || !$this->__call('isEntity')) {
             return FALSE;
         }
 
@@ -292,63 +299,7 @@ final class EntityReflection
 
     public function getEntityColumn()
     {
-        return $this->_prefix . '_' . self::ENTITY_COLUMN;
-    }
-
-
-
-    public function getTableName()
-    {
-        if (!isset($this->_tableName)) {
-            if (($tn = $this->getAnnotation('table')) && \is_string($tn))
-                $this->_tableName = $tn;
-            else
-                $this->_tableName = Helpers::fromCamelCase(strrpos($this->name, '\\') !== FALSE ? \substr($this->name, \strrpos($this->name, '\\') + 1) : $this->name);
-        }
-
-        return $this->_tableName;
-    }
-
-
-
-    public function getPrefix()
-    {
-        if (!isset($this->_prefix)) {
-            if (($prefix = $this->getAnnotation('prefix')) && \is_string($prefix))
-                $this->_prefix = $prefix;
-            else
-                $this->_prefix = \strtolower(\preg_replace('/[^A-Z0-9]*/', '', $this->name));
-        }
-
-        return $this->_prefix;
-    }
-
-
-
-    public function getParents()
-    {
-        return $this->parents;
-    }
-
-
-
-    public function getChildren()
-    {
-        return $this->children;
-    }
-
-
-
-    public function getSingles()
-    {
-        return $this->singles;
-    }
-
-
-
-    public function getColumns()
-    {
-        return $this->columns;
+        return $this->prefix . '_' . self::ENTITY_COLUMN;
     }
 
 
@@ -363,13 +314,6 @@ final class EntityReflection
     public function isProperty($name)
     {
         return \array_key_exists($name, $this->columns);
-    }
-
-
-
-    public function getTypes()
-    {
-        return $this->types;
     }
 
 
@@ -392,23 +336,16 @@ final class EntityReflection
 
 
 
-    public function getPrimaryKey()
-    {
-        return $this->primary_key;
-    }
-
-
-
     public function getPrimaryKeyColumn()
     {
-        return $this->columns[$this->primary_key];
+        return $this->columns[$this->primaryKey];
     }
 
 
 
     public function isSelfReferencing()
     {
-        return \in_array($this->name, $this->parents) && \in_array($this->name, $this->children);
+        return \in_array($this->getName(), $this->parents) && \in_array($this->getName(), $this->children);
     }
 
 
@@ -419,7 +356,7 @@ final class EntityReflection
      * @return bool|string
      * @throws osto\Exception
      */
-    private function getRelationWith($reflection)
+    public function getRelationWith($reflection)
     {
         if (!$reflection instanceof EntityReflection) {
             try {
@@ -429,19 +366,47 @@ final class EntityReflection
             }
         }
 
-        if ($name = \array_search($reflection->name, $this->parents, TRUE)) {
+        if ($name = \array_search($reflection->getName(), $this->parents, TRUE)) {
             return $name;
         }
 
-        if ($name = \array_search($reflection->name, $this->singles, TRUE)) {
+        if ($name = \array_search($reflection->getName(), $this->singles, TRUE)) {
             return $name;
         }
 
-        if ($name = \array_search($reflection->name, $this->children, TRUE)) {
+        if ($name = \array_search($reflection->getName(), $this->children, TRUE)) {
             return $name;
         }
 
         return FALSE;
+    }
+
+
+
+    public function getColumns()
+    {
+        return $this->columns;
+    }
+
+
+
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+
+
+    public function getParents()
+    {
+        return $this->parents;
+    }
+
+
+
+    public function getSingles()
+    {
+        return $this->singles;
     }
 
 
@@ -480,8 +445,8 @@ final class EntityReflection
     {
         try {
             $cache = self::instantiateCache();
-            if (!isset($cache[$this->name])) {
-                $cache->save($this->name, \serialize($this), array(
+            if (!isset($cache[$this->getName()])) {
+                $cache->save($this->getName(), \serialize($this), array(
                     Caching\Cache::FILES => array($this->getFileName())
                 ));
             }

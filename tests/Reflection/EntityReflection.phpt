@@ -71,7 +71,6 @@ dump(TestA::getReflection()->getColumns());
 dump(subTest::getReflection()->getColumns());
 
 Assert::same( 'TestA', TestA::getReflection()->getShortName() );
-Assert::same( 'TestA', TestA::getReflection()->shortName );
 
 
 __halt_compiler();

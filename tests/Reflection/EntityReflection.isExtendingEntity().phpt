@@ -61,6 +61,6 @@ Assert::true(D::getReflection()->isExtendingEntity());
 
 __halt_compiler();
 ------EXPECT------
-string(55) "Cannot create reflection: osto\Entity is not an entity."
+string(57) "Cannot create reflection: 'osto\Entity' is not an entity."
 
-string(45) "Cannot create reflection: B is not an entity."
+string(47) "Cannot create reflection: 'B' is not an entity."

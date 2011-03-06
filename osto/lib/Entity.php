@@ -82,11 +82,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         $r = static::getReflection();
-        $entityColumn = $r->entityColumn;
+        $entityColumn = $r->getEntityColumn();
 
         $values = $entity->_values;
-        $values[$r->primaryKeyColumn] = $entity->_id;
-        $values[$r->entityColumn] = $entity->getEntityClass();
+        $values[$r->getPrimaryKeyColumn()] = $entity->_id;
+        $values[$r->getEntityColumn()] = $entity->getEntityClass();
 
         return static::createFromValues($values);
 
@@ -104,14 +104,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     {
         $class = \get_called_class();
         $r = static::getReflection();
-        $entityColumn = $r->entityColumn;
+        $entityColumn = $r->getEntityColumn();
         if (!isset($values[$entityColumn]) || $class === $values[$entityColumn]) {
             return new $class($values);
         }
 
         $sClass = $values[$entityColumn];
         $sTable = $sClass::getTable();
-        return $sTable->where($sTable->id->eq($values[$r->primaryKeyColumn]))->fetch();
+        return $sTable->where($sTable->id->eq($values[$r->getPrimaryKeyColumn()]))->fetch();
     }
 
 
@@ -349,7 +349,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         //primary key
-        if ($name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->primaryKeyColumn) {
+        if ($name == 'id' || $name == $this->_reflection->primaryKey || $name == $this->_reflection->getPrimaryKeyColumn()) {
             $this->_setId($value);
             return;
         }
@@ -413,7 +413,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      */
     private function _setId($value)
     {
-        $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->primaryKeyColumn]);
+        $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->getPrimaryKeyColumn()]);
         $newId = $value === 0 ? NULL : $value;
         if ($this->_id !== $newId && $this->_id !== NULL) {
             $this->_modified = \array_fill_keys(\array_keys($this->_values), self::VALUE_MODIFIED);
@@ -674,8 +674,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 $table = static::getTable();
                 $row = dibi::fetch("SELECT * FROM [{$table->getName()}] WHERE %and", array($table->id->eq($this->_id)));
                 if ($row) {
-                    $this->id = $row->{$this->_reflection->primaryKeyColumn};
-                    unset($row->{$this->_reflection->primaryKeyColumn});
+                    $this->id = $row->{$this->_reflection->getPrimaryKeyColumn()};
+                    unset($row->{$this->_reflection->getPrimaryKeyColumn()});
                     foreach ($row as $name => $value) {
                         if (isset($this[$name])) {
                             $this[$name] = $value;
@@ -850,22 +850,22 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
                 //entity column
                 if (isset($this->_entityClass)) {
-                    $values[$this->_reflection->entityColumn] = $values_update[$this->_reflection->entityColumn] = $this->_entityClass;
+                    $values[$this->_reflection->getEntityColumn()] = $values_update[$this->_reflection->getEntityColumn()] = $this->_entityClass;
                 }
 
                 //primary key
-                $values = $values + array($this->_reflection->primaryKeyColumn=>$this->_id);
+                $values = $values + array($this->_reflection->getPrimaryKeyColumn()=>$this->_id);
 
                 $this->beforeSave($values, $values_update);
 
                 dibi::query(
                     'INSERT INTO `' . $this->_reflection->tableName . '`', $values,
-                    'ON DUPLICATE KEY UPDATE ' . $this->_reflection->primaryKeyColumn . '=LAST_INSERT_ID(' . $this->_reflection->primaryKeyColumn . ')
+                    'ON DUPLICATE KEY UPDATE ' . $this->_reflection->getPrimaryKeyColumn() . '=LAST_INSERT_ID(' . $this->_reflection->getPrimaryKeyColumn() . ')
                      %if', $values_update, ', %a', $values_update, '%end'
                 );
 
                 if ($this->_id === NULL) {
-                    $id = $values[$this->_reflection->primaryKeyColumn] = dibi::insertId();
+                    $id = $values[$this->_reflection->getPrimaryKeyColumn()] = dibi::insertId();
                 }
 
                 $this->afterSave($values, $values_update);
@@ -958,7 +958,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 dibi::begin();
                 dibi::query(
                     'DELETE FROM [' . $this->_reflection->tableName . '] WHERE %and',
-                    array($this->_reflection->primaryKeyColumn => $this->_id), 'LIMIT 1'
+                    array($this->_reflection->getPrimaryKeyColumn() => $this->_id), 'LIMIT 1'
                 );
 
                 if (\array_key_exists(self::EXTENDED, $this->_parents)) {
@@ -1040,7 +1040,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public function setValues($values, $isColumns = FALSE)
     {
         foreach ($values as $key=>$value) {
-            if ($key === $this->_reflection->primaryKeyColumn && $isColumns) {
+            if ($key === $this->_reflection->getPrimaryKeyColumn() && $isColumns) {
                 $this->id = $value;
                 //unset($values[$key]);
                 continue;
@@ -1089,7 +1089,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
 
         //entity class name
-        if (isset($values[$this->_reflection->entityColumn])) {
+        if (isset($values[$this->_reflection->getEntityColumn()])) {
             $this->setEntityClass($value);
         }
 
@@ -1206,9 +1206,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         if ($name && \array_key_exists($name, $this->_values)) {
             $this->_setValue($name, $value);
-        } elseif ($name == $this->_reflection->primaryKeyColumn) {
+        } elseif ($name == $this->_reflection->getPrimaryKeyColumn()) {
             $this->_setId($value);
-        } elseif ($name == $this->_reflection->entityColumn) {
+        } elseif ($name == $this->_reflection->getEntityColumn()) {
             $this->setEntityClass($value);
         } elseif (\array_key_exists(self::EXTENDED, $this->_parents)) {
             $this->_parents[self::EXTENDED]->offsetSet($name, $value);
@@ -1229,10 +1229,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if ($name && \array_key_exists($name, $this->_values)) {
             return $this->_values[$name];
         }
-        if ($name == $this->_reflection->primaryKeyColumn) {
+        if ($name == $this->_reflection->getPrimaryKeyColumn()) {
             return $this->_id;
         }
-        if ($name == $this->_reflection->entityColumn) {
+        if ($name == $this->_reflection->getEntityColumn()) {
             return $this->getEntityClass();
         }
         if (\array_key_exists(self::EXTENDED, $this->_parents)) {
@@ -1251,8 +1251,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             throw new Exception("Key value must be a string or an integer, not '".  \gettype($name) . "'.");
         }
         return \array_key_exists($name, $this->_values) ||
-                $name == $this->_reflection->primaryKeyColumn ||
-                $name == $this->_reflection->entityColumn ||
+                $name == $this->_reflection->getPrimaryKeyColumn() ||
+                $name == $this->_reflection->getEntityColumn() ||
                 \array_key_exists(self::EXTENDED, $this->_parents) && $this->_parents[self::EXTENDED]->offsetExists($name);
     }
 
