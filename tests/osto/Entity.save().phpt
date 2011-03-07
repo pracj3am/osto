@@ -147,6 +147,15 @@ $p->L[] = $l1->copy();
 $p->save();
 Assert::same(Lkjh::count(), 3);
 
+//uložení po vynulování relací
+$p->L = NULL;
+$p->M = NULL;
+try {
+    $p->save();
+} catch (\Exception $e) {
+    output('Never should be here');
+}
+
 output('Parent of the first L:');
 $ls = Lkjh::findAll();
 

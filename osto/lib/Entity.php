@@ -814,8 +814,10 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     continue;
                 }
                 
-                $parentEntity->save(TRUE);
-                $this[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
+                if ($parentEntity) {
+                    $parentEntity->save(TRUE);
+                    $this[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
+                }
             }
             if ($this->_reflection->isExtendingEntity()) {
                 $this->_parents[self::EXTENDED]->save(TRUE);
@@ -874,15 +876,19 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
             //save singles
             foreach ($this->_singles as $singleName => $single) {
-                $single[$this->_reflection->getForeignKeyName($singleName)] = $this->_id;
-                $single->save(TRUE);
+                if ($single) {
+                    $single[$this->_reflection->getForeignKeyName($singleName)] = $this->_id;
+                    $single->save(TRUE);
+                }
             }
 
             //save children
             foreach ($this->_children as $childName => $children) {
-                foreach ($children as $i => $childEntity) {
-                    $childEntity[$this->_reflection->getForeignKeyName($childName)] = $this->_id;
-                    $childEntity->save(TRUE);
+                if ($children) {
+                    foreach ($children as $i => $childEntity) {
+                        $childEntity[$this->_reflection->getForeignKeyName($childName)] = $this->_id;
+                        $childEntity->save(TRUE);
+                    }
                 }
             }
 
@@ -1268,7 +1274,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public function serialize()
     {
         foreach ($this->_parents as $parentName=>$parentEntity) {
-            $this->_values[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
+            if ($parentEntity) {
+                $this->_values[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
+            }
         }
 
         $vars = \get_object_vars($this);

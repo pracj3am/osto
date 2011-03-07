@@ -85,7 +85,7 @@ try {
     dump($e->getMessage());
 }
 
-dump($a->values);
+echo $a;
 
 Assert::true(isset($a->id));
 Assert::true(isset($a->rid));
@@ -96,6 +96,11 @@ Assert::true(isset($a->C->maslo));
 Assert::false(isset($a->C->A));
 Assert::false(isset($a->x));
 
+$a->B = NULL;
+$a->C = NULL;
+
+echo $a;
+
 __halt_compiler();
 
 ------EXPECT------
@@ -105,18 +110,30 @@ string(36) "Property C must be entity of class C"
 
 string(25) "Undeclared property A->x."
 
-array(4) {
-	"rid" => NULL
-	"a" => int(1)
-	"C" => array(3) {
-		"myid" => NULL
-		"c" => string(2) "51"
-		"ac" => NULL
-	}
-	"B" => array(1) {
-		0 => array(2) {
-			"id" => NULL
-			"b" => NULL
-		}
-	}
-}
+Array
+(
+    [rid] => 
+    [a] => 1
+    [C] => Array
+        (
+            [myid] => 
+            [c] => 51
+            [ac] => 
+        )
+
+    [B] => Array
+        (
+            [0] => Array
+                (
+                    [id] => 
+                    [b] => 
+                )
+
+        )
+
+)
+Array
+(
+    [rid] => 
+    [a] => 1
+)
