@@ -166,7 +166,11 @@ final class EntityReflection
     {
         //caching results of methods call
         if (\method_exists($target = $this, $name) || \method_exists($target = $this->getReflection(), $name)) {
-            $key = $name . ($arguments ? '|' . $arguments[0] . (isset($arguments[1]) ? ',' . $arguments[1] . (isset($arguments[2]) ? ',' . $arguments[2] : '') : '') : '');
+            $keyA = array($name);
+            foreach ($arguments as &$a) {
+                $keyA[] = $a;
+            }
+            $key = \implode('|', $keyA);
             if (!isset($this->cache[$key])) {
                 $this->cache[$key] = \call_user_func_array(array($target, $name), $arguments);
             }
@@ -299,7 +303,7 @@ final class EntityReflection
 
     public function getEntityColumn()
     {
-        return $this->prefix . '_' . self::ENTITY_COLUMN;
+        return "{$this->prefix}_" . self::ENTITY_COLUMN;
     }
 
 

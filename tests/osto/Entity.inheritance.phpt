@@ -105,8 +105,9 @@ $c->save();
 unset($c);
 
 output('A =====');
-foreach (A::findAll() as $row)
+foreach (A::findAll() as $row) {
 	output($row);
+}
 
 output('B =====');
 foreach (B::findAll() as $row)
