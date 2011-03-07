@@ -428,7 +428,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         if ($value !== NULL) {
             $type = $this->_reflection->types[$name];
-            if (\class_exists($type)) {
+            if ($type == 'string' || $type == 'int' || $type == 'integer' || $type == 'bool' || $type == 'float') {
+                \settype($value, $type);
+            } elseif (\class_exists($type)) {
                 if (!$value instanceof $type) {
                     $value = new $type($value);
                 }
