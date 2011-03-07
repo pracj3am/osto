@@ -116,7 +116,7 @@ __halt_compiler();
                     
 
 			SELECT `%S%`.`a_a`
-			FROM `c` AS `%S%` JOIN (`a` AS `%S%`) USING(`c_id`)
+			FROM `c` AS `%S%` JOIN (`a` AS `%S%`) USING (`c_id`)
 
 
 
