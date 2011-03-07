@@ -237,7 +237,7 @@ class Table implements \IDataSource, \ArrayAccess
     {
         $this->alias = $alias;
         foreach ($this->joined as $relName=>$table) {
-            $table->setAlias($this->alias . self::ALIAS_DELIM . $relName);
+            $table->setAlias(\implode('', array($this->alias, self::ALIAS_DELIM, $relName)));
         }
     }
 
@@ -312,19 +312,21 @@ class Table implements \IDataSource, \ArrayAccess
         }
 
 
-        $sql = '[' . $this->getName() . '] AS [' . $this->alias . ']';
+        $sql = array('[', $this->getName(), '] AS [', $this->alias, ']');
 
         foreach ($this->joined as $relName=>$table) {
-            $sql .= ' JOIN (' . $table->getSql() . ')';
+            $sql[] = ' JOIN (';
+            $sql[] = $table->getSql();
+            $sql[] = ')';
 
             if (isset($this->reflection->parents[$relName])) {
                 $c1 = $this->reflection->columns[$relName];
                 $c2 = $table->reflection->getPrimaryKeyColumn();
 
                 if ($c1 === $c2) {
-                    $sql .= " USING ([$c1])";
+                    $sql[] = " USING ([$c1])";
                 } else {
-                    $sql .= " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
+                    $sql[] = " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
                 }
 
             } elseif (isset($this->reflection->singles[$relName]) || isset($this->reflection->children[$relName])) {
@@ -332,15 +334,15 @@ class Table implements \IDataSource, \ArrayAccess
                 $c2 = $this->reflection->getForeignKeyName($relName);
 
                 if ($c1 === $c2) {
-                    $sql .= " USING([$c1])";
+                    $sql[] = " USING([$c1])";
                 } else {
-                    $sql .= " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
+                    $sql[] = " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
                 }
 
             }
         }
 
-        $this->dataSource->setSql($sql);
+        $this->dataSource->setSql(\implode('', $sql));
 
     }
 
@@ -402,7 +404,7 @@ class Table implements \IDataSource, \ArrayAccess
             throw new Exception("Circular reference between tables '" . $this->getName() . "' and '" . $table->getName() . "'.");
         }
 
-        $table->setAlias($this->alias . self::ALIAS_DELIM . $relName);
+        $table->setAlias(\implode('', array($this->alias, self::ALIAS_DELIM, $relName)));
         $this->joined[$relName] = $table;
 
         $this->invalidateQuery();
@@ -615,7 +617,7 @@ class Table implements \IDataSource, \ArrayAccess
     
     public function __destruct()
     {
-        unset($this->dataSource);
+        $this->dataSource = NULL;
     }
 
 }
