@@ -1268,9 +1268,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public function serialize()
     {
         foreach ($this->_parents as $parentName=>$parentEntity) {
-            if ($parentEntity instanceof self) {
-                $this->_values[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
-            }
+            $this->_values[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
         }
 
         $vars = \get_object_vars($this);
@@ -1296,10 +1294,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     public function __destruct()
     {
-        $this->_reflection = NULL;
-        $this->_parents = NULL;
-        $this->_singles = NULL;
-        $this->_children = NULL;
+
     }
 
 }

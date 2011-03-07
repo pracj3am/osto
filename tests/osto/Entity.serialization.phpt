@@ -110,6 +110,14 @@ unset($aa);
 $aa = unserialize($as);
 echo $aa;
 
+$c = new C;
+$c->ca->id = 1;
+$c->__destruct(); //destruct is called before seralization in session
+$cs = serialize($c);
+unset($c);
+$c = unserialize($cs);
+echo $c;
+
 __halt_compiler();
 
 ------EXPECT------
@@ -139,4 +147,10 @@ Array
     [a] => foo
     [b_id] => 1
     [aa] => bar
+)
+Array
+(
+    [id] => 
+    [c] => 
+    [aa_id] => 1
 )
