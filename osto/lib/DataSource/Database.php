@@ -11,19 +11,17 @@ use osto;
  */
 class Database extends \DibiDataSource implements \ArrayAccess
 {
+    /** @var \DibiTranslator */
+    public static $translator;
 
     private $rowClass = 'DibiRow';
-    /** @var \DibiTranslator */
-    private $translator;
     /** @var array */
     private $array;
 
 
     public function __construct()
     {
-        $args = \func_get_args();
-        $this->translator = new \DibiTranslator(\dibi::getConnection());
-        parent::__construct($this->translator->translate($args), \dibi::getConnection());
+        parent::__construct('', \dibi::getConnection());
     }
 
 
@@ -76,7 +74,7 @@ class Database extends \DibiDataSource implements \ArrayAccess
      */
     public function join($sql)
     {
-        $this->setSql($this->sql . ' JOIN ' . $sql);
+        $this->setSql(\implode('', array($this->sql, ' JOIN ', $sql)));
     }
 
 
@@ -87,7 +85,7 @@ class Database extends \DibiDataSource implements \ArrayAccess
      */
     public function setSql($sql)
     {
-        $this->sql = $this->translator->translate((array)$sql);
+        $this->sql = self::$translator->translate((array)$sql);
         $this->result = $this->count = $this->totalCount = NULL;
     }
 
@@ -228,3 +226,6 @@ class Database extends \DibiDataSource implements \ArrayAccess
     }
 
 }
+
+
+Database::$translator = new \DibiTranslator(\dibi::getConnection());
