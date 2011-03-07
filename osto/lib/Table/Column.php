@@ -48,21 +48,21 @@ class Column
      */
     private function _op($operator, $operand)
     {
-        $cond = "[$this] $operator ";
+        $cond = array('['.$this.']', $operator);
         if ($operand instanceof self) {
-            $cond .= '%n';
+            $cond[] = '%n';
             $operand = (string)$operand;
         } elseif ($operand instanceof \DateTime) {
-            $cond .= '%d';
+            $cond[] = '%d';
         } elseif (\is_int($operand)) {
-            $cond .= '%i';
+            $cond[] = '%i';
         } elseif (\is_float ($operand)) {
-            $cond .= '%f';
+            $cond[] = '%f';
         } else {
-            $cond .= '%s';
+            $cond[] = '%s';
         }
 
-        return array($cond, $operand);
+        return array(\implode(' ', $cond), $operand);
     }
 
 

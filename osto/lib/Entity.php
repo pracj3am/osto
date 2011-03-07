@@ -3,6 +3,7 @@
 namespace osto;
 
 use dibi;
+use osto\Table;
 
 
 
@@ -711,11 +712,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     $parentEntity = new $parentClass($this->_id);
                     $parentEntity->load($depth);
                 } else {
-                    $parentEntity = $parentClass::find($this[$this->_reflection->columns[$parentName]]) or
+                    $table = $parentClass::getTable();
+                    $parentEntity = Table\Helpers::find($table, $this[$this->_reflection->columns[$parentName]]) or
                         $parentEntity = new $parentClass;
                     if ($depth > 0) {
                         $parentEntity->load($depth);
                     }
+                    unset($table);
                 }
 
                 $this->_parents[$parentName] = $parentEntity;
@@ -741,10 +744,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         foreach ($this->_reflection->singles as $singleName => $singleClass) {
             if (in_array($singleName, $singleNames)) {
                 if ($this->_id !== NULL) {
-                    $fkColumn = $singleClass::getTable()->{$this->_reflection->getForeignKeyName($singleName)};
-                    $entity = $singleClass::findOne($fkColumn->eq($this->id)) or
+                    $table = $singleClass::getTable();
+                    $fkColumn = $table->{$this->_reflection->getForeignKeyName($singleName)};
+                    $entity = Table\Helpers::findOne($table, $fkColumn->eq($this->id)) or
                               $entity = new $singleClass;
                     $entity->load($depth);
+                    unset($table);
                 } else {
                     $entity = new $singleClass;
                 }

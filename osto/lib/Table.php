@@ -148,7 +148,7 @@ class Table implements \IDataSource, \ArrayAccess
                         ( $this->reflection->isColumn($name) ? $name : FALSE );
 
         if ($i !== FALSE) {
-            return "$this->alias.$i";
+            return \implode('.', array($this->alias, $i));
         }
 
         if (isset($this->extends)) {
@@ -237,7 +237,7 @@ class Table implements \IDataSource, \ArrayAccess
     {
         $this->alias = $alias;
         foreach ($this->joined as $relName=>$table) {
-            $table->setAlias(\implode('', array($this->alias, self::ALIAS_DELIM, $relName)));
+            $table->setAlias(\implode(self::ALIAS_DELIM, array($this->alias, $relName)));
         }
     }
 
@@ -324,9 +324,10 @@ class Table implements \IDataSource, \ArrayAccess
                 $c2 = $table->reflection->getPrimaryKeyColumn();
 
                 if ($c1 === $c2) {
-                    $sql[] = " USING ([$c1])";
+                    $sql[] = ' USING (['; $sql[] = $c1;  $sql[] = '])';
                 } else {
-                    $sql[] = " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
+                    $sql[] = ' ON [';  $sql[] = $this->alias;  $sql[] = '.';  $sql[] = $c1; $sql[] = '] = [';
+                    $sql[] = $table->alias; $sql[] = '.'; $sql[] = $c2; $sql[] = ']';
                 }
 
             } elseif (isset($this->reflection->singles[$relName]) || isset($this->reflection->children[$relName])) {
@@ -334,9 +335,10 @@ class Table implements \IDataSource, \ArrayAccess
                 $c2 = $this->reflection->getForeignKeyName($relName);
 
                 if ($c1 === $c2) {
-                    $sql[] = " USING([$c1])";
+                    $sql[] = ' USING (['; $sql[] = $c1;  $sql[] = '])';
                 } else {
-                    $sql[] = " ON [{$this->alias}.$c1] = [{$table->alias}.$c2]";
+                    $sql[] = ' ON [';  $sql[] = $this->alias;  $sql[] = '.';  $sql[] = $c1; $sql[] = '] = [';
+                    $sql[] = $table->alias; $sql[] = '.'; $sql[] = $c2; $sql[] = ']';
                 }
 
             }
@@ -617,7 +619,7 @@ class Table implements \IDataSource, \ArrayAccess
     
     public function __destruct()
     {
-        $this->dataSource = NULL;
+        unset($this->dataSource);
     }
 
 }
