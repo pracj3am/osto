@@ -48,6 +48,9 @@ class Helpers
      */
     public static function count(Table $table, $cond = array())
     {
+        $args = \func_get_args();
+        unset($args[0]);
+        $cond = \is_array($cond) ? $cond : $args;
         return self::findAll($table, $cond)->count();
     }
 
