@@ -896,7 +896,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             $in_transaction === TRUE or
             dibi::rollback();
 
-            throw new DatabaseException('Error when saving entity "' . \get_class($this) . '."', 0, $e);
+            throw new DatabaseException('Error when saving entity "' . \get_class($this) . '": ' . $e->getMessage(), 0, $e->getSql());
 
             return FALSE;
         }
