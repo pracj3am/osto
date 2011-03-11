@@ -585,8 +585,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             foreach ($this->_children as $childName => $childEntities) {
                 if ($childEntities instanceof \IDataSource) {
                     $this->_children[$childName] = clone $this->_children[$childName];
-                    foreach ($this->_children[$childName] as $i => $childEntity) {
-                        $this->_children[$childName][$i] = clone $this->_children[$childName][$i];
+                    foreach ($this->_children[$childName] as $childEntity) {
+                        $this->_children[$childName][] = clone $childEntity;
                     }
                 }
             }
@@ -625,8 +625,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
         foreach ($copy->_children as $childName => $childEntities) {
             if ($childEntities instanceof \IDataSource) {
-                foreach ($copy->_children[$childName] as $i => $childEntity) {
-                    $copy->_children[$childName][$i] = $this->_children[$childName][$i]->copy();
+                foreach ($copy->_children[$childName] as $childEntity) {
+                    $copy->_children[$childName][] = $childEntity->copy();
                 }
             }
         }
