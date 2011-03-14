@@ -403,6 +403,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->getPrimaryKeyColumn()]);
         $newId = $value === 0 ? NULL : $value;
         if ($this->_id !== $newId && $this->_id !== NULL) {
+            $this->_self_modified = self::VALUE_MODIFIED;
             $this->_modified = \array_fill_keys(\array_keys($this->_values), self::VALUE_MODIFIED);
             \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
         }
@@ -609,7 +610,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public function copy()
     {
         $copy = clone $this;
-        $copy->_id = NULL;
+        $copy->id = NULL;
         foreach ($copy->_modified as $name => $v) {
             $copy->_modified[$name] = self::VALUE_MODIFIED;
         }
