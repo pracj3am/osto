@@ -27,6 +27,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      */
     protected static $reflections = array();
     protected static $registered = array();
+    
+    /** @var integer */
+    protected static $transaction_nesting_level = 0;
 
     private $_id;
     private $_values = array();
@@ -790,19 +793,55 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     /****************** DATA MANIPULATION *******************/
 
+    
+    /**
+     * Starts the transaction
+     */
+    public static function begin()
+    {
+        if (self::$transaction_nesting_level == 0) {
+            dibi::begin();
+        }
+        ++self::$transaction_nesting_level;
+    }
+    
 
+    
+    /**
+     * Commits the transaction
+     * @var integer $levels Number of levels to commit
+     */
+    public static function commit($levels = NULL)
+    {
+        if ($levels === NULL || $levels >= self::$transaction_nesting_level) {
+            dibi::commit();
+            self::$transaction_nesting_level = 0;
+        }
+        self::$transaction_nesting_level -= $levels;
+    }
+    
+
+    
+    /**
+     * Rollbacks the transaction
+     */
+    public static function rollback()
+    {
+        dibi::rollback();
+        self::$transaction_nesting_level = 0;
+    }
+    
+    
 
     /**
      * Saves the entity to database
-     * @param bool $in_transaction Is method called in outer db transaction?
      * @return bool FALSE on failure, TRUE otherwise
      * @throws DatabaseException
      */
-    final public function save($in_transaction = FALSE)
+    final public function save()
     {
 
-        $in_transaction === TRUE or
-        dibi::begin();
+        self::begin();
 
         try {
 
@@ -893,16 +932,14 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             }
 
         } catch (\DibiException $e) {
-            $in_transaction === TRUE or
-            dibi::rollback();
+            self::rollback();
 
             throw new DatabaseException('Error when saving entity "' . \get_class($this) . '."', 0, $e);
 
             return FALSE;
         }
 
-        $in_transaction === TRUE or
-        dibi::commit();
+        self::commit(1);
 
         return TRUE;
     }
@@ -948,12 +985,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      * (deleting of its chidren and singles must be ensured in database itself via foreign keys)
      * @throws DatabaseException
      */
-    final public function delete($in_transaction = FALSE)
+    final public function delete()
     {
         if ($this->_id !== NULL) {
             try {
-                $in_transaction === TRUE or
-                dibi::begin();
+                self::begin();
+                
                 dibi::query(
                     'DELETE FROM [' . $this->_reflection->tableName . '] WHERE %and',
                     array($this->_reflection->getPrimaryKeyColumn() => $this->_id), 'LIMIT 1'
@@ -964,13 +1001,11 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 }
 
             } catch (\DibiException $e) {
-                $in_transaction === TRUE or
-                dibi::rollback();
+                self::rollback();
                 throw new DatabaseException("Error while deleting entity '" .  \get_class($this) . "' with id {$this->_id}", 0, $e);
             }
 
-            $in_transaction === TRUE or
-            dibi::commit();
+            self::commit(1);
         }
     }
 
