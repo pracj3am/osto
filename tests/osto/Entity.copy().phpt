@@ -90,9 +90,19 @@ $a1 = $a->copy();
 
 dump(array_diff_assoc($a->values, $a1->values));
 
+$a2 = new A(1);
+$a2->load(1);
+$a3 = $a2->copy();
+
+dump(array_diff_assoc($a2->values, $a3->values));
+
 __halt_compiler();
 
 ------EXPECT------
+array(1) {
+	"rid" => int(1)
+}
+
 array(1) {
 	"rid" => int(1)
 }

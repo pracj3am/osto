@@ -406,6 +406,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         $value === NULL or \settype($value, $this->_reflection->types[$this->_reflection->getPrimaryKeyColumn()]);
         $newId = $value === 0 ? NULL : $value;
         if ($this->_id !== $newId && $this->_id !== NULL) {
+            $this->_self_modified = self::VALUE_MODIFIED;
             $this->_modified = \array_fill_keys(\array_keys($this->_values), self::VALUE_MODIFIED);
             \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
         }
@@ -588,8 +589,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
             foreach ($this->_children as $childName => $childEntities) {
                 if ($childEntities instanceof \IDataSource) {
                     $this->_children[$childName] = clone $this->_children[$childName];
-                    foreach ($this->_children[$childName] as $i => $childEntity) {
-                        $this->_children[$childName][$i] = clone $this->_children[$childName][$i];
+                    foreach ($this->_children[$childName] as $childEntity) {
+                        $this->_children[$childName][] = clone $childEntity;
                     }
                 }
             }
@@ -612,7 +613,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     public function copy()
     {
         $copy = clone $this;
-        $copy->_id = NULL;
+        $copy->id = NULL;
         foreach ($copy->_modified as $name => $v) {
             $copy->_modified[$name] = self::VALUE_MODIFIED;
         }
@@ -628,8 +629,8 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
         foreach ($copy->_children as $childName => $childEntities) {
             if ($childEntities instanceof \IDataSource) {
-                foreach ($copy->_children[$childName] as $i => $childEntity) {
-                    $copy->_children[$childName][$i] = $this->_children[$childName][$i]->copy();
+                foreach ($copy->_children[$childName] as $childEntity) {
+                    $copy->_children[$childName][] = $childEntity->copy();
                 }
             }
         }
@@ -934,7 +935,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         } catch (\DibiException $e) {
             self::rollback();
 
-            throw new DatabaseException('Error when saving entity "' . \get_class($this) . '."', 0, $e);
+            throw new DatabaseException('Error when saving entity "' . \get_class($this) . '": ' . $e->getMessage(), 0, $e->getSql());
 
             return FALSE;
         }
