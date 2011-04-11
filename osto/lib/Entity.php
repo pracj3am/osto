@@ -1122,11 +1122,6 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         }
 
-        //entity class name
-        if (isset($values[$this->_reflection->getEntityColumn()])) {
-            $this->setEntityClass($value);
-        }
-
 
         if ($this->_reflection->isExtendingEntity()) {
             $this->_parents[self::EXTENDED]->setValues($values, $isColumns);
