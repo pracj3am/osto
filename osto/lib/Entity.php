@@ -398,7 +398,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
 
     /**
-     * Internal method so set primary key value
+     * Internal method to set primary key value
      * @param integer $value
      */
     private function _setId($value)
@@ -408,7 +408,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if ($this->_id !== $newId && $this->_id !== NULL) {
             $this->_self_modified = self::VALUE_MODIFIED;
             $this->_modified = \array_fill_keys(\array_keys($this->_values), self::VALUE_MODIFIED);
-            \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
+            if ($newId !== NULL) {
+                \trigger_error("OSTO: Id of entity '".\get_class($this)."' has changed.", E_USER_WARNING);
+            }
         }
         $this->_id = $newId;
 
