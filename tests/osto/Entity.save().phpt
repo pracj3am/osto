@@ -100,6 +100,10 @@ $p->M = new Mnbv;
 
 $p->save();
 
+//change value and save
+$p->koo = 'lut';
+$p->save();
+
 unset($p);
 $p = new Poiu;
 
@@ -111,14 +115,20 @@ $p->zzz = '2009-01-01 12:00:01';
 $l1 = new Lkjh;
 $l1->content = 'bla1 bla1';
 $l2 = new Lkjh;
+$l3 = new Lkjh;
 
 $p->L[] = $l1;
 $p->L[] = $l2;
+$p->L[] = $l3;
 
 $p->M = new Mnbv;
 $p->M->boo = 'Howgh';
 
 $p->save();
+
+//set value and save
+$l3->content = 'mlok';
+$l3->save();
 
 unset($p);
 
@@ -145,7 +155,7 @@ dump($p->values);
 //test přidání dalšího L pomocí []
 $p->L[] = $l1->copy();
 $p->save();
-Assert::same(Lkjh::count(), 3);
+Assert::same(Lkjh::count(), 4);
 
 //uložení po vynulování relací
 $p->L = NULL;
@@ -176,13 +186,15 @@ Saved sucessfully
 
 Saved sucessfully
 
+Saved sucessfully
+
 All P%c%s:
 
 array(5) {
 	"id" => int(1)
 	"a" => int(2)
 	"p_koo" => string(1) "2"
-	"koo" => string(3) "jut"
+	"koo" => string(3) "lut"
 	"zzz" => object(DateTime) (3) {
 		"date" => string(19) "%d%-%d%-%d% %d%:%d%:%d%"
 		"timezone_type" => int(3)
@@ -228,6 +240,12 @@ array(3) {
 	"p_id" => int(2)
 }
 
+array(3) {
+	"id" => int(3)
+	"content" => string(4) "mlok"
+	"p_id" => int(2)
+}
+
 ... and the P itself
 
 array(6) {
@@ -240,7 +258,7 @@ array(6) {
 		"timezone_type" => int(3)
 		"timezone" => string(13) "Europe/Prague"
 	}
-	"L" => array(2) {
+	"L" => array(3) {
 		0 => array(3) {
 			"id" => int(1)
 			"content" => string(9) "bla1 bla1"
@@ -249,6 +267,11 @@ array(6) {
 		1 => array(3) {
 			"id" => int(2)
 			"content" => NULL
+			"p_id" => int(2)
+		}
+		2 => array(3) {
+			"id" => int(3)
+			"content" => string(4) "mlok"
 			"p_id" => int(2)
 		}
 	}

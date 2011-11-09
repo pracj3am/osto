@@ -102,6 +102,7 @@ $m->p->a = 1;
 Entity::begin();
 $m->save();
 Entity::rollback();
+$m->restore();
 
 Entity::begin();
 $m->save();

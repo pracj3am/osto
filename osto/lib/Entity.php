@@ -27,7 +27,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
      */
     protected static $reflections = array();
     protected static $registered = array();
-    
+
     /** @var integer */
     protected static $transaction_nesting_level = 0;
 
@@ -40,6 +40,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     private $_singles = array();
     private $_loaded;
     private $_entityClass;
+    private $_snapshot;
 
     /**
      * Reference of entity reflection
@@ -503,7 +504,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
             if (isset($this->_reflection->singles[$childName=$varName]) || isset($this->_reflection->singles[$childName=$VarName]) ||
                    isset($this->_reflection->children[$childName=$varName]) || isset($this->_reflection->children[$childName=$VarName])) {
-                
+
                 $fk = $this->_reflection->getForeignKeyName($childName);
                 $childClass = @$this->_reflection->children[$childName] or
                         $childClass = $this->_reflection->singles[$childName];
@@ -798,7 +799,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
     /****************** DATA MANIPULATION *******************/
 
-    
+
     /**
      * Starts the transaction
      */
@@ -809,9 +810,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
         ++self::$transaction_nesting_level;
     }
-    
 
-    
+
+
     /**
      * Commits the transaction
      * @var integer $levels Number of levels to commit
@@ -824,9 +825,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         }
         self::$transaction_nesting_level -= $levels;
     }
-    
 
-    
+
+
     /**
      * Rollbacks the transaction
      */
@@ -834,9 +835,13 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
     {
         dibi::rollback();
         self::$transaction_nesting_level = 0;
+        
+        if (isset($this)) {
+            $this->restore(TRUE);
+        }
     }
-    
-    
+
+
 
     /**
      * Saves the entity to database
@@ -857,7 +862,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 if ($parentName === self::EXTENDED) {
                     continue;
                 }
-                
+
                 if ($parentEntity) {
                     $parentEntity->save(TRUE);
                     $this[$this->_reflection->columns[$parentName]] = $parentEntity->_id;
@@ -910,6 +915,12 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                     $id = $values[$this->_reflection->getPrimaryKeyColumn()] = dibi::insertId();
                 }
 
+                //set modified flag
+                $this->saveState();
+
+                $this->_self_modified = self::VALUE_SET;
+                $this->_modified = \array_fill_keys(\array_keys($this->_values), self::VALUE_SET);
+
                 $this->afterSave($values, $values_update);
 
                 if ($this->_id === NULL) {
@@ -947,6 +958,43 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         self::commit(1);
 
         return TRUE;
+    }
+
+
+
+    /**
+     * Saves the current state of entity
+     */
+    public function saveState()
+    {
+        $this->_snapshot = new \stdClass;
+        $this->_snapshot->_id = $this->_id;
+        $this->_snapshot->_values = $this->_values;
+        $this->_snapshot->_self_modified = $this->_self_modified;
+        $this->_snapshot->_modified = $this->_modified;
+    }
+
+
+
+    /**
+     * Restores last saved state
+     */
+    public function restore($recursive = TRUE)
+    {
+        if ($this->_snapshot) {
+            $this->_id = $this->_snapshot->_id;
+            $this->_values = $this->_snapshot->_values;
+            $this->_self_modified = $this->_snapshot->_self_modified;
+            $this->_modified = $this->_snapshot->_modified;
+        }
+
+        $this->_snapshot = NULL;
+        
+        if ($recursive) {
+            foreach ($this->_parents as $parentName => $parentEntity) {
+                $parentEntity->restore();
+            }
+        }
     }
 
 
@@ -995,7 +1043,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
         if ($this->_id !== NULL) {
             try {
                 self::begin();
-                
+
                 dibi::query(
                     'DELETE FROM [' . $this->_reflection->tableName . '] WHERE %and',
                     array($this->_reflection->getPrimaryKeyColumn() => $this->_id), 'LIMIT 1'
