@@ -6,6 +6,7 @@
  * @author     David Grudl
  * @package    Nette\Test
  */
+namespace {
 
 date_default_timezone_set('Europe/Prague');
 
@@ -60,4 +61,6 @@ function db_connect()
 	dibi::connect('driver=mysqli&host=localhost&username=test&charset=utf8&profiler=1');
 	dibi::query('CREATE DATABASE IF NOT EXISTS test');
 	dibi::query('USE test');
+}
+
 }
