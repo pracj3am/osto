@@ -62,6 +62,7 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
 
         $this->initialize();
         if (\is_array($id)) {
+			$this->_loaded = TRUE;
             $this->setColumnValues($id);
         } else {
             $this->id = $id;
