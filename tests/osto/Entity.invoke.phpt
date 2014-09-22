@@ -60,9 +60,9 @@ namespace {
 
     output($a());
 
-    
-    __halt_compiler();
 }
+    
+__halt_compiler();
 ------EXPECT------
 
 			SELECT *

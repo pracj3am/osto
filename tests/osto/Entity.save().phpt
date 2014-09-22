@@ -110,7 +110,7 @@ $p = new Poiu;
 $p['p_a'] = 3;
 $p->p_koo = 'sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg';
 $p->koo = 'wer';
-$p->zzz = '2009-01-01 12:00:01';
+$p->zzz = '2009-01-01 12:00:01.000000';
 
 $l1 = new Lkjh;
 $l1->content = 'bla1 bla1';
@@ -196,7 +196,7 @@ array(5) {
 	"p_koo" => string(1) "2"
 	"koo" => string(3) "lut"
 	"zzz" => object(DateTime) (3) {
-		"date" => string(19) "%d%-%d%-%d% %d%:%d%:%d%"
+		"date" => string(26) "%d%-%d%-%d% %d%:%d%:%d%.000000"
 		"timezone_type" => int(3)
 		"timezone" => string(13) "Europe/Prague"
 	}
@@ -208,7 +208,7 @@ array(5) {
 	"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 	"koo" => string(3) "wer"
 	"zzz" => object(DateTime) (3) {
-		"date" => string(19) "2009-01-01 12:00:01"
+		"date" => string(26) "2009-01-01 12:00:01.000000"
 		"timezone_type" => int(3)
 		"timezone" => string(13) "Europe/Prague"
 	}
@@ -220,7 +220,7 @@ array(5) {
 	"p_koo" => string(0) ""
 	"koo" => string(0) ""
 	"zzz" => object(DateTime) (3) {
-		"date" => string(19) "%d%-%d%-%d% %d%:%d%:%d%"
+		"date" => string(26) "%d%-%d%-%d% %d%:%d%:%d%.000000"
 		"timezone_type" => int(3)
 		"timezone" => string(13) "Europe/Prague"
 	}
@@ -254,7 +254,7 @@ array(6) {
 	"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 	"koo" => string(3) "wer"
 	"zzz" => object(DateTime) (3) {
-		"date" => string(19) "2009-01-01 12:00:01"
+		"date" => string(26) "2009-01-01 12:00:01.000000"
 		"timezone_type" => int(3)
 		"timezone" => string(13) "Europe/Prague"
 	}
@@ -289,7 +289,7 @@ array(4) {
 		"p_koo" => string(122) "sdk agjdfj gkjdfgkjdfjg sdůjf új ai gjaúg jaúsgfo ajdůjůajg ůadj gůjdfgůljfadojúgjůvj ůdfk ůkdfajg kůdjfgsdg"
 		"koo" => string(3) "wer"
 		"zzz" => object(DateTime) (3) {
-			"date" => string(19) "2009-01-01 12:00:01"
+			"date" => string(26) "2009-01-01 12:00:01.000000"
 			"timezone_type" => int(3)
 			"timezone" => string(13) "Europe/Prague"
 		}

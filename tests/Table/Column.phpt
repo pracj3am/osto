@@ -94,7 +94,7 @@ array(2) {
 array(2) {
 	0 => string(11) "[a_a] <= %d"
 	1 => object(DateTime) (3) {
-		"date" => string(19) "2010-10-10 00:00:00"
+		"date" => string(26) "2010-10-10 00:00:00.000000"
 		"timezone_type" => int(3)
 		"timezone" => string(13) "Europe/Prague"
 	}
