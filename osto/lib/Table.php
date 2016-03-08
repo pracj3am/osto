@@ -579,6 +579,20 @@ class Table implements \IDataSource, \ArrayAccess
 
 
 
+	/**
+	 * Dibi interface
+	 */
+	public function dibi()
+	{
+		$this->buildQuery();
+		$sql = $this->dataSource->getSql();
+		$this->dataSource->setSql(array_merge([$sql], func_get_args()));
+		$this->isSqlValid = TRUE;
+		return $this;
+	}
+
+
+
     public function offsetSet($name, $value)
     {
        $this->dataSource->offsetSet($name, $value);
