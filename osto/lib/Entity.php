@@ -787,7 +787,9 @@ abstract class Entity implements \ArrayAccess, \IteratorAggregate, \Serializable
                 if ($this->_id !== NULL) {
                     $fk = $this->_reflection->getForeignKeyName($childName);
                     $fkColumn = $childClass::getTable()->$fk;
-                    $children = $childClass::getTable()->where($fkColumn->eq($this->id));
+					// turn on column name translating
+					$whereClause = preg_replace('/\[([^\[\]]*)\]/', '[:\1:]', $fkColumn->eq($this->id));
+                    $children = $childClass::getTable()->where($whereClause);
                 } else {
                     $children = new DataSource\ArraySource;
                 }
