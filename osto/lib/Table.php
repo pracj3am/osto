@@ -126,7 +126,7 @@ class Table implements \IDataSource, \ArrayAccess
                     $table = $this->joined[$relName];
                 } else {
                     $table = new self($relations[$relName]);
-                    $this->join($table);
+                    $this->join($table, $relName);
                 }
 
                 $i = $table->getColumnIdentifier($name);
